@@ -1,0 +1,6 @@
+allowBuilds:
+  # unrs-resolver: transitive dep of eslint-config-next (via eslint-import-resolver-typescript).
+  # Its postinstall (napi-postinstall) only selects/links the correct pre-fetched,
+  # integrity-verified native binary from its own pinned optionalDependencies —
+  # no network access or arbitrary code execution. Verified 2026-08-17.
+  unrs-resolver: true
