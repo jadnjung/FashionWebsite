@@ -38,7 +38,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] New / Tops / Bottoms / Etc. category pages
 - [ ] Search (predictive, full-screen overlay)
 - [ ] Filters (category, size, color, availability, collection, price, sort)
-- [ ] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-page))
+- [ ] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-grid-behavior))
 
 ## Phase 5 — Product Detail Page
 
