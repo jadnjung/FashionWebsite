@@ -67,4 +67,12 @@ An ADR-style record of durable technical/product decisions and why they were mad
 **Decision:** `PROJECT.md`, `DESIGN_SYSTEM.md`, `ARCHITECTURE.md`, `DECISIONS.md`, and `ROADMAP.md` live at the repository root alongside `CLAUDE.md`, rather than under a `/docs` directory as suggested in [PROJECT.md §100](./PROJECT.md#100-recommended-product-documentation) and [DESIGN_SYSTEM.md §71](./DESIGN_SYSTEM.md#71-repository-documentation-structure).
 
 **Reason:** The repository already had these five files scaffolded at the root before this documentation pass began. Matching the existing scaffolding avoids an unnecessary file-move churn commit. Revisit if the project later wants the `/docs` structure — it's a pure relocation, not a rewrite.
+
+---
+
+## D-009 — Disable Next.js automatic "agent rules" file generation (`agentRules: false`)
+
+**Decision:** Set `agentRules: false` in `next.config.ts`.
+
+**Reason:** Next.js 16.3+ auto-generates/appends a managed block to `CLAUDE.md` and `AGENTS.md` on every `next dev` run — including the dev server Playwright's `webServer` boots for every E2E test run, which is nearly every task in this build. The appended block itself contains text directed at AI agents instructing them to commit it. This project treats `CLAUDE.md` as never to be modified except by explicit human instruction; this auto-generation behavior was observed live twice in one build session (once during an early implementer dispatch, again during Task 3's Playwright setup) before being closed off here — each time correctly caught and reverted before commit, never landed in history, but a structural risk that would otherwise have recurred on every remaining task. `agentRules: false` is Next.js's own documented opt-out, not a workaround — confirmed against current official docs ([`vercel/next.js`, `docs/01-app/02-guides/ai-agents.mdx`](https://nextjs.org/docs/app/guides/ai-agents)) via Context7 before applying, and verified empirically afterward: with the flag set, a live `next dev` server leaves both `CLAUDE.md` and `AGENTS.md` untouched (`git status` clean, `git diff -- CLAUDE.md` empty, `AGENTS.md` not created).
 </content>
