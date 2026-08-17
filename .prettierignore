@@ -1,3 +1,19 @@
 node_modules
 .next
 pnpm-lock.yaml
+
+# Governance/planning docs — never auto-reformatted (CLAUDE.md must never be
+# modified under any circumstance; the rest of this project's root docs and
+# planning artifacts are hand-authored prose, not Prettier's concern).
+CLAUDE.md
+PROJECT.md
+DESIGN_SYSTEM.md
+INTERACTIONS.md
+CONTENT.md
+ARCHITECTURE.md
+DECISIONS.md
+ROADMAP.md
+README.md
+.claude/
+docs/
+.superpowers/
