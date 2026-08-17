@@ -47,8 +47,6 @@ Do not intentionally access or modify unrelated files elsewhere on the computer.
 
 # Specialized Agents
 
-Use specialized project agents when their expertise materially applies.
-
 Core roles include:
 
 - engineering-lead
@@ -69,7 +67,42 @@ Review specialists may include:
 - test-reviewer
 - ui-reviewer
 
-Complex work should consider the perspectives of the relevant disciplines rather than relying on a single generic implementation perspective.
+## Workflow and Routing
+
+Standard path for non-trivial work:
+
+> You → Engineering Lead → specialist agent(s) → specialist self-check → Engineering Lead integration & review → automated validation → commit/push
+
+Engineering Lead is a **router, architect, and reviewer** — not a mandatory extra step that duplicates work on every task. Its full routing responsibilities are defined in `.claude/agents/engineering-lead.md`; the rules below are the policy every agent (including the top-level session) should follow.
+
+**Route to Engineering Lead when a task:**
+
+- spans architecture, multiple systems, or multiple disciplines
+- is a roadmap milestone or a multi-file feature
+- involves a decision worth recording in DECISIONS.md
+- has ambiguous scope that needs to be broken down before work starts
+
+**Handle directly, no agent dispatch, when a task is small and self-contained:**
+
+- a typo, copy fix, or single small bug fix
+- a narrow, well-specified change confined to one file or area
+- a question that doesn't require writing code
+
+When a task's size is unclear, default to handling it directly and escalate only if it turns out to touch more than expected.
+
+**Use a specialist only when the task genuinely benefits from that discipline** — UI/UX, commerce/backend integration, animation, accessibility, testing, SEO, performance, security, or analytics are the recurring cases on this project. Do not dispatch a specialist merely because the role exists; if the work can be done competently in less time than it takes to brief a specialist, do it directly.
+
+**Parallelism:** specialists may work at the same time only when their work is clearly separated — different files or areas, no shared state, no sequential dependency. If two specialists would touch the same files, or one's output feeds the other's input, run them sequentially instead.
+
+**Engineering Lead always retains:**
+
+- final say on architecture consistency
+- integration of specialist output into one coherent change
+- deciding when work is actually complete (see Completion below)
+- running automated validation after integration — this is not satisfied by specialist self-checks alone
+- the commit
+
+Complex work should consider the perspectives of the relevant disciplines rather than relying on a single generic implementation perspective — but "considering the perspective" does not always require spawning a separate agent for it.
 
 # Fashion Website Priorities
 
