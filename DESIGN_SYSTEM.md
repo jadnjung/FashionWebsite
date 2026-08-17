@@ -198,7 +198,7 @@ Recommended starting direction: Helvetica Neue / Neue Haas Grotesk style
 
 If licensing becomes an issue, select a high-quality modern grotesk alternative.
 
-### Typeface B — Editorial Display
+## 7. Typeface B — Editorial Display
 
 Used for:
 
@@ -224,7 +224,7 @@ Preferred direction:
 - experimental neo-grotesk
 - selective serif contrast if later justified
 
-## 7. Typography Personality
+## 8. Typography Personality
 
 Typography should feel:
 
@@ -246,7 +246,7 @@ Words may occasionally:
 
 But product information must remain conventional and readable.
 
-## 8. Type Scale — Desktop
+## 9. Type Scale — Desktop
 
 **Display XL** — `clamp(72px, 11vw, 180px)` — Collection titles and major editorial moments.
 
@@ -268,7 +268,7 @@ But product information must remain conventional and readable.
 
 Typography should rely heavily on spacing and scale rather than excessive font weights.
 
-## 9. Weight System
+## 10. Weight System
 
 Prefer:
 
@@ -287,7 +287,7 @@ Avoid excessive:
 
 Large size should create impact instead of heavy weight.
 
-## 10. Letter Spacing
+## 11. Letter Spacing
 
 - Display typography: `-0.03em` to `-0.01em`
 - Navigation: `0.02em` to `0.08em`
@@ -295,7 +295,7 @@ Large size should create impact instead of heavy weight.
 
 This creates a controlled editorial contrast.
 
-## 11. Case
+## 12. Case
 
 - Primary navigation: UPPERCASE
 - Product names: Flexible.
@@ -304,7 +304,7 @@ This creates a controlled editorial contrast.
 
 Do not make every piece of text uppercase.
 
-## 12. Spacing System
+## 13. Spacing System
 
 Base unit: `4px`
 
@@ -312,7 +312,7 @@ Core spacing values: `4, 8, 12, 16, 24, 32, 48, 64, 96, 128`
 
 Large editorial layouts may exceed this scale.
 
-## 13. Page Margins
+## 14. Page Margins
 
 - Desktop: `32–48px`
 - Large desktop: `48–64px`
@@ -321,7 +321,7 @@ Large editorial layouts may exceed this scale.
 
 The layout should feel spacious without wasting viewport area.
 
-## 14. Grid
+## 15. Grid
 
 - Desktop: 12-column grid
 - Tablet: 8 columns
@@ -329,7 +329,7 @@ The layout should feel spacious without wasting viewport area.
 
 Product layouts may intentionally break the visual grid while still being based on it internally.
 
-## 15. Shape Language
+## 16. Shape Language
 
 Esque should avoid excessive rounded cards.
 
@@ -341,7 +341,7 @@ Recommended:
 
 Avoid the generic SaaS aesthetic of: `rounded card + shadow + pill button`
 
-## 16. Buttons
+## 17. Buttons
 
 ### Primary
 
@@ -360,7 +360,7 @@ Hover may: fill, invert, reveal underline, shift text
 
 Often text-based: `EXPLORE COLLECTION →` instead of large filled buttons.
 
-## 17. Hover Philosophy
+## 18. Hover Philosophy
 
 Hover should communicate responsiveness.
 
@@ -381,7 +381,7 @@ Avoid:
 - glowing neon borders
 - gimmicky rotations
 
-## 18. Motion Personality
+## 19. Motion Personality
 
 Motion should feel: **Fast, controlled, physical and intentional.**
 
@@ -392,7 +392,7 @@ Not:
 - whimsical
 - overly elastic
 
-## 19. Motion Curves
+## 20. Motion Curves
 
 Recommended standard easing: `cubic-bezier(0.22, 1, 0.36, 1)`
 
@@ -402,7 +402,7 @@ For short microinteractions: `ease-out`
 
 Avoid uncontrolled spring effects throughout the site. Physics may be used specifically for drag interactions.
 
-## 20. Motion Timing
+## 21. Motion Timing
 
 **Micro** — 120–200 ms — icon state, underline, button feedback
 
@@ -414,7 +414,7 @@ Avoid uncontrolled spring effects throughout the site. Physics may be used speci
 
 Do not routinely exceed 800 ms.
 
-## 21. Custom Cursor
+## 22. Custom Cursor
 
 Desktop only.
 
@@ -426,7 +426,7 @@ Text inside may become: VIEW, SHOP, DRAG, OPEN
 
 The cursor follows movement with extremely light interpolation. Lag must remain low. If the cursor feels delayed, disable interpolation.
 
-## 22. Cursor Accessibility Rule
+## 23. Cursor Accessibility Rule
 
 Do not hide the operating-system cursor until the custom cursor has initialized successfully.
 
@@ -437,7 +437,7 @@ Disable custom cursor for:
 - low-performance devices
 - form inputs where precision matters
 
-## 23. Main Navigation — Desktop
+## 24. Main Navigation — Desktop
 
 Default header approximately: `72px`
 
@@ -451,7 +451,7 @@ Header should be:
 - transparent over hero when readable
 - solid/dark after necessary scroll state
 
-## 24. Menu Experience
+## 25. Menu Experience
 
 Clicking MENU creates a full-screen transition.
 
@@ -470,7 +470,7 @@ Hovering TOPS:
 
 Subcategories: T-SHIRTS / SHIRTS / HOODIES / SWEATERS / JACKETS
 
-## 25. Menu Transition
+## 26. Menu Transition
 
 Opening:
 
@@ -481,7 +481,7 @@ Opening:
 
 Total duration: approximately 350–500 ms. Closing should be slightly faster.
 
-## 26. Homepage — Scene 01: Collection Hero
+## 27. Homepage — Scene 01: Collection Hero
 
 Height: approximately `100svh`
 
@@ -496,7 +496,7 @@ Large ESQUE typography may exist partially outside the viewport.
 
 Subtle mouse movement creates depth between typography, model, and background. Movement should stay within a few pixels.
 
-## 27. Hero First Load
+## 28. Hero First Load
 
 Recommended sequence:
 
@@ -508,7 +508,7 @@ Recommended sequence:
 
 Total: approximately 600–900 ms. No multi-second splash screen.
 
-## 28. Homepage — Scene 02: Interactive Model
+## 29. Homepage — Scene 02: Interactive Model
 
 One large still model photograph. Copy: `LOOK 01` or collection-specific equivalent.
 
@@ -521,13 +521,13 @@ Hovering a garment (e.g. hoodie):
 
 Highlight should appear sophisticated rather than literally outlining the garment with a glowing border. Preferred technique: masked luminance/exposure treatment rather than obvious glow.
 
-## 29. Interactive Model Hotspots
+## 30. Interactive Model Hotspots
 
 Hotspots should approximately follow garment silhouettes rather than rectangular boxes.
 
 Implementation options: SVG masks, polygon hit regions, image masks. Do not rely on tiny manually positioned circles.
 
-## 30. Shop the Look
+## 31. Shop the Look
 
 Position: lower corner or contextual side panel.
 
@@ -543,13 +543,13 @@ Opens a floating or side panel containing all garments, e.g.:
 
 Each item displays variant controls where required. Final CTA: `ADD LOOK`
 
-## 31. Homepage — Scene 03: Collection Statement
+## 32. Homepage — Scene 03: Collection Statement
 
 Typography-first. Example: large text `NOT MADE TO REMAIN.`, smaller text `COLLECTION 001`.
 
 Editorial imagery appears in smaller intentional placements. Use parallax sparingly.
 
-## 32. Homepage — Scene 04: Selected Pieces
+## 33. Homepage — Scene 04: Selected Pieces
 
 Three or four products maximum. Avoid displaying the entire collection like a conventional grid.
 
@@ -557,13 +557,13 @@ Potential composition: large product left, smaller product upper-right, another 
 
 Names remain visible. Prices hidden until product interaction.
 
-## 33. Homepage — Scene 05: Categories
+## 34. Homepage — Scene 05: Categories
 
 Large text: TOPS, BOTTOMS, ETC.
 
 Hovering changes: background imagery, typography position, cursor. Click enters the respective category.
 
-## 34. Homepage — Scene 06: Drop Status
+## 35. Homepage — Scene 06: Drop Status
 
 Example:
 
@@ -575,13 +575,13 @@ AVAILABLE UNTIL GONE
 
 This section reinforces scarcity. Do not fabricate demand statistics.
 
-## 35. Homepage — Scene 07: Archive Preview
+## 36. Homepage — Scene 07: Archive Preview
 
 Once future collections exist: `PAST / 001`, previous campaign image, CTA `ENTER ARCHIVE`.
 
 For initial launch, this can remain minimal or hidden.
 
-## 36. Collection Page
+## 37. Collection Page
 
 Opening section: collection identity + hero image, e.g. `COLLECTION 001` / `06 PIECES`.
 
@@ -589,7 +589,7 @@ Followed by: editorial visual, interactive model, unconventional product layout.
 
 Avoid unnecessary long introductory text.
 
-## 37. Collection Grid Behavior
+## 38. Collection Grid Behavior
 
 For six products, suggested composition:
 
@@ -600,7 +600,7 @@ For six products, suggested composition:
 
 The exact grid should respond to available photography.
 
-## 38. Product Card
+## 39. Product Card
 
 Default: image, below it `HOODIE 01`. No price.
 
@@ -613,7 +613,7 @@ Hover:
 
 Click imagery → PDP. Click Quick Add → variant overlay.
 
-## 39. Quick Add — Desktop
+## 40. Quick Add — Desktop
 
 Appears as lightweight overlay or expansion connected to the product card.
 
@@ -628,25 +628,25 @@ ADD TO BAG
 
 Unavailable variants are visibly disabled.
 
-## 40. Quick Add — Mobile
+## 41. Quick Add — Mobile
 
 Do not overlay several controls on the photograph. Use a bottom sheet.
 
 Tap `QUICK ADD` → bottom sheet enters → user chooses color, size → `ADD TO BAG`
 
-## 41. PDP Opening Layout
+## 42. PDP Opening Layout
 
 Desktop: approximately `60% media / 40% product`. Media remains visually dominant but not full-screen.
 
 Right panel contains: product name, price, short description, color, size, add to bag, wishlist, availability.
 
-## 42. PDP Scrolling
+## 43. PDP Scrolling
 
 Right product controls remain sticky through the first media sequence.
 
 Further down: product concept, materials, fit, care, sizing, collection context. These may become editorial layouts rather than accordion-only utility sections.
 
-## 43. PDP Media
+## 44. PDP Media
 
 Recommended minimum photography package per product:
 
@@ -660,7 +660,7 @@ Recommended minimum photography package per product:
 
 This should later become part of the photography brief.
 
-## 44. Size Selection
+## 45. Size Selection
 
 Size options should be obvious, e.g. `XS S M L XL`
 
@@ -670,19 +670,19 @@ Unavailable: strike-through or reduced opacity.
 
 CTA should not become active until required selection is made.
 
-## 45. Size Guide
+## 46. Size Guide
 
 Open in: side panel (desktop) / bottom sheet (mobile).
 
 Include: body measurements, garment measurements, fit description, model measurements. Eventually consider recommendation tooling.
 
-## 46. Scarcity UI
+## 47. Scarcity UI
 
 Examples: `LOW STOCK`, `3 REMAIN`, `FINAL PIECES`
 
 Use only real inventory information. Forest green may indicate availability. Muted warm red may indicate extremely limited state, but avoid conventional alarm-style ecommerce UI.
 
-## 47. Bag
+## 48. Bag
 
 Dedicated page.
 
@@ -692,7 +692,7 @@ Each item: image, name, color, size, quantity, price, remove, save.
 
 Checkout CTA clearly dominant.
 
-## 48. Add-to-Bag Transition
+## 49. Add-to-Bag Transition
 
 On successful add:
 
@@ -703,7 +703,7 @@ On successful add:
 
 Total: less than approximately 500 ms. Never block continued browsing.
 
-## 49. Search
+## 50. Search
 
 Search becomes a full-screen overlay.
 
@@ -717,7 +717,7 @@ As user types, results populate instantly:
 
 No-result state: `NOTHING MATCHES.`
 
-## 50. Filters
+## 51. Filters
 
 Desktop: compact horizontal control above products or side overlay.
 
@@ -727,13 +727,13 @@ Filters: category, type, size, color, availability, collection, price.
 
 Do not expose every filter simultaneously when not useful.
 
-## 51. Account
+## 52. Account
 
 Account pages should become more functional than editorial. Still maintain: Esque typography, dark theme, strong spacing.
 
 Areas: ORDERS, SAVED, ADDRESSES, PROFILE, ACCESS. Future: MEMBERSHIP
 
-## 52. Access Page — Detailed Layout
+## 53. Access Page — Detailed Layout
 
 Desktop: large central password experience.
 
@@ -747,13 +747,13 @@ Background layers:
 
 Garment imagery may move laterally across the viewport at different speeds.
 
-## 53. Access UI Copy
+## 54. Access UI Copy
 
 Suggested: `ENTER ESQUE`, password field, buttons `ENTER` / `REQUEST ACCESS`.
 
 Supporting text: `ACCESS TO CURRENT COLLECTIONS.` Avoid paragraphs explaining the system.
 
-## 54. Request Access Form
+## 55. Request Access Form
 
 Fields: `FIRST NAME`, `EMAIL`
 
@@ -763,7 +763,7 @@ CTA: `REQUEST ACCESS`
 
 Confirmation: `ACCESS SENT.` Secondary: `CHECK YOUR EMAIL.`
 
-## 55. Incorrect Password
+## 56. Incorrect Password
 
 Preferred animation:
 
@@ -775,14 +775,14 @@ Potential rotating microcopy: `NOT THIS ONE.` / `ACCESS DENIED.` / `TRY AGAIN.`
 
 Avoid aggressive shaking.
 
-## 56. Access Persistence
+## 57. Access Persistence
 
 - General access: approximately 30 days (secure cookie or equivalent state)
 - Early-drop access: separate permission state
 
 The architecture should permit future access tiers without rebuilding routing.
 
-## 57. Mobile Homepage
+## 58. Mobile Homepage
 
 Mobile should favor strong vertical composition:
 
@@ -802,21 +802,21 @@ Drop Information
 
 The site should feel almost app-like while remaining web-native.
 
-## 58. Mobile Motion
+## 59. Mobile Motion
 
 Reduce depth and pointer-dependent effects. Prefer: swipe, masked reveals, vertical transforms, image transitions, tap states.
 
 Maintain 60 FPS on typical modern phones where practical.
 
-## 59. Responsive Rules
+## 60. Responsive Rules
 
 Do not simply scale desktop compositions down. At breakpoints: change composition, relocate typography, modify interaction, remove unnecessary effects, reduce simultaneous animation.
 
-## 60. Performance Budget Philosophy
+## 61. Performance Budget Philosophy
 
 Every large effect should justify its cost. Before adding WebGL, a large animation library, 3D, video, or a custom shader, ask: **Does this create meaningful Esque value?** If not, do not ship it.
 
-## 61. Recommended Frontend Motion Stack
+## 62. Recommended Frontend Motion Stack
 
 Preferred starting architecture:
 
@@ -829,29 +829,29 @@ Preferred starting architecture:
 
 Do not use three animation systems to solve the same problem.
 
-## 62. Reduced Motion
+## 63. Reduced Motion
 
 When user requests reduced motion, disable/reduce: parallax, cursor inertia, large movement, scroll-linked transforms, depth effects.
 
 Retain: fades, state changes, basic page transitions.
 
-## 63. Loading
+## 64. Loading
 
 Images should reserve layout space before loading. Use: blurred placeholder, low-quality preview, masked reveal. Never cause large page jumps.
 
-## 64. Placeholder Assets
+## 65. Placeholder Assets
 
 Until Esque has real photography, use intentional development placeholders. Each placeholder should include `ESQUE PLACEHOLDER` and intended type, e.g. `MODEL — FULL BODY`, `PRODUCT — FRONT`, `PRODUCT — DETAIL`.
 
 This prevents temporary stock images from accidentally defining the final design.
 
-## 65. Photography Requirements — Future Brief
+## 66. Photography Requirements — Future Brief
 
 The eventual photography brief should specifically capture assets for: homepage hero, interactive model, product cards, PDP, collection hero, category imagery, social previews, email campaigns.
 
 Interactive model photography requires controlled posing so individual garments remain visually separable.
 
-## 66. SEO + Access Gate
+## 67. SEO + Access Gate
 
 The access experience must not make the entire site technically invisible.
 
@@ -861,7 +861,7 @@ Search engines should be able to access: title, description, product schema, ima
 
 The Esque access experience can be applied to human browsing without turning the catalog into an uncrawlable private application.
 
-## 67. Design Quality Rule
+## 68. Design Quality Rule
 
 Before shipping any page, evaluate:
 
@@ -873,7 +873,7 @@ Before shipping any page, evaluate:
 - **Performance** — Does it respond immediately?
 - **Accessibility** — Can someone use the core interface with keyboard, screen reader and reduced motion?
 
-## 68. V1 Signature Features
+## 69. V1 Signature Features
 
 The first Esque release should be known for a few extremely polished interactions rather than dozens of average ones. Prioritize these six:
 
@@ -886,7 +886,7 @@ The first Esque release should be known for a few extremely polished interaction
 
 These should receive the majority of interaction-development attention.
 
-## 69. Things Esque Must Avoid
+## 70. Things Esque Must Avoid
 
 Do not use:
 
@@ -908,51 +908,7 @@ Do not use:
 - low-contrast gray text
 - multiple competing accent colors
 
-## 70. No Audio
-
-The Esque website will not use background music, interaction sounds, or transition sounds. All sensory identity comes from: motion, imagery, typography, spacing, color.
-
-## 71. Magnetic Effects
-
-Selective controls may respond slightly to cursor proximity. Good candidates: hero CTA, View Product, menu items, collection navigation.
-
-Movement should remain restrained. Buttons should not visibly escape the user's cursor.
-
-## 72. Page Transitions
-
-Navigation should feel continuous, e.g. Collection card → Collection page, Product card → Product page, Interactive garment → Product page.
-
-Preferred technique: shared imagery / typography transitions. However, transitions must degrade gracefully and must never prevent navigation.
-
-## 73. Drag Interactions
-
-Drag should be used only where users naturally understand it. Potential uses: campaign gallery, product media carousel, collection editorial strip, future lookbook. Always provide a non-drag alternative.
-
-## 74. Approved Interaction Techniques
-
-Use selectively: image masks, clip reveals, subtle scale, parallax, cursor proximity, magnetic interactions, layout morphing, shared-element page transitions, drag interactions, inertial movement, animated typography, image displacement, depth transforms, subtle WebGL effects where justified.
-
-## 75. Interaction Rule
-
-Every major animation must satisfy at least one of these:
-
-1. Improve comprehension.
-2. Communicate state.
-3. Connect two interface states.
-4. Reinforce Esque's identity.
-5. Produce meaningful delight.
-
-If it satisfies none of these, remove it.
-
-## 76. Mobile Navigation
-
-Recommended: full-screen menu triggered from the top navigation. Avoid an overloaded permanent bottom navigation because the website is primarily a fashion experience rather than an application. Bag state should remain immediately accessible.
-
-## 77. Mobile Product Cards
-
-Default: strong imagery, product name. Tap product opens PDP. Quick Add remains accessible through a clear secondary action. No interaction should depend solely on hover.
-
-## 78. Repository Documentation Structure
+## 71. Repository Documentation Structure
 
 Recommended root structure:
 
@@ -972,6 +928,157 @@ docs/
 `CLAUDE.md` stays at repository root. Supporting project documentation lives under `/docs`. This keeps the project root clean while giving every agent a predictable location.
 
 > **Note:** this repository currently keeps `PROJECT.md` and `DESIGN_SYSTEM.md` at the root rather than under `/docs`, matching the existing `CLAUDE.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `ROADMAP.md` placement already present in the repo. Revisit this if the project later adopts the `/docs` structure described above.
+
+## 72. PRODUCT.md
+
+Contains:
+
+- Esque vision
+- target audience
+- product architecture
+- categories
+- drop system
+- commerce requirements
+- account requirements
+- SEO
+- email
+- analytics
+- feature scope
+
+The existing Esque Product Requirements Document becomes this file.
+
+> **Note:** in this repository, this content lives in `PROJECT.md` (not `PRODUCT.md`), matching the file this repo already had scaffolded before this documentation pass began. See DECISIONS.md.
+
+## 73. DESIGN_SYSTEM.md
+
+Contains:
+
+- colors
+- typography
+- layout grid
+- spacing
+- surfaces
+- buttons
+- forms
+- cards
+- breakpoints
+- responsive rules
+- accessibility design rules
+
+The visual sections of this specification become this file.
+
+## 74. INTERACTIONS.md
+
+Contains:
+
+- timing
+- easing
+- cursor
+- menu
+- hover
+- drag
+- scroll
+- interactive model
+- page transitions
+- mobile gestures
+- reduced motion
+
+Any developer changing animation should consult this file first.
+
+> **Note:** this repository does not yet have a standalone `INTERACTIONS.md` — the motion/interaction content this section describes currently lives within this file (DESIGN_SYSTEM.md, sections 18–31 and 61–63) and within PROJECT.md's motion sections. Split it out into its own file if animation work grows enough to need a dedicated reference.
+
+## 75. ARCHITECTURE.md
+
+Recommended technology baseline:
+
+**Commerce** — Shopify
+
+**Storefront** — Headless React storefront
+
+**Checkout** — Shopify Checkout
+
+**Email** — Klaviyo
+
+**Analytics** — Shopify Analytics + GA4 + Search Console
+
+**Hosting** — Shopify-compatible edge hosting / Oxygen where appropriate
+
+**Search** — Start with Shopify-native/storefront search capabilities
+
+**Content** — Shopify products + collections + metafields/metaobjects initially
+
+The architecture should avoid introducing additional paid infrastructure until there is a demonstrated need.
+
+> **Note:** this repository's actual `ARCHITECTURE.md` refines this baseline — Next.js (App Router) rather than Hydrogen/Remix, and Vercel rather than Oxygen — per DECISIONS.md D-002 and D-003, confirmed with the project owner.
+
+## 76. CONTENT.md
+
+Defines Esque's voice.
+
+Voice should be:
+
+- concise
+- confident
+- restrained
+- mysterious
+- precise
+
+Avoid:
+
+- excessive exclamation marks
+- slang-heavy marketing
+- generic lifestyle copy
+- long explanations
+
+Example:
+
+Bad:
+
+> We're so excited to introduce our amazing new collection!
+
+Better:
+
+> COLLECTION 001
+>
+> AVAILABLE UNTIL GONE.
+
+> **Note:** this repository does not yet have a standalone `CONTENT.md`. Voice/copy guidance currently lives embedded across PROJECT.md (e.g. §17 Incorrect Password, §87 Error States, §89 Empty States) and this file (e.g. §54–56 Access UI Copy). Split it out into its own file if copy volume grows enough to need a dedicated reference.
+
+## 77. DECISIONS.md
+
+Use an ADR-style record.
+
+Example:
+
+`D-001 — Use Shopify as commerce backend`
+
+Reason:
+
+Reliable inventory, checkout, payments, order management and product operations without constraining the frontend.
+
+> **Note:** this repository's actual `DECISIONS.md` follows this exact format — see D-001 there for the real (matching) entry.
+
+## 78. ROADMAP.md
+
+Recommended phases:
+
+**Phase 0** — Foundation
+
+**Phase 1** — Design system
+
+**Phase 2** — Commerce foundation
+
+**Phase 3** — Core storefront
+
+**Phase 4** — Signature interactions
+
+**Phase 5** — Checkout/accounts/email
+
+**Phase 6** — SEO/accessibility/performance
+
+**Phase 7** — Launch validation
+
+> **Note:** this repository's actual `ROADMAP.md` expands this into a more granular 12-phase build order (see §79 below) plus V1.1/V2+ tracking, rather than using this 8-phase summary directly.
 
 ## 79. Build Order
 

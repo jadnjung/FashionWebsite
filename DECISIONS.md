@@ -50,7 +50,7 @@ An ADR-style record of durable technical/product decisions and why they were mad
 
 **Decision:** Use native CSS transitions/transforms as the default, View Transitions where the browser supports them, a Framer-Motion-style library for component/layout motion, GSAP only for complex sequences that justify it, and Three.js/WebGL only for isolated high-impact features once real assets exist to justify them.
 
-**Reason:** [DESIGN_SYSTEM.md §61](./DESIGN_SYSTEM.md#61-recommended-frontend-motion-stack) explicitly warns against using three animation systems to solve the same problem — each library adds bundle weight, and Esque's performance priority order ([PROJECT.md §75](./PROJECT.md#75-performance)) puts usability and perceived speed above animation sophistication.
+**Reason:** [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack) explicitly warns against using three animation systems to solve the same problem — each library adds bundle weight, and Esque's performance priority order ([PROJECT.md §75](./PROJECT.md#75-performance)) puts usability and perceived speed above animation sophistication.
 
 ---
 
@@ -64,7 +64,7 @@ An ADR-style record of durable technical/product decisions and why they were mad
 
 ## D-008 — Documentation lives at the repository root, not under `/docs`
 
-**Decision:** `PROJECT.md`, `DESIGN_SYSTEM.md`, `ARCHITECTURE.md`, `DECISIONS.md`, and `ROADMAP.md` live at the repository root alongside `CLAUDE.md`, rather than under a `/docs` directory as suggested in [PROJECT.md §100](./PROJECT.md#100-recommended-product-documentation) and [DESIGN_SYSTEM.md §78](./DESIGN_SYSTEM.md#78-repository-documentation-structure).
+**Decision:** `PROJECT.md`, `DESIGN_SYSTEM.md`, `ARCHITECTURE.md`, `DECISIONS.md`, and `ROADMAP.md` live at the repository root alongside `CLAUDE.md`, rather than under a `/docs` directory as suggested in [PROJECT.md §100](./PROJECT.md#100-recommended-product-documentation) and [DESIGN_SYSTEM.md §71](./DESIGN_SYSTEM.md#71-repository-documentation-structure).
 
 **Reason:** The repository already had these five files scaffolded at the root before this documentation pass began. Matching the existing scaffolding avoids an unnecessary file-move churn commit. Revisit if the project later wants the `/docs` structure — it's a pure relocation, not a rewrite.
 </content>

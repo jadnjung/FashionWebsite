@@ -18,7 +18,7 @@ Reasoning depth: **Deep** (`effort: high`).
 Before reviewing, read DESIGN_SYSTEM.md — it is the standard you are reviewing against, not generic best practice. In particular, check for:
 
 - Off-brand color usage: forest green (`#1F3D2B`) used as a default/frequent accent instead of sparingly for selection/active states; pure `#000000`/`#FFFFFF` instead of the specified near-black/off-white tokens.
-- Motion outside the documented budgets (DESIGN_SYSTEM.md §20), or animation that doesn't serve one of the five reasons in §75.
+- Motion outside the documented budgets (DESIGN_SYSTEM.md §21), or animation that doesn't serve one of the five reasons in PROJECT.md §66.
 - Anything on the "Things Esque Must Avoid" list (§69): rounded-card-plus-shadow-plus-pill-button defaults, glassmorphism, neon gradients, generic Shopify-template sections, autoplay audio, carousels, hover-only critical information.
 - Product/collection prices shown where DESIGN_SYSTEM.md specifies they should stay hidden until product interaction (e.g. homepage/collection grids).
 

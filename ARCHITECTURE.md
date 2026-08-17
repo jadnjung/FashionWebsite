@@ -23,7 +23,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 | Data fetching | Shopify Storefront API (GraphQL) | Product/collection/cart reads, cart mutations |
 | Checkout | Shopify Checkout | Hosted checkout, no custom payment handling |
 | Styling | CSS with design tokens (see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)) + Tailwind or CSS Modules (TBD at scaffold time) | Token-driven to keep color/spacing/type consistent across experimental layouts |
-| Motion | Native CSS transitions/transforms + View Transitions + Motion (Framer Motion) for component/layout motion; GSAP only for complex sequences; Three.js only for isolated high-impact features | Per [DESIGN_SYSTEM.md §61](./DESIGN_SYSTEM.md#61-recommended-frontend-motion-stack) — do not stack multiple animation systems for the same job |
+| Motion | Native CSS transitions/transforms + View Transitions + Motion (Framer Motion) for component/layout motion; GSAP only for complex sequences; Three.js only for isolated high-impact features | Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack) — do not stack multiple animation systems for the same job |
 | Hosting/deploy | Vercel | Edge rendering, image optimization, preview deployments |
 | Email | Klaviyo (free tier at launch) | Access password email, welcome, collection announcements, abandoned cart, back-in-stock |
 | Analytics | Shopify Analytics + Google Analytics 4 + Google Search Console | Add Meta/TikTok pixels, Clarity, etc. only when a real marketing need exists |
@@ -96,7 +96,7 @@ Custom editorial content that doesn't fit Shopify's native product/collection fi
 
 ## 6. Access Gate Architecture
 
-Per [PROJECT.md §80](./PROJECT.md#80-important-access-gate-seo-rule) and [DESIGN_SYSTEM.md §66](./DESIGN_SYSTEM.md#66-seo--access-gate), the access gate is a **visitor experience**, not a server-level wall:
+Per [PROJECT.md §80](./PROJECT.md#80-important-access-gate-seo-rule) and [DESIGN_SYSTEM.md §67](./DESIGN_SYSTEM.md#67-seo--access-gate), the access gate is a **visitor experience**, not a server-level wall:
 
 - Product/collection routes remain server-rendered and crawlable (`robots` allowed, sitemap included, structured data present) regardless of access-cookie state.
 - The access gate is enforced at the **UI layer** for human visitors without a valid access cookie (redirect-to-gate on client navigation, or a lightweight middleware check that still allows bots/crawlers through based on user-agent + still serves full HTML either way).
@@ -127,7 +127,7 @@ No secrets are committed. `.env.local` is gitignored; production secrets live in
 
 ## 9. Performance Baseline
 
-Per [PROJECT.md §76](./PROJECT.md#76-performance-requirements) and [DESIGN_SYSTEM.md §60](./DESIGN_SYSTEM.md#60-performance-budget-philosophy):
+Per [PROJECT.md §76](./PROJECT.md#76-performance-requirements) and [DESIGN_SYSTEM.md §61](./DESIGN_SYSTEM.md#61-performance-budget-philosophy):
 
 - Next.js `<Image>` for all product/editorial imagery (responsive sizes, modern formats, lazy loading below the fold).
 - Route-level code splitting is automatic with the App Router; keep heavy motion/WebGL code in dynamically-imported client components so it never blocks initial paint.

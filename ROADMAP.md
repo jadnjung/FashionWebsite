@@ -16,7 +16,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [ ] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
 - [ ] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
-- [ ] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §12–14](./DESIGN_SYSTEM.md#12-spacing-system))
+- [ ] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system))
 - [ ] Build base components: buttons, inputs, form fields
 
 ## Phase 2 — Commerce Foundation
@@ -38,7 +38,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] New / Tops / Bottoms / Etc. category pages
 - [ ] Search (predictive, full-screen overlay)
 - [ ] Filters (category, size, color, availability, collection, price, sort)
-- [ ] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-grid-behavior))
+- [ ] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-page))
 
 ## Phase 5 — Product Detail Page
 
