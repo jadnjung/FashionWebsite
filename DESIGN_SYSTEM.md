@@ -985,7 +985,7 @@ Contains:
 
 Any developer changing animation should consult this file first.
 
-> **Note:** this repository does not yet have a standalone `INTERACTIONS.md` — the motion/interaction content this section describes currently lives within this file (DESIGN_SYSTEM.md, sections 18–31 and 61–63) and within PROJECT.md's motion sections. Split it out into its own file if animation work grows enough to need a dedicated reference.
+> **Note:** this repository's [INTERACTIONS.md](./INTERACTIONS.md) fulfills this section — a consolidated motion/interaction reference citing back to the relevant sections of this file and PROJECT.md.
 
 ## 75. ARCHITECTURE.md
 
@@ -1042,7 +1042,7 @@ Better:
 >
 > AVAILABLE UNTIL GONE.
 
-> **Note:** this repository does not yet have a standalone `CONTENT.md`. Voice/copy guidance currently lives embedded across PROJECT.md (e.g. §17 Incorrect Password, §87 Error States, §89 Empty States) and this file (e.g. §54–56 Access UI Copy). Split it out into its own file if copy volume grows enough to need a dedicated reference.
+> **Note:** this repository's [CONTENT.md](./CONTENT.md) fulfills this section — a consolidated voice/copy reference citing back to the relevant sections of PROJECT.md and this file.
 
 ## 77. DECISIONS.md
 

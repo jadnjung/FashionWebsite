@@ -10,13 +10,19 @@ Before substantial work, consult the applicable project documentation:
 
 - PROJECT.md
 - DESIGN_SYSTEM.md
+- INTERACTIONS.md
+- CONTENT.md
 - ARCHITECTURE.md
 - DECISIONS.md
 - ROADMAP.md
 
 PROJECT.md defines what is being built.
 
-DESIGN_SYSTEM.md defines the visual language and interaction system: color, typography, spacing, components, motion, and responsive rules.
+DESIGN_SYSTEM.md defines the visual language: color, typography, spacing, components, and responsive rules.
+
+INTERACTIONS.md defines animation timing, easing, cursor behavior, transitions, hover, gestures, and the interactive model. Consult it before changing any motion or animation.
+
+CONTENT.md defines copy style, product copy, empty-state language, error language, and naming. Consult it before writing customer-facing copy.
 
 ARCHITECTURE.md defines how the system is structured.
 

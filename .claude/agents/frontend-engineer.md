@@ -26,6 +26,7 @@ Before significant changes, inspect:
 - CLAUDE.md
 - PROJECT.md
 - DESIGN_SYSTEM.md
+- INTERACTIONS.md
 - ARCHITECTURE.md
 - DECISIONS.md
 

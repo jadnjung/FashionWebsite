@@ -26,6 +26,8 @@ Before substantial changes, read:
 - CLAUDE.md
 - PROJECT.md
 - DESIGN_SYSTEM.md
+- INTERACTIONS.md
+- CONTENT.md
 - ARCHITECTURE.md
 - DECISIONS.md
 - ROADMAP.md
