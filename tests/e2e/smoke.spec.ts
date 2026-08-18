@@ -29,4 +29,12 @@ test.describe('fonts', () => {
     expect(displayFont.trim()).not.toBe('');
     expect(functionalFont).not.toBe(displayFont);
   });
+
+  test('body renders text in the functional font, not a default fallback', async ({ page }) => {
+    await page.goto('/');
+    // Guards against the variables existing but never actually being applied —
+    // e.g. body silently falling back to Tailwind's default font-sans stack.
+    const bodyFontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
+    expect(bodyFontFamily).toContain('Inter');
+  });
 });
