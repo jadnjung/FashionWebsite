@@ -12,6 +12,11 @@
   --color-esque-forest-highlight: #335b41;
   --color-esque-error: #a74338;
 
+  /* Typefaces — DESIGN_SYSTEM.md §6-7, wired via lib/fonts.ts (placeholder
+     stacks; final fonts open per PROJECT.md §101) */
+  --font-functional: var(--font-functional);
+  --font-display: var(--font-display);
+
   /* Type scale — DESIGN_SYSTEM.md §9 */
   --text-display-xl: clamp(72px, 11vw, 180px);
   --text-display-l: clamp(56px, 8vw, 128px);

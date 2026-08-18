@@ -15,3 +15,18 @@ test.describe('design tokens', () => {
     await expect(body).toHaveCSS('color', 'rgb(243, 241, 234)'); // #F3F1EA
   });
 });
+
+test.describe('fonts', () => {
+  test('functional and display font CSS variables are defined', async ({ page }) => {
+    await page.goto('/');
+    const functionalFont = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-functional'),
+    );
+    const displayFont = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-display'),
+    );
+    expect(functionalFont.trim()).not.toBe('');
+    expect(displayFont.trim()).not.toBe('');
+    expect(functionalFont).not.toBe(displayFont);
+  });
+});
