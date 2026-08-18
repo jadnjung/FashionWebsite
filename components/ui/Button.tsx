@@ -1,9 +1,13 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 
 type ButtonVariant = 'primary' | 'secondary' | 'editorial';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  // React 19 supports `ref` as a plain prop on function components — no
+  // forwardRef wrapper needed. Consumers that need the underlying DOM node
+  // (e.g. FullScreenMenu restoring focus to the MENU trigger) can pass one.
+  ref?: Ref<HTMLButtonElement>;
 }
 
 // Applied to every variant — DESIGN_SYSTEM.md §22's cursor/focus rules and

@@ -80,3 +80,43 @@ test.describe('header', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 });
+
+test.describe('full-screen menu', () => {
+  test('is closed by default and opens when MENU is clicked', async ({ page }) => {
+    await page.goto('/');
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    await expect(menu).toBeHidden();
+
+    await page.getByRole('button', { name: 'MENU' }).click();
+    await expect(menu).toBeVisible();
+    await expect(page.getByRole('link', { name: 'TOPS' })).toBeVisible();
+  });
+
+  test('Escape closes the menu and returns focus to the MENU trigger', async ({ page }) => {
+    await page.goto('/');
+    const menuTrigger = page.getByRole('button', { name: 'MENU' });
+    await menuTrigger.click();
+    await expect(page.getByRole('dialog', { name: /menu/i })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: /menu/i })).toBeHidden();
+    await expect(menuTrigger).toBeFocused();
+  });
+
+  test('Tab cycles focus within the open menu (focus trap)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const firstLink = page.getByRole('link', { name: 'NEW' });
+    await expect(firstLink).toBeFocused();
+  });
+
+  test('respects prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const duration = await menu.evaluate((el) => getComputedStyle(el).transitionDuration);
+    // "0s" or a near-instant value — not the full 350-500ms from DESIGN_SYSTEM.md §26.
+    expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
+  });
+});

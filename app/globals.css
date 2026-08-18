@@ -68,3 +68,14 @@ button:focus-visible {
   outline: 2px solid var(--color-esque-text);
   outline-offset: 2px;
 }
+
+/* Reduced motion — DESIGN_SYSTEM.md §63, INTERACTIONS.md §17. Collapses all
+   transitions/animations to near-instant rather than removing them outright,
+   so state changes (e.g. FullScreenMenu open/close) still resolve correctly
+   without relying on a duration that a reduced-motion user never wanted. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
