@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, type RefObject } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useEffectEvent, useRef, type RefObject } from 'react';
 import { NAVIGATION } from '@/lib/navigation-data';
 
 interface FullScreenMenuProps {
@@ -37,6 +38,31 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
   // ever actually been open" instead is correct regardless of how many
   // times the effect fires while `open` has never yet been true.
   const hasOpenedRef = useRef(false);
+  const pathname = usePathname();
+
+  // Always calls the *latest* onClose without needing it in the effect's
+  // dependency array below. That distinction matters here, not just style:
+  // onClose is a fresh arrow function on every ShellClient render, so a
+  // plain `[pathname, onClose]` dependency would re-run the effect (and
+  // thus re-close the menu) on *any* ShellClient re-render — including the
+  // very render that just opened it, since flipping menuOpen to true also
+  // creates a new onClose reference. useEffectEvent is the React-supplied
+  // primitive for this: stable identity, always reads current props/state,
+  // callable only from inside effects.
+  const handleRouteChange = useEffectEvent(() => {
+    onClose();
+  });
+
+  // Category links close the menu directly via onClick (below) for the
+  // common case, but that alone misses browser back/forward navigation
+  // while the menu happens to be open. Watching the route itself covers
+  // both: without this, ShellClient's menuOpen state survives client-side
+  // navigation (it wraps `{children}`, which is what changes), so the
+  // destination page would render underneath a still-open, fully opaque
+  // full-screen overlay.
+  useEffect(() => {
+    handleRouteChange();
+  }, [pathname]);
 
   useEffect(() => {
     if (open) {
@@ -84,14 +110,15 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
       role="dialog"
       aria-modal="true"
       aria-label="Menu"
-      hidden={!open}
-      className="fixed inset-0 z-40 flex flex-col justify-center gap-4 bg-esque-black px-8 transition-opacity duration-[400ms] ease-esque"
+      data-open={open}
+      className="esque-menu fixed inset-0 z-40 flex flex-col justify-center gap-4 bg-esque-black px-8"
     >
       {NAVIGATION.map((category, index) => (
         <Link
           key={category.href}
           href={category.href}
           ref={index === 0 ? firstLinkRef : undefined}
+          onClick={onClose}
           className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
         >
           {category.label}

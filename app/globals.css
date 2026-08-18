@@ -72,10 +72,40 @@ button:focus-visible {
 /* Reduced motion — DESIGN_SYSTEM.md §63, INTERACTIONS.md §17. Collapses all
    transitions/animations to near-instant rather than removing them outright,
    so state changes (e.g. FullScreenMenu open/close) still resolve correctly
-   without relying on a duration that a reduced-motion user never wanted. */
+   without relying on a duration that a reduced-motion user never wanted.
+   transition-delay is zeroed too, not just duration — see esque-menu below,
+   whose closed→hidden delay would otherwise still wait out its full length
+   under reduced motion even though the opacity fade itself is instant. */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* FullScreenMenu open/close — DESIGN_SYSTEM.md §26 (~350-500ms staged
+   opening; INTERACTIONS.md §9). A plain `hidden` attribute toggle can't
+   animate (display isn't transitionable), and toggling opacity alone would
+   leave the closed menu's links visually invisible but still present,
+   painted, and focusable/tabbable. `visibility` solves the accessibility
+   half (removes it from tab order and, in practice, the accessibility
+   tree) while `opacity` handles the actual fade. The visibility switch is
+   delayed on close only (`transition-delay`, 0s on open) so the element
+   stays visible for the full opacity fade-out instead of vanishing the
+   instant `data-open` flips. */
+.esque-menu {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 400ms var(--ease-esque),
+    visibility 0s linear 400ms;
+}
+
+.esque-menu[data-open='true'] {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 400ms var(--ease-esque),
+    visibility 0s linear 0s;
 }

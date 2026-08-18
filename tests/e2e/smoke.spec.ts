@@ -119,4 +119,71 @@ test.describe('full-screen menu', () => {
     // "0s" or a near-instant value — not the full 350-500ms from DESIGN_SYSTEM.md §26.
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
   });
+
+  test('clicking a category link closes the menu and navigates', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    await expect(menu).toBeVisible();
+
+    await page.getByRole('link', { name: 'NEW' }).click();
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(menu).toBeHidden();
+  });
+
+  test('background content is inert while the menu is open', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    await expect(page.getByRole('dialog', { name: /menu/i })).toBeVisible();
+
+    // The ESQUE wordmark link is background content — visually covered by
+    // the open overlay and, per the `inert` spec, unfocusable while its
+    // ancestor is inert. Calling .focus() on it should be a no-op if inert
+    // genuinely took effect at the browser level (not just present in the
+    // markup); a plain aria-hidden with no inert would still let it be
+    // focused via script.
+    await page.getByRole('link', { name: 'ESQUE' }).focus();
+    await expect(page.getByRole('link', { name: 'ESQUE' })).not.toBeFocused();
+    // The MENU button itself is also inside the inert wrapper (it's part
+    // of the visually-covered background too) — the dialog stays open, not
+    // toggled/refocused by a background element that should be unreachable.
+    await expect(page.getByRole('dialog', { name: /menu/i })).toBeVisible();
+  });
+
+  test('the open/close transition genuinely animates opacity, not just its duration value', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const menu = page.getByRole('dialog', { name: /menu/i });
+
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const openedMidway = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          setTimeout(() => {
+            const el = document.getElementById('esque-full-screen-menu');
+            resolve(el ? parseFloat(getComputedStyle(el).opacity) : -1);
+          }, 150);
+        }),
+    );
+    await expect(menu).toHaveCSS('opacity', '1');
+    // Sampled partway through the 400ms fade-in — a genuine transition is
+    // still interpolating at 150ms, not already at (or still at) either end.
+    expect(openedMidway).toBeGreaterThan(0);
+    expect(openedMidway).toBeLessThan(1);
+
+    await page.keyboard.press('Escape');
+    const closedMidway = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          setTimeout(() => {
+            const el = document.getElementById('esque-full-screen-menu');
+            resolve(el ? parseFloat(getComputedStyle(el).opacity) : -1);
+          }, 150);
+        }),
+    );
+    expect(closedMidway).toBeGreaterThan(0);
+    expect(closedMidway).toBeLessThan(1);
+    await expect(menu).toBeHidden();
+  });
 });

@@ -18,17 +18,27 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header
-        menuOpen={menuOpen}
-        onMenuOpen={() => setMenuOpen(true)}
-        menuTriggerRef={menuTriggerRef}
-      />
+      {/* WAI-ARIA APG modal dialog pattern: everything behind the open
+          FullScreenMenu is marked inert. The Tab-trap inside FullScreenMenu
+          only intercepts keydown, which screen-reader virtual-cursor
+          navigation bypasses entirely — inert additionally removes this
+          wrapper's contents from the accessibility tree and from focus/hit
+          testing at the browser level while the menu is open, including the
+          MENU trigger itself (correct: it's visually covered too). Native
+          DOM attribute, no library required. */}
+      <div inert={menuOpen}>
+        <Header
+          menuOpen={menuOpen}
+          onMenuOpen={() => setMenuOpen(true)}
+          menuTriggerRef={menuTriggerRef}
+        />
+        <main id="main-content">{children}</main>
+      </div>
       <FullScreenMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         triggerRef={menuTriggerRef}
       />
-      <main id="main-content">{children}</main>
     </>
   );
 }
