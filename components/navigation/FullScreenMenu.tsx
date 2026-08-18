@@ -23,11 +23,26 @@ interface FullScreenMenuProps {
 export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  // Tracks whether the menu has genuinely been opened at least once, so the
+  // `else` branch below only ever returns focus to the trigger after a real
+  // open→close transition — never on mount. A naive "skip the first effect
+  // run" ref guard is NOT sufficient here: Next.js's App Router enables
+  // React Strict Mode by default, which double-invokes every effect once on
+  // initial mount in dev (mount → simulated cleanup → mount again) as a
+  // diagnostic aid. That means a first-render guard gets consumed by the
+  // first of the two dev-only invocations and no longer blocks the second
+  // one — `open` is still `false` at that point (mount state, before any
+  // interaction), so the second invocation would still hit the `else`
+  // branch and steal focus to the MENU trigger. Gating on "has this menu
+  // ever actually been open" instead is correct regardless of how many
+  // times the effect fires while `open` has never yet been true.
+  const hasOpenedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
+      hasOpenedRef.current = true;
       firstLinkRef.current?.focus();
-    } else {
+    } else if (hasOpenedRef.current) {
       triggerRef.current?.focus();
     }
   }, [open, triggerRef]);
