@@ -2,13 +2,12 @@
 
 import { useRef, useState } from 'react';
 import { Header } from '@/components/navigation/Header';
+import { Footer } from '@/components/navigation/Footer';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
 
 // Owns the shell-wide client state (currently just menu-open) so that
 // app/layout.tsx can stay a Server Component and keep its `metadata`
 // export — Next.js forbids `metadata` exports in Client Components.
-// Task 10 extends this component with Footer rather than adding more
-// state to layout.tsx.
 export function ShellClient({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   // Owned here (not inside Header or FullScreenMenu) because both need it:
@@ -25,14 +24,26 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
           wrapper's contents from the accessibility tree and from focus/hit
           testing at the browser level while the menu is open, including the
           MENU trigger itself (correct: it's visually covered too). Native
-          DOM attribute, no library required. */}
-      <div inert={menuOpen}>
+          DOM attribute, no library required.
+          Footer lives inside this same wrapper (as a sibling after <main>)
+          so it's covered by the same inert behavior — otherwise its links
+          would stay focusable/screen-reader-reachable while the full-screen
+          menu visually covers the whole viewport, including the footer.
+          The wrapper is a flex column filling the body's height (body is
+          `flex flex-col` + `min-h-full` in app/layout.tsx) with `main`
+          allowed to grow, so Footer is pushed to the bottom of the
+          viewport on short pages instead of trailing directly under a
+          short <main> with empty space beneath it. */}
+      <div inert={menuOpen} className="flex min-h-full flex-1 flex-col">
         <Header
           menuOpen={menuOpen}
           onMenuOpen={() => setMenuOpen(true)}
           menuTriggerRef={menuTriggerRef}
         />
-        <main id="main-content">{children}</main>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+        <Footer />
       </div>
       <FullScreenMenu
         open={menuOpen}
