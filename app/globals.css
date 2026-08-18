@@ -46,9 +46,20 @@ body {
 /* Global focus-visible safety net — DESIGN_SYSTEM.md §22, PROJECT.md §78.
    Button (Task 7) additionally sets its own branded outline; this covers
    every other interactive element (nav links, footer links) so visibility
-   never depends on remembering to add focus classes per-component. */
+   never depends on remembering to add focus classes per-component.
+
+   Uses --color-esque-text, not --color-esque-forest: forest (#1F3D2B)
+   measures ~1.71:1 against the black background and ~1.65:1 against the
+   surface color — both far under WCAG 1.4.11's 3:1 minimum for non-text/
+   focus indicators (verified independently, not just asserted). Text
+   color contrasts ~18:1 against both, comfortably passing, and stays
+   within the palette's 80%-monochrome identity rather than reaching for
+   a new color. Forest remains correct for its other documented uses
+   (selection states, active states, rare emphasis) — this is scoped to
+   focus-ring visibility specifically, not a palette change. See
+   DECISIONS.md D-010. */
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--color-esque-forest);
+  outline: 2px solid var(--color-esque-text);
   outline-offset: 2px;
 }
