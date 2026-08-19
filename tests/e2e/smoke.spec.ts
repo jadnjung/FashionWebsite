@@ -61,22 +61,55 @@ test.describe('header', () => {
     await expect(page.getByRole('main')).toBeVisible();
   });
 
-  // BLOCKED ON A FOLLOW-UP TASK (not Task 11, not app/page.tsx): confirmed
-  // directly that Header.tsx's utility nav (MENU/SEARCH/ACCOUNT/BAG) renders
-  // as four full-text buttons in a single non-wrapping flex row at every
-  // viewport size, with no responsive treatment — this alone produces the
-  // full measured overflow (537px scrollWidth at a 375px viewport),
-  // confirmed by measuring BEFORE touching app/page.tsx's content too and
-  // getting the identical result. Task 8's original fixme comment
-  // misdiagnosed the cause as app/page.tsx's generator scaffold content;
-  // this corrects that. A dedicated follow-up task must redesign Header's
-  // mobile utility-nav treatment and un-fixme this.
-  test.fixme('header adapts to mobile viewport without horizontal overflow', async ({ page }) => {
+  // Fixed by Task 11.5: Header.tsx's utility nav (MENU/SEARCH/ACCOUNT/BAG)
+  // previously rendered as four full-text buttons in a single non-wrapping
+  // flex row at every viewport size, producing the full measured overflow
+  // (537px scrollWidth at a 375px viewport). Below `md`, SEARCH/ACCOUNT now
+  // compress to icon-only controls (real accessible names retained via
+  // visually-hidden text) and MENU/BAG get tighter padding — see
+  // components/navigation/Header.tsx and DECISIONS.md for the approach.
+  test('header adapts to mobile viewport without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  test('Bag stays visible and reachable at mobile widths, with its count indicator', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    // PROJECT.md §73: Bag state must remain immediately accessible — not
+    // compressed to icon-only or hidden behind a second tap, unlike
+    // SEARCH/ACCOUNT below.
+    await expect(page.getByRole('button', { name: 'BAG (0)' })).toBeVisible();
+  });
+
+  test('SEARCH and ACCOUNT compress to icon-only controls at mobile widths but keep real accessible names', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+
+    const search = page.getByRole('button', { name: 'SEARCH' });
+    const account = page.getByRole('button', { name: 'ACCOUNT' });
+    await expect(search).toBeVisible();
+    await expect(account).toBeVisible();
+
+    // The visible label collapses to an icon below `md` — assert the icon
+    // is what's actually on screen. The text label stays in the a11y tree
+    // (that's what makes `name: 'SEARCH'`/`'ACCOUNT'` above resolve at all)
+    // but is visually clipped to a 1x1px box by the sr-only technique, so
+    // `toBeVisible()` alone can't distinguish "on screen" from "sr-only" —
+    // assert its rendered size directly instead.
+    await expect(search.locator('svg')).toBeVisible();
+    await expect(account.locator('svg')).toBeVisible();
+    const searchLabelBox = await search.locator('span').boundingBox();
+    const accountLabelBox = await account.locator('span').boundingBox();
+    expect(searchLabelBox?.width).toBeLessThanOrEqual(1);
+    expect(accountLabelBox?.width).toBeLessThanOrEqual(1);
   });
 });
 
