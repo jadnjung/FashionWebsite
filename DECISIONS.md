@@ -68,6 +68,8 @@ An ADR-style record of durable technical/product decisions and why they were mad
 
 **Reason:** The repository already had these five files scaffolded at the root before this documentation pass began. Matching the existing scaffolding avoids an unnecessary file-move churn commit. Revisit if the project later wants the `/docs` structure — it's a pure relocation, not a rewrite.
 
+**Reaffirmed 2026-08-17:** a later prompt referenced `docs/PRODUCT.md`-style paths; project owner confirmed keeping this repo's existing root-level layout rather than moving to match. No change to the decision itself.
+
 ---
 
 ## D-009 — Disable Next.js automatic "agent rules" file generation (`agentRules: false`)
@@ -83,4 +85,36 @@ An ADR-style record of durable technical/product decisions and why they were mad
 **Decision:** Every focus-visible outline in this project — the global CSS safety net in `app/globals.css`, and every component-level focus ring, including Button (Task 7) — uses `--color-esque-text` (`#F3F1EA`), never `--color-esque-forest` (`#1F3D2B`) or `--color-esque-forest-highlight` (`#335B41`).
 
 **Reason:** [DESIGN_SYSTEM.md §22](./DESIGN_SYSTEM.md#22-custom-cursor) and [PROJECT.md §78](./PROJECT.md#78-accessibility) require visible focus states meeting WCAG 2.2 AA. Computed contrast (WCAG 2.1 relative-luminance formula, verified independently, not just asserted): forest vs. `--color-esque-black` ≈1.71:1, forest vs. `--color-esque-surface` ≈1.65:1, forest-highlight vs. black ≈2.63:1 — all fail WCAG 1.4.11's 3:1 minimum for non-text/focus indicators. `--color-esque-text` reaches ≈18:1 against both backgrounds, comfortably passing, and keeps focus rings within the palette's 80%-monochrome identity ([DESIGN_SYSTEM.md §5](./DESIGN_SYSTEM.md#5-color-usage-rule)) rather than introducing a new color. This does not change the palette itself — forest remains correct for its other documented uses (selection states, active states, rare emphasis); the fix is scoped to focus-ring visibility specifically. Discovered during Task 5's task review: the plan's own text specified forest for this purpose (inherited from the original design spec, not an implementer error), and the same defect appeared again in Task 7's planned Button component text — both corrected under this ruling before either landed.
+
+---
+
+## D-011 — Tailwind CSS as the styling approach, configured via CSS `@theme`
+
+**Decision:** Use Tailwind CSS v4 for all styling. Design tokens (colors, type scale, spacing, letter-spacing, easing) are declared in a single `@theme` block in `app/globals.css`, not a separate `tailwind.config.ts`.
+
+**Reason:** Resolves the open item in [ARCHITECTURE.md §10](./ARCHITECTURE.md#10-open-architecture-decisions). Tailwind v4's current convention is CSS-first configuration — there is no JS/TS config file for basic theming as there was in v3. `DESIGN_SYSTEM.md`'s token system (exact hex values, a `clamp()`-based type scale, a fixed spacing scale, a named easing curve) maps directly onto `@theme` custom properties. Verified against current Tailwind docs before implementation (the original design spec assumed a `tailwind.config.ts` file, which is no longer how the library works).
+
+---
+
+## D-012 — Placeholder data over a mock Shopify client for pre-commerce UI work
+
+**Decision:** Where the storefront shell needs data that will eventually come from Shopify (navigation categories), use a small, clearly-commented, typed placeholder data file (`lib/navigation-data.ts`) rather than building a mock Shopify Storefront API client.
+
+**Reason:** No Shopify store exists yet, so there's nothing to validate a client interface against — building one now risks guessing wrong about the real API's shape and having to redo it in [ROADMAP.md Phase 2](./ROADMAP.md#phase-2--commerce-foundation). YAGNI per [CLAUDE.md](./CLAUDE.md)'s "do not introduce unnecessary abstractions."
+
+---
+
+## D-013 — View Transitions API (native) as the starting motion implementation
+
+**Decision:** Use CSS transitions and the native View Transitions API for motion in the storefront shell (menu open/close) before introducing a JS animation library.
+
+**Reason:** Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack)'s layered stack, use the cheapest tier that satisfies the need. The shell's only transition this pass (the full-screen menu) doesn't require spring physics, gesture-driven animation, or orchestrated sequences — a CSS `transition` on `opacity`/`transform` is sufficient and adds zero bundle weight. Cross-page shared-element transitions (which would more plausibly need Motion/Framer Motion) are deferred until a second real page exists to transition to.
+
+---
+
+## D-014 — Header utility-nav mobile treatment: icon + visually-hidden text below `md`
+
+**Decision:** Below Tailwind's `md` breakpoint, Header's SEARCH and ACCOUNT utility-nav controls compress from full-text buttons to icon-only presentation (small hand-authored inline SVGs, `aria-hidden`), with the original text preserved as a visually-hidden (`sr-only`) sibling so each control's accessible name is unchanged. MENU and BAG (0) remain full-text at every viewport size.
+
+**Reason:** DESIGN_SYSTEM.md §24's utility-nav specification (`ESQUE MENU SEARCH ACCOUNT BAG (0)`) is explicitly scoped "Desktop" — no mobile treatment was specified, and the as-built Header (Task 8) had none: four full-text buttons in a single non-wrapping row overflowed a 375px viewport (measured 537px scrollWidth), a defect against CLAUDE.md's Fashion Website Priorities, which rank mobile responsiveness above accessibility, performance, reliability, SEO, and security. PROJECT.md §73 requires Bag to "remain immediately accessible" on mobile and establishes MENU's full-screen menu as the primary mobile navigation mechanism — both stay full-text accordingly. SEARCH and ACCOUNT are the two controls without real behavior yet (ROADMAP.md Phase 4/10) and are lower-priority at narrow widths, so they compress. Hand-authored inline SVGs were used rather than adding an icon-library dependency — no icon library exists anywhere else in this codebase, and CLAUDE.md's "avoid unnecessary dependencies" guidance applies; two small icons don't justify a new dependency. Discovered and fixed as an unplanned follow-up task after Task 8's original approval — see the SDD ledger's Ruling 8 for the full discovery/diagnosis trail.
 </content>
