@@ -56,22 +56,21 @@ test.describe('header', () => {
     await expect(skipLink).toBeVisible();
   });
 
-  // BLOCKED ON TASK 11 (both tests below): app/page.tsx still holds the
-  // Next.js generator's scaffold content (its own nested <main>, a fixed-
-  // width non-responsive layout). ShellClient/Header are correct and
-  // already verified via `pnpm build` + the passing test above — these two
-  // checks fail purely because of app/page.tsx content that belongs to
-  // Task 11, not a Header/ShellClient defect. Confirmed directly: strict-
-  // mode getByRole('main') resolves 2 elements (ShellClient's #main-content
-  // wrapper + the generator's own <main>), and the generator's fixed-width
-  // content overflows a 375px viewport (537px scrollWidth). Task 11 MUST
-  // un-fixme both tests below and confirm they pass as part of its own
-  // completion criteria — do not leave these permanently skipped.
-  test.fixme('has a single main landmark', async ({ page }) => {
+  test('has a single main landmark', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('main')).toBeVisible();
   });
 
+  // BLOCKED ON A FOLLOW-UP TASK (not Task 11, not app/page.tsx): confirmed
+  // directly that Header.tsx's utility nav (MENU/SEARCH/ACCOUNT/BAG) renders
+  // as four full-text buttons in a single non-wrapping flex row at every
+  // viewport size, with no responsive treatment — this alone produces the
+  // full measured overflow (537px scrollWidth at a 375px viewport),
+  // confirmed by measuring BEFORE touching app/page.tsx's content too and
+  // getting the identical result. Task 8's original fixme comment
+  // misdiagnosed the cause as app/page.tsx's generator scaffold content;
+  // this corrects that. A dedicated follow-up task must redesign Header's
+  // mobile utility-nav treatment and un-fixme this.
   test.fixme('header adapts to mobile viewport without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
@@ -196,5 +195,13 @@ test.describe('footer', () => {
     await expect(footer.getByRole('link', { name: /privacy/i })).toBeVisible();
     await expect(footer.getByRole('link', { name: /terms/i })).toBeVisible();
     await expect(footer.getByRole('link', { name: /contact/i })).toBeVisible();
+  });
+});
+
+test.describe('homepage placeholder', () => {
+  test('shows the ESQUE wordmark and in-development notice', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
+    await expect(page.getByText('COLLECTION 001 — IN DEVELOPMENT')).toBeVisible();
   });
 });
