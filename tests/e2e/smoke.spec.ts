@@ -179,17 +179,40 @@ test.describe('full-screen menu', () => {
   test('respects prefers-reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+
+    // The delayed-visibility technique (app/globals.css) needs its
+    // transition-delay zeroed under reduced motion — otherwise the closed
+    // state's visibility switch would still wait out its full un-reduced
+    // delay even though the opacity fade itself is instant. This must be
+    // checked on the CLOSED menu (its state on initial load, before ever
+    // opening it), not the open one: the open state's own authored CSS
+    // already declares 0 delay on both transitioned properties regardless
+    // of reduced motion, so sampling it can never fail even if this
+    // override were deleted outright — there's nothing non-zero there to
+    // suppress. Only the closed state has a real non-zero delay (280ms on
+    // `visibility`) to prove is actually being zeroed. `#esque-full-screen-menu`
+    // (a plain DOM id selector) is used instead of the role-based `dialog`
+    // locator because the closed menu is `visibility: hidden`, which
+    // Playwright's accessibility-aware role queries may not resolve.
+    const closedDelay = await page
+      .locator('#esque-full-screen-menu')
+      .evaluate((el) => getComputedStyle(el).transitionDelay);
+    // transitionDelay is a comma-separated list, one entry per transitioned
+    // property ("<opacity-delay>, <visibility-delay>"). Checking only the
+    // first entry — as a single parseFloat() on the whole string would —
+    // can never catch a regression here: opacity's own delay is 0s by
+    // default regardless of this override, so only the second (visibility)
+    // entry ever carries a real non-zero value to prove is being
+    // suppressed.
+    for (const value of closedDelay.split(',')) {
+      expect(parseFloat(value)).toBeLessThan(0.05);
+    }
+
     await page.getByRole('button', { name: 'MENU' }).click();
     const menu = page.getByRole('dialog', { name: /menu/i });
     const duration = await menu.evaluate((el) => getComputedStyle(el).transitionDuration);
     // "0s" or a near-instant value — not the full 350-500ms from DESIGN_SYSTEM.md §26.
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
-    // The delayed-visibility technique (app/globals.css) also needs its
-    // transition-delay zeroed under reduced motion — otherwise the closed
-    // state's visibility switch would still wait out its full un-reduced
-    // delay even though the opacity fade itself is instant.
-    const delay = await menu.evaluate((el) => getComputedStyle(el).transitionDelay);
-    expect(delay === '0s' || parseFloat(delay) < 0.05).toBe(true);
   });
 
   test('clicking a category link closes the menu and navigates', async ({ page }) => {
