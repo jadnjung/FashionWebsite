@@ -25,13 +25,18 @@ const focusRing =
 const variantClasses: Record<ButtonVariant, string> = {
   // DESIGN_SYSTEM.md §17 — Primary: bg #F3F1EA, text #050505, rectangular
   primary: `bg-esque-text text-esque-black rounded-none px-6 py-3 transition-opacity duration-200 ease-esque hover:opacity-90 ${focusRing}`,
-  // Secondary: transparent, thin border, hover reveals underline
+  // Secondary: transparent, thin border, hover darkens border to full text color
   secondary: `bg-transparent text-esque-text border border-esque-text-secondary rounded-none px-6 py-3 transition-colors duration-200 ease-esque hover:border-esque-text ${focusRing}`,
   // Editorial CTA: text-based, no fill
   editorial: `bg-transparent text-esque-text underline-offset-4 tracking-nav uppercase transition-colors duration-200 ease-esque hover:text-esque-text-secondary ${focusRing}`,
 };
 
-export function Button({ variant = 'primary', className = '', ...props }: ButtonProps) {
+export function Button({
+  variant = 'primary',
+  className = '',
+  type = 'button',
+  ...props
+}: ButtonProps) {
   const classes = `${variantClasses[variant]} ${className}`.trim();
-  return <button className={classes} {...props} />;
+  return <button type={type} className={classes} {...props} />;
 }

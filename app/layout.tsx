@@ -19,12 +19,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           most of the page. Display (§7) is expressive/editorial and opt-in per
           element via the font-display utility, not a body-wide default. */}
       <body className="min-h-full flex flex-col font-functional">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-esque-forest focus:px-4 focus:py-2 focus:text-esque-text"
-        >
-          Skip to content
-        </a>
         <ShellClient>{children}</ShellClient>
       </body>
     </html>

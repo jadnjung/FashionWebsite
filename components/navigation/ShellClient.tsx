@@ -33,8 +33,22 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
           `flex flex-col` + `min-h-full` in app/layout.tsx) with `main`
           allowed to grow, so Footer is pushed to the bottom of the
           viewport on short pages instead of trailing directly under a
-          short <main> with empty space beneath it. */}
+          short <main> with empty space beneath it.
+
+          The skip-to-content link lives here too (moved from app/layout.tsx),
+          as the first child inside this same inert wrapper: it's background
+          content just like Header/main/Footer — visually covered by the
+          full-screen menu when open — so it must become unreachable then
+          too. Previously it sat outside the wrapper as a layout.tsx sibling
+          and stayed focusable/in the accessibility tree even while the menu
+          was open. */}
       <div inert={menuOpen} className="flex min-h-full flex-1 flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-esque-forest focus:px-4 focus:py-2 focus:text-esque-text"
+        >
+          Skip to content
+        </a>
         <Header
           menuOpen={menuOpen}
           onMenuOpen={() => setMenuOpen(true)}
