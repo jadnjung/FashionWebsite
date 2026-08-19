@@ -135,4 +135,3 @@ To be added to `DECISIONS.md` during implementation:
 - Shopify store creation, Vercel project connection — project owner's action, not part of this implementation.
 - Final brand fonts, exact forest-green hex, final logo — `PROJECT.md §101`, unresolved by design (revisit later).
 - The full editorial homepage (hero, interactive model, collection scenes) — `app/page.tsx` in this pass is a minimal placeholder proving the shell works, not the final homepage from `DESIGN_SYSTEM.md §27–36`.
-</content>

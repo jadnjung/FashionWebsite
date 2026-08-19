@@ -1445,4 +1445,3 @@ Shopify store creation and Vercel project connection remain unchecked
 — both need the project owner's account, not implementation work."
 git push
 ```
-</content>

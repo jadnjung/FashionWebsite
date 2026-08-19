@@ -104,11 +104,11 @@ An ADR-style record of durable technical/product decisions and why they were mad
 
 ---
 
-## D-013 — View Transitions API (native) as the starting motion implementation
+## D-013 — CSS transitions as the starting motion implementation; View Transitions API deferred
 
-**Decision:** Use CSS transitions and the native View Transitions API for motion in the storefront shell (menu open/close) before introducing a JS animation library.
+**Decision:** Use plain CSS transitions (opacity/visibility) for motion in the storefront shell (menu open/close) before introducing the native View Transitions API or a JS animation library.
 
-**Reason:** Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack)'s layered stack, use the cheapest tier that satisfies the need. The shell's only transition this pass (the full-screen menu) doesn't require spring physics, gesture-driven animation, or orchestrated sequences — a CSS `transition` on `opacity`/`transform` is sufficient and adds zero bundle weight. Cross-page shared-element transitions (which would more plausibly need Motion/Framer Motion) are deferred until a second real page exists to transition to.
+**Reason:** Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack)'s layered stack, use the cheapest tier that satisfies the need. The shell's only transition this pass (the full-screen menu) doesn't require spring physics, gesture-driven animation, or orchestrated sequences — a CSS `transition` on `opacity`/`visibility` is sufficient and adds zero bundle weight. The native View Transitions API (`document.startViewTransition`, `view-transition-name`) is not used yet — its value is in animating *between* two rendered views (e.g. a cross-page navigation), and this shell pass only has one real route to transition within. Deferred until a second real page exists to transition to; cross-page shared-element transitions (which would more plausibly need Motion/Framer Motion, or the View Transitions API directly) are deferred for the same reason.
 
 ---
 
@@ -117,4 +117,3 @@ An ADR-style record of durable technical/product decisions and why they were mad
 **Decision:** Below Tailwind's `md` breakpoint, Header's SEARCH and ACCOUNT utility-nav controls compress from full-text buttons to icon-only presentation (small hand-authored inline SVGs, `aria-hidden`), with the original text preserved as a visually-hidden (`sr-only`) sibling so each control's accessible name is unchanged. MENU and BAG (0) remain full-text at every viewport size.
 
 **Reason:** DESIGN_SYSTEM.md §24's utility-nav specification (`ESQUE MENU SEARCH ACCOUNT BAG (0)`) is explicitly scoped "Desktop" — no mobile treatment was specified, and the as-built Header (Task 8) had none: four full-text buttons in a single non-wrapping row overflowed a 375px viewport (measured 537px scrollWidth), a defect against CLAUDE.md's Fashion Website Priorities, which rank mobile responsiveness above accessibility, performance, reliability, SEO, and security. PROJECT.md §73 requires Bag to "remain immediately accessible" on mobile and establishes MENU's full-screen menu as the primary mobile navigation mechanism — both stay full-text accordingly. SEARCH and ACCOUNT are the two controls without real behavior yet (ROADMAP.md Phase 4/10) and are lower-priority at narrow widths, so they compress. Hand-authored inline SVGs were used rather than adding an icon-library dependency — no icon library exists anywhere else in this codebase, and CLAUDE.md's "avoid unnecessary dependencies" guidance applies; two small icons don't justify a new dependency. Discovered and fixed as an unplanned follow-up task after Task 8's original approval — see the SDD ledger's Ruling 8 for the full discovery/diagnosis trail.
-</content>
