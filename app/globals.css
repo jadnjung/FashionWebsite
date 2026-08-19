@@ -93,13 +93,18 @@ button:focus-visible {
    tree) while `opacity` handles the actual fade. The visibility switch is
    delayed on close only (`transition-delay`, 0s on open) so the element
    stays visible for the full opacity fade-out instead of vanishing the
-   instant `data-open` flips. */
+   instant `data-open` flips.
+
+   Closing uses a shorter 280ms duration than opening's 400ms — DESIGN_SYSTEM.md
+   §26: "Closing should be slightly faster." The visibility delay matches the
+   closing opacity duration so the element stays in the tab order/painted for
+   exactly as long as it's visibly fading, no longer. */
 .esque-menu {
   visibility: hidden;
   opacity: 0;
   transition:
-    opacity 400ms var(--ease-esque),
-    visibility 0s linear 400ms;
+    opacity 280ms var(--ease-esque),
+    visibility 0s linear 280ms;
 }
 
 .esque-menu[data-open='true'] {

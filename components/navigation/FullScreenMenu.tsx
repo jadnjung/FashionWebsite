@@ -111,19 +111,41 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
       aria-modal="true"
       aria-label="Menu"
       data-open={open}
-      className="esque-menu fixed inset-0 z-40 flex flex-col justify-center gap-4 bg-esque-black px-8"
+      className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-8"
     >
-      {NAVIGATION.map((category, index) => (
-        <Link
-          key={category.href}
-          href={category.href}
-          ref={index === 0 ? firstLinkRef : undefined}
-          onClick={onClose}
-          className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
-        >
-          {category.label}
-        </Link>
-      ))}
+      {/* `my-auto` on this inner wrapper (not `justify-center` on the
+          scrolling parent above) is what keeps all categories reachable.
+          With 6 categories at up to 128px each, content height can exceed
+          the viewport — `justify-center` on the parent would push the
+          overflow equally off both the top and bottom edges (verified: NEW,
+          the first/auto-focused category, landed ~140px above the visible
+          viewport at 1280x720). Auto margins on a block-level flex child
+          center it when it fits and let it flow naturally from the top,
+          scrollable via the parent's `overflow-y-auto`, when it doesn't. */}
+      <div className="my-auto flex flex-col gap-4">
+        {NAVIGATION.map((category, index) => (
+          <Link
+            key={category.href}
+            href={category.href}
+            ref={index === 0 ? firstLinkRef : undefined}
+            onClick={onClose}
+            // Explicit tabIndex, not left to the anchor's default: WebKit
+            // (desktop and iOS Safari) only includes links in the Tab
+            // sequence when the system-level "Full Keyboard Access"
+            // preference is on — off by default, so real Safari users (and
+            // Playwright's mobile-safari project, which mirrors this
+            // behavior) would silently skip every link here on Tab press,
+            // landing on <body> instead. An explicit tabIndex overrides
+            // that WebKit-specific default and keeps this dialog's
+            // hand-rolled focus trap (handleKeyDown above) actually
+            // reachable by keyboard on every engine.
+            tabIndex={0}
+            className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
+          >
+            {category.label}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

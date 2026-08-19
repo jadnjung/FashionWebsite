@@ -5,6 +5,24 @@ test.describe('shell', () => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Esque/);
   });
+
+  test('homepage loads without console errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await page.goto('/');
+
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
 });
 
 test.describe('design tokens', () => {
@@ -139,7 +157,23 @@ test.describe('full-screen menu', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'MENU' }).click();
     const firstLink = page.getByRole('link', { name: 'NEW' });
+    const lastLink = page.getByRole('link', { name: 'ABOUT' });
     await expect(firstLink).toBeFocused();
+
+    // Forward: Tab through every category link, ending back on the first —
+    // exercises the actual wrap-forward branch of handleKeyDown, not just
+    // the initial-focus-on-open behavior.
+    for (const name of ['TOPS', 'BOTTOMS', 'ETC.', 'COLLECTIONS', 'ABOUT']) {
+      await page.keyboard.press('Tab');
+      await expect(page.getByRole('link', { name })).toBeFocused();
+    }
+    await expect(lastLink).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(firstLink).toBeFocused();
+
+    // Backward: Shift+Tab from the first link wraps to the last link.
+    await page.keyboard.press('Shift+Tab');
+    await expect(lastLink).toBeFocused();
   });
 
   test('respects prefers-reduced-motion', async ({ page }) => {
@@ -150,6 +184,12 @@ test.describe('full-screen menu', () => {
     const duration = await menu.evaluate((el) => getComputedStyle(el).transitionDuration);
     // "0s" or a near-instant value — not the full 350-500ms from DESIGN_SYSTEM.md §26.
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
+    // The delayed-visibility technique (app/globals.css) also needs its
+    // transition-delay zeroed under reduced motion — otherwise the closed
+    // state's visibility switch would still wait out its full un-reduced
+    // delay even though the opacity fade itself is instant.
+    const delay = await menu.evaluate((el) => getComputedStyle(el).transitionDelay);
+    expect(delay === '0s' || parseFloat(delay) < 0.05).toBe(true);
   });
 
   test('clicking a category link closes the menu and navigates', async ({ page }) => {
