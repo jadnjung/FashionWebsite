@@ -6,18 +6,18 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 0 — Project Foundation
 
-- [ ] Create Shopify development store
-- [ ] Scaffold Next.js (App Router, TypeScript) app on pnpm
-- [ ] Connect Vercel project + preview deployments
-- [ ] Set up environment variable scaffolding (see [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-environment-variables-draft--fill-in-once-the-shopify-store-exists))
-- [ ] Wire up CI (lint, typecheck, Playwright)
+- [ ] Create Shopify development store — blocked on the project owner's Shopify account setup; not an implementation task
+- [x] Scaffold Next.js (App Router, TypeScript) app on pnpm
+- [ ] Connect Vercel project + preview deployments — blocked on the project owner's Vercel account setup; not an implementation task
+- [x] Set up environment variable scaffolding (see [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-environment-variables-draft--fill-in-once-the-shopify-store-exists))
+- [x] Wire up CI (lint, typecheck, Playwright) — plus format:check and build; no deploy step yet (no Vercel project)
 
 ## Phase 1 — Design System / Tokens
 
-- [ ] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
-- [ ] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
-- [ ] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system))
-- [ ] Build base components: buttons, inputs, form fields
+- [x] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
+- [x] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
+- [~] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system)) — spacing scale implemented (Tailwind `--spacing` base unit reproduces the 4/8/12/16/24/32/48/64/96/128 scale); the 12/8/4-column responsive grid remains conceptual/undocumented-in-code until Phase 4/5's catalog and PDP layouts give it real content to implement and validate against
+- [~] Build base components: buttons, inputs, form fields — Button implemented (primary/secondary/editorial variants); Input and other form fields deliberately deferred (YAGNI — no real consumer exists until Phase 4/6/10's search, request-access, and account forms)
 
 ## Phase 2 — Commerce Foundation
 
@@ -28,10 +28,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 3 — Core Storefront Shell
 
-- [ ] Global layout, header (`ESQUE MENU SEARCH ACCOUNT BAG`)
-- [ ] Full-screen experimental menu
-- [ ] Footer
-- [ ] Base page transitions
+- [x] Global layout, header (`ESQUE MENU SEARCH ACCOUNT BAG`) — including a mobile-responsive utility nav (icon-compressed SEARCH/ACCOUNT below `md`, see DECISIONS.md D-014)
+- [x] Full-screen experimental menu — focus trap, Escape-to-close, closes on navigation, reduced-motion support
+- [x] Footer
+- [x] Base page transitions — the full-screen menu's open/close is the one transition that exists in this pass (the homepage placeholder is still a single route); cross-page shared-element transitions are deferred to whichever later phase first introduces a second route (see DECISIONS.md D-013)
 
 ## Phase 4 — Catalog
 
