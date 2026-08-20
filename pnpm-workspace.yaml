@@ -1,4 +1,12 @@
 allowBuilds:
+  # @parcel/watcher: transitive dep of @graphql-codegen/cli (via @shopify/api-codegen-preset),
+  # added Task 3: GraphQL codegen. Its install script (scripts/build-from-source.js) only runs
+  # `node-gyp rebuild` when npm_config_build_from_source=true is explicitly set (it isn't here) —
+  # otherwise it's a no-op. The actual native binary comes from a platform-specific
+  # optionalDependency (e.g. @parcel/watcher-darwin-arm64), which ships only a prebuilt
+  # .node binary with no install scripts of its own — no network access or arbitrary code
+  # execution. Verified 2026-08-20.
+  '@parcel/watcher': true
   # unrs-resolver: transitive dep of eslint-config-next (via eslint-import-resolver-typescript).
   # Its postinstall (napi-postinstall) only selects/links the correct pre-fetched,
   # integrity-verified native binary from its own pinned optionalDependencies —
