@@ -4,3 +4,12 @@ allowBuilds:
   # integrity-verified native binary from its own pinned optionalDependencies —
   # no network access or arbitrary code execution. Verified 2026-08-17.
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  # @rolldown/binding-darwin-x64, @rolldown/binding-linux-arm64-gnu: platform-specific native
+  # binaries for Rolldown (Rust bundler), transitive deps of vite@8.2.1, which itself is
+  # transitive to vitest@4.1.11 and vite-tsconfig-paths@6.1.1 (added Task 1: Vitest setup).
+  # Pinned exact versions, hash-verified in pnpm-lock.yaml. Same pattern as unrs-resolver
+  # above — legitimate package family, no arbitrary code execution, only binary selection.
+  # Verified 2026-08-20.
+  - '@rolldown/binding-darwin-x64@1.2.5'
+  - '@rolldown/binding-linux-arm64-gnu@1.2.5'
