@@ -1,4 +1,7 @@
-import { createStorefrontApiClient, type StorefrontApiClient } from '@shopify/storefront-api-client';
+import {
+  createStorefrontApiClient,
+  type StorefrontApiClient,
+} from '@shopify/storefront-api-client';
 
 // Falls back to this if SHOPIFY_STOREFRONT_API_VERSION isn't set. Keep in
 // sync with .graphqlrc.ts's hardcoded apiVersion (Task 3) — codegen runs
