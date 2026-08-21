@@ -38,9 +38,13 @@ export async function getCollection(
   after?: string,
 ): Promise<CollectionDetail | null> {
   const client = getStorefrontClient();
-  const { data } = await client.request(GET_COLLECTION_QUERY, {
+  const { data, errors } = await client.request(GET_COLLECTION_QUERY, {
     variables: { handle, first, after: after ?? null },
   });
+
+  if (errors) {
+    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+  }
 
   const collection = data?.collection;
   if (!collection) return null;
@@ -73,9 +77,13 @@ export async function getCollections(
   after?: string,
 ): Promise<{ collections: CollectionSummary[]; hasNextPage: boolean; endCursor: string | null }> {
   const client = getStorefrontClient();
-  const { data } = await client.request(GET_COLLECTIONS_QUERY, {
+  const { data, errors } = await client.request(GET_COLLECTIONS_QUERY, {
     variables: { first, after: after ?? null },
   });
+
+  if (errors) {
+    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+  }
 
   const edges = data?.collections?.edges ?? [];
 

@@ -54,6 +54,15 @@ describe('getCollection', () => {
       endCursor: 'c1',
     });
   });
+
+  test('throws when the response includes errors, rather than treating it as not-found', async () => {
+    mockClient({
+      data: { collection: null },
+      errors: { message: 'Throttled by Shopify', networkStatusCode: 429 },
+    });
+
+    await expect(getCollection('collection-001')).rejects.toThrow('Throttled by Shopify');
+  });
 });
 
 describe('getCollections', () => {
@@ -91,5 +100,14 @@ describe('getCollections', () => {
       hasNextPage: true,
       endCursor: 'c1',
     });
+  });
+
+  test('throws when the response includes errors, rather than returning an empty page', async () => {
+    mockClient({
+      data: undefined,
+      errors: { message: 'Throttled by Shopify', networkStatusCode: 429 },
+    });
+
+    await expect(getCollections()).rejects.toThrow('Throttled by Shopify');
   });
 });
