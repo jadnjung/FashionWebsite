@@ -21,10 +21,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 2 — Commerce Foundation
 
-- [ ] Shopify Storefront API client + typed GraphQL queries
-- [ ] Product/collection data fetching
-- [ ] Cart (Storefront API cart object, persisted cart ID)
-- [ ] Shopify Checkout handoff
+- [x] Shopify Storefront API client + typed GraphQL queries
+- [x] Product/collection data fetching
+- [ ] Cart (Storefront API cart object, persisted cart ID) — deferred pending a real Shopify store; see DECISIONS.md D-016
+- [ ] Shopify Checkout handoff — deferred pending a real Shopify store; see DECISIONS.md D-016
 
 ## Phase 3 — Core Storefront Shell
 

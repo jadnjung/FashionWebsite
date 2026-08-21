@@ -117,3 +117,19 @@ An ADR-style record of durable technical/product decisions and why they were mad
 **Decision:** Below Tailwind's `md` breakpoint, Header's SEARCH and ACCOUNT utility-nav controls compress from full-text buttons to icon-only presentation (small hand-authored inline SVGs, `aria-hidden`), with the original text preserved as a visually-hidden (`sr-only`) sibling so each control's accessible name is unchanged. MENU and BAG (0) remain full-text at every viewport size.
 
 **Reason:** DESIGN_SYSTEM.md §24's utility-nav specification (`ESQUE MENU SEARCH ACCOUNT BAG (0)`) is explicitly scoped "Desktop" — no mobile treatment was specified, and the as-built Header (Task 8) had none: four full-text buttons in a single non-wrapping row overflowed a 375px viewport (measured 537px scrollWidth), a defect against CLAUDE.md's Fashion Website Priorities, which rank mobile responsiveness above accessibility, performance, reliability, SEO, and security. PROJECT.md §73 requires Bag to "remain immediately accessible" on mobile and establishes MENU's full-screen menu as the primary mobile navigation mechanism — both stay full-text accordingly. SEARCH and ACCOUNT are the two controls without real behavior yet (ROADMAP.md Phase 4/10) and are lower-priority at narrow widths, so they compress. Hand-authored inline SVGs were used rather than adding an icon-library dependency — no icon library exists anywhere else in this codebase, and CLAUDE.md's "avoid unnecessary dependencies" guidance applies; two small icons don't justify a new dependency. Discovered and fixed as an unplanned follow-up task after Task 8's original approval — see the SDD ledger's Ruling 8 for the full discovery/diagnosis trail.
+
+---
+
+## D-015 — `@shopify/storefront-api-client` + `@shopify/api-codegen-preset` for Storefront API integration
+
+**Decision:** Use `@shopify/storefront-api-client` as the Storefront API client and `@shopify/api-codegen-preset` (with `@graphql-codegen/cli`) to generate TypeScript types from `#graphql`-tagged query documents.
+
+**Reason:** `ARCHITECTURE.md` §2 already ruled out the full Hydrogen framework ("to avoid over-coupling to Shopify's opinionated stack") but left the specific lightweight alternative unnamed. `@shopify/storefront-api-client` is Shopify's own official, framework-agnostic client built for exactly this case — confirmed via Shopify's current documentation, not assumed. Types are generated against Shopify's real Storefront API schema via a public proxy endpoint (`shopify.dev/storefront-graphql-direct-proxy`) that requires no store credentials, so full type safety is achievable before a real store exists — verified directly rather than assumed possible.
+
+---
+
+## D-016 — Phase 2 narrowed to client + product/collection reads; cart and checkout deferred
+
+**Decision:** This pass of ROADMAP.md Phase 2 implements only the Shopify Storefront API client and typed product/collection read queries. Cart (Storefront API cart object) and Shopify Checkout handoff are deferred to a follow-up phase.
+
+**Reason:** No Shopify store exists yet, so nothing built here can be tested against live data. Read-only product/collection queries can be fully type-verified against Shopify's real, live schema even without a store. Cart mutations and the checkout handoff (which fundamentally means redirecting to a real Shopify-issued checkout URL) cannot be meaningfully verified at all without hitting a live store. The previous phase's final whole-branch review found its two worst defects specifically in code paths that had never been exercised end-to-end (an untested CI pipeline, an unmeasured viewport) — deferring the hardest-to-verify commerce code avoids repeating that pattern on checkout, where the cost of an undiscovered defect is highest.
