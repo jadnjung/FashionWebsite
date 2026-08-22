@@ -57,7 +57,7 @@ describe('validatePassword', () => {
     expect(mockCookieStore.set).not.toHaveBeenCalled();
   });
 
-  test('never matches an empty submitted password against an unset password env var', async () => {
+  test('never matches an empty submitted password when the password env vars are wholly unset', async () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', undefined);
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', undefined);
 
@@ -65,5 +65,34 @@ describe('validatePassword', () => {
 
     expect(result).toEqual({ success: false });
     expect(mockCookieStore.set).not.toHaveBeenCalled();
+  });
+
+  test('never matches an empty submitted password when the password env vars are set to the empty string', async () => {
+    // Distinct from the "wholly unset" case above: here the env vars are
+    // present but blank, which `vi.stubEnv(name, undefined)` cannot
+    // simulate (that deletes the key entirely). This is the only case
+    // that actually exercises the `earlyAccessPassword &&` / `generalPassword
+    // &&` truthiness guards — without them, '' === '' would grant access.
+    vi.stubEnv('ESQUE_ACCESS_PASSWORD', '');
+    vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', '');
+
+    const result = await validatePassword('');
+
+    expect(result).toEqual({ success: false });
+    expect(mockCookieStore.set).not.toHaveBeenCalled();
+  });
+
+  test('grants early access (not general access) when both password env vars are misconfigured to the same value', async () => {
+    // Guards against an accidental reordering of the two tier checks: if
+    // an operator sets both env vars to the same value, the early-access
+    // branch must win rather than silently downgrading to general access.
+    vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'shared-secret');
+    vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'shared-secret');
+
+    await expect(validatePassword('shared-secret')).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
+    expect(mockCookieStore.set).toHaveBeenCalledWith('esque_access', '1', expect.any(Object));
+    expect(mockCookieStore.set).toHaveBeenCalledWith('esque_vip_access', '1', expect.any(Object));
   });
 });
