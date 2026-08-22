@@ -88,7 +88,7 @@ This structure is a target for when scaffolding begins (see [ROADMAP.md](./ROADM
 
 Per [PROJECT.md §10](./PROJECT.md#10-collections-vs-categories), **Category** and **Collection** are separate concepts and must map to distinct Shopify structures:
 
-- **Collection** (Collection 001, Collection 002, …) → a Shopify **Collection**, tagged/dated for drop status (active/archived) via metafields (`drop_status`, `drop_date`, `archived_at`).
+- **Collection** (Collection 001, Collection 002, …) → a Shopify **Collection**, tagged/dated for drop status (active/archived) via metafields (`drop_status`, `drop_date`, `archived_at`). The Storefront API queries (`lib/shopify/queries/collections.ts`) read these three keys under the `"custom"` metafield namespace — when the real store is provisioned, its metafield definitions must use that same namespace, or all three will silently resolve to `null` (not an error), indistinguishable from a collection that simply hasn't set drop status yet.
 - **Category** (Tops → Hoodies) → Shopify **product type** + **tags**, or a second collection dimension used purely for taxonomy, not commerce grouping.
 - Products carry both: their category taxonomy and their collection membership, queried independently.
 

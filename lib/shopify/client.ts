@@ -1,5 +1,6 @@
 import {
   createStorefrontApiClient,
+  type ClientResponse,
   type StorefrontApiClient,
 } from '@shopify/storefront-api-client';
 
@@ -35,4 +36,23 @@ export function getStorefrontClient(): StorefrontApiClient {
     apiVersion: process.env.SHOPIFY_STOREFRONT_API_VERSION || DEFAULT_API_VERSION,
     publicAccessToken,
   });
+}
+
+type RequestErrors = NonNullable<ClientResponse<unknown>['errors']>;
+
+/**
+ * Builds a clear Error from a Shopify Storefront API response's `errors`
+ * field. `errors.message` alone is a fixed generic string for GraphQL-level
+ * errors ("...Review 'graphQLErrors' for details.") — the real detail is in
+ * `errors.graphQLErrors[].message`, so prefer that when present. Never
+ * JSON.stringify(errors): `errors.response` is a raw Fetch Response with no
+ * own-enumerable properties, so stringifying the whole object silently
+ * collapses to '{}'.
+ */
+export function toRequestError(errors: RequestErrors): Error {
+  const detail = errors.graphQLErrors?.map((e) => e.message).join('; ');
+  const status = errors.networkStatusCode ? ` (HTTP ${errors.networkStatusCode})` : '';
+  return new Error(
+    `Shopify Storefront API request failed${status}: ${detail || errors.message || 'Unknown error'}`,
+  );
 }

@@ -28,6 +28,8 @@ jobs:
 
       - run: pnpm typecheck
 
+      - run: pnpm test:unit
+
       - run: pnpm build
 
       - name: Install Playwright browsers

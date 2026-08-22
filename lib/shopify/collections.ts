@@ -1,4 +1,4 @@
-import { getStorefrontClient } from '@/lib/shopify/client';
+import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import { GET_COLLECTION_QUERY, GET_COLLECTIONS_QUERY } from '@/lib/shopify/queries/collections';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
@@ -30,7 +30,9 @@ export interface CollectionDetail extends CollectionSummary {
  * metafields (ARCHITECTURE.md §5) and a first page of its products.
  * Returns null if no collection matches — a genuinely absent collection
  * is not an error; the caller decides how to handle it (e.g. Next.js's
- * notFound()).
+ * notFound()). Throws if the Storefront API response includes `errors`
+ * (e.g. a bad field, a throttled request) — that is a real failure, not
+ * a not-found case, and is never swallowed or misreported as one.
  */
 export async function getCollection(
   handle: string,
@@ -43,7 +45,7 @@ export async function getCollection(
   });
 
   if (errors) {
-    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+    throw toRequestError(errors);
   }
 
   const collection = data?.collection;
@@ -53,7 +55,7 @@ export async function getCollection(
     id: collection.id,
     handle: collection.handle,
     title: collection.title,
-    description: collection.description ?? '',
+    description: collection.description,
     dropStatus: collection.dropStatus?.value ?? null,
     dropDate: collection.dropDate?.value ?? null,
     archivedAt: collection.archivedAt?.value ?? null,
@@ -70,7 +72,9 @@ export async function getCollection(
 /**
  * Fetches a page of collections. Cursor-paginated per the Storefront
  * API's standard pattern — pass the previous call's endCursor as `after`
- * to fetch the next page.
+ * to fetch the next page. Throws if the Storefront API response includes
+ * `errors` (e.g. a bad field, a throttled request) rather than returning
+ * an empty page — a real failure must never look like "no collections".
  */
 export async function getCollections(
   first = 20,
@@ -82,7 +86,7 @@ export async function getCollections(
   });
 
   if (errors) {
-    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+    throw toRequestError(errors);
   }
 
   const edges = data?.collections?.edges ?? [];

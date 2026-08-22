@@ -88,6 +88,18 @@ describe('getProduct', () => {
 
     await expect(getProduct('item-one')).rejects.toThrow('Throttled by Shopify');
   });
+
+  test('propagates the client\'s "not configured" error rather than attempting a request', async () => {
+    vi.spyOn(clientModule, 'getStorefrontClient').mockImplementation(() => {
+      throw new Error(
+        'Shopify Storefront API is not configured. Set SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_API_TOKEN.',
+      );
+    });
+
+    await expect(getProduct('item-one')).rejects.toThrow(
+      'Shopify Storefront API is not configured',
+    );
+  });
 });
 
 describe('getProductsByCollection', () => {
@@ -135,6 +147,12 @@ describe('getProductsByCollection', () => {
     });
   });
 
+  test('returns null when the collection handle does not exist', async () => {
+    mockClient({ data: { collection: null } });
+    const result = await getProductsByCollection('does-not-exist');
+    expect(result).toBeNull();
+  });
+
   test('throws when the response includes errors, rather than returning an empty page', async () => {
     mockClient({
       data: undefined,
@@ -142,5 +160,17 @@ describe('getProductsByCollection', () => {
     });
 
     await expect(getProductsByCollection('collection-001')).rejects.toThrow('Throttled by Shopify');
+  });
+
+  test('propagates the client\'s "not configured" error rather than attempting a request', async () => {
+    vi.spyOn(clientModule, 'getStorefrontClient').mockImplementation(() => {
+      throw new Error(
+        'Shopify Storefront API is not configured. Set SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_API_TOKEN.',
+      );
+    });
+
+    await expect(getProductsByCollection('collection-001')).rejects.toThrow(
+      'Shopify Storefront API is not configured',
+    );
   });
 });

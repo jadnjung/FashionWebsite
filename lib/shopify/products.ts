@@ -1,4 +1,4 @@
-import { getStorefrontClient } from '@/lib/shopify/client';
+import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
   GET_PRODUCT_QUERY,
   GET_PRODUCTS_BY_COLLECTION_QUERY,
@@ -53,6 +53,9 @@ export interface ProductSummary {
  * Fetches a single product by handle, for a product detail page. Returns
  * null if no product matches — a genuinely absent product is not an
  * error; the caller decides how to handle it (e.g. Next.js's notFound()).
+ * Throws if the Storefront API response includes `errors` (e.g. a bad
+ * field, a throttled request) — that is a real failure, not a not-found
+ * case, and is never swallowed or misreported as one.
  */
 export async function getProduct(handle: string): Promise<ProductDetail | null> {
   const client = getStorefrontClient();
@@ -61,7 +64,7 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
   });
 
   if (errors) {
-    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+    throw toRequestError(errors);
   }
 
   const product = data?.product;
@@ -71,7 +74,7 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
     id: product.id,
     handle: product.handle,
     title: product.title,
-    description: product.description ?? '',
+    description: product.description,
     productType: product.productType,
     tags: product.tags,
     minPrice: product.priceRange.minVariantPrice,
@@ -87,26 +90,35 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
 
 /**
  * Fetches a page of products belonging to a collection, for catalog/grid
- * views. Cursor-paginated per the Storefront API's standard pattern.
+ * views. `first`/`after` paginate the collection's *products*, not the
+ * collections themselves — cursor-paginated per the Storefront API's
+ * standard pattern. Returns null if no collection matches `handle` (vs.
+ * an empty `products` array for a real, empty collection) — mirrors
+ * getCollection's null-on-missing contract so a bogus handle can't be
+ * mistaken for a collection that simply has no products yet. Throws if
+ * the Storefront API response includes `errors` (e.g. a bad field, a
+ * throttled request) — that is a real failure, not a not-found case, and
+ * is never swallowed or misreported as one.
  */
 export async function getProductsByCollection(
   handle: string,
   first = 24,
   after?: string,
-): Promise<{ products: ProductSummary[]; hasNextPage: boolean; endCursor: string | null }> {
+): Promise<{ products: ProductSummary[]; hasNextPage: boolean; endCursor: string | null } | null> {
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_PRODUCTS_BY_COLLECTION_QUERY, {
     variables: { handle, first, after: after ?? null },
   });
 
   if (errors) {
-    throw new Error(`Shopify Storefront API request failed: ${errors.message ?? 'Unknown error'}`);
+    throw toRequestError(errors);
   }
 
-  const edges = data?.collection?.products?.edges ?? [];
+  const collection = data?.collection;
+  if (!collection) return null;
 
   return {
-    products: edges.map(({ node }) => {
+    products: collection.products.edges.map(({ node }) => {
       const image = node.images.edges[0]?.node;
       return {
         id: node.id,
@@ -125,7 +137,7 @@ export async function getProductsByCollection(
           : null,
       };
     }),
-    hasNextPage: data?.collection?.products?.pageInfo?.hasNextPage ?? false,
-    endCursor: data?.collection?.products?.pageInfo?.endCursor ?? null,
+    hasNextPage: collection.products.pageInfo.hasNextPage,
+    endCursor: collection.products.pageInfo.endCursor ?? null,
   };
 }

@@ -41,8 +41,17 @@ next-env.d.ts
 # @shopify/api-codegen-preset's actual output filenames (verified against the
 # live schema, Task 3) differ from what the plan predicted (`types.generated.ts`):
 # it hardcodes per-apiType names in its own apiConfigs table instead.
-lib/shopify/storefront.types.d.ts
-lib/shopify/storefront.generated.d.ts
+#
+# storefront.types.d.ts and storefront.generated.d.ts are NOT ignored (tracked
+# in git, not listed below) — unlike next-env.d.ts, which is regenerated
+# automatically as a side effect of `next dev`/`next build` themselves, these
+# two files require a separate, explicit `pnpm graphql-codegen` invocation that
+# nothing in the standard install/build/typecheck pipeline triggers. TypeScript
+# consumes them directly (module augmentation for client.request()'s generic
+# inference), so a fresh checkout without them fails typecheck/build. See
+# DECISIONS.md D-017. The schema cache below stays ignored: it's a
+# codegen-internal intermediate (~800KB) the TypeScript compiler never reads,
+# so committing it has no build-time benefit.
 lib/shopify/storefront-*.schema.json
 
 # Vercel
