@@ -301,3 +301,13 @@ test.describe('homepage placeholder', () => {
     await expect(page.getByText('COLLECTION 001 — IN DEVELOPMENT')).toBeVisible();
   });
 });
+
+test.describe('not-found', () => {
+  test('visiting a nonexistent route shows the branded 404 with a way back to Esque', async ({
+    page,
+  }) => {
+    await page.goto('/this-route-does-not-exist');
+    await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'ESQUE' })).toBeVisible();
+  });
+});

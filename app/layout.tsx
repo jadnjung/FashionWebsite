@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { functionalFont, displayFont } from '@/lib/fonts';
-import { ShellClient } from '@/components/navigation/ShellClient';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,9 +17,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           §6 lists it for nav, controls, product info, forms, and utility text, i.e.
           most of the page. Display (§7) is expressive/editorial and opt-in per
           element via the font-display utility, not a body-wide default. */}
-      <body className="min-h-full flex flex-col font-functional">
-        <ShellClient>{children}</ShellClient>
-      </body>
+      <body className="min-h-full flex flex-col font-functional">{children}</body>
     </html>
   );
 }
