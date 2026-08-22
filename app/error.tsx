@@ -19,11 +19,11 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
       <h1 className="font-display text-display-l text-esque-text">SOMETHING WENT WRONG.</h1>
       <Button variant="secondary" onClick={reset}>
         Retry
       </Button>
-    </div>
+    </main>
   );
 }

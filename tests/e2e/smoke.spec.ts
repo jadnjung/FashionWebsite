@@ -310,4 +310,26 @@ test.describe('not-found', () => {
     await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toBeVisible();
     await expect(page.getByRole('link', { name: 'ESQUE' })).toBeVisible();
   });
+
+  // Regression: this page has no Header/Footer (the shell only wraps
+  // app/(storefront)/**), so it must supply its own `<main>` landmark
+  // rather than relying on ShellClient's — otherwise the page has no
+  // landmark at all for screen-reader users.
+  test('has a single main landmark', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist');
+    await expect(page.getByRole('main')).toBeVisible();
+  });
+
+  // Regression: the ESQUE link intentionally carries no focus-visible
+  // classes of its own (removed as a duplicate of the global a:focus-visible
+  // rule in app/globals.css) — confirms that global rule is genuinely
+  // applied, not merely assumed to cover it.
+  test('the ESQUE link back to home still shows a visible focus ring', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist');
+    const homeLink = page.getByRole('link', { name: 'ESQUE' });
+    await homeLink.focus();
+    await expect(homeLink).toBeFocused();
+    await expect(homeLink).toHaveCSS('outline-style', 'solid');
+    await expect(homeLink).toHaveCSS('outline-color', 'rgb(243, 241, 234)'); // --color-esque-text
+  });
 });

@@ -23,16 +23,16 @@ import Link from 'next/link';
 // interactivity needed.
 export default function NotFound() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
       <h1 className="font-display text-display-l tracking-display text-esque-text">
         THIS PIECE DOESN&apos;T EXIST.
       </h1>
       <Link
         href="/"
-        className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+        className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline"
       >
         ESQUE
       </Link>
-    </div>
+    </main>
   );
 }
