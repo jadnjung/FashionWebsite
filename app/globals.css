@@ -114,3 +114,44 @@ button:focus-visible {
     opacity 400ms var(--ease-esque),
     visibility 0s linear 0s;
 }
+
+/* Incorrect-password animation — DESIGN_SYSTEM.md §56: text briefly splits
+   horizontally, the field shifts ~3-5px, then the message appears. A single
+   gentle nudge-and-return (not an oscillating shake) per the spec's explicit
+   "avoid aggressive shaking" instruction. Both are plain CSS @keyframes, so
+   the existing global `@media (prefers-reduced-motion: reduce)` rule above
+   (which zeroes all animation-duration) already covers them — no separate
+   reduced-motion handling needed here, unlike EntranceMotion's JS-driven
+   motion/react animations (Task 6), which bypass CSS animation properties
+   entirely and need their own explicit useReducedMotion() check. */
+@keyframes esque-access-error-shift {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(-4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.esque-access-error-shift {
+  animation: esque-access-error-shift 300ms var(--ease-esque);
+}
+
+@keyframes esque-access-error-message {
+  from {
+    letter-spacing: 0.5em;
+    opacity: 0;
+  }
+  to {
+    letter-spacing: var(--tracking-metadata);
+    opacity: 1;
+  }
+}
+
+.esque-access-error-message {
+  animation: esque-access-error-message 350ms var(--ease-esque);
+  animation-delay: 80ms;
+}

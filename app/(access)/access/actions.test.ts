@@ -32,7 +32,17 @@ describe('validatePassword', () => {
     expect(mockCookieStore.set).toHaveBeenCalledWith(
       'esque_access',
       '1',
-      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'lax', path: '/' }),
+      expect.objectContaining({
+        httpOnly: true,
+        // Not hardcoded `true`: cookieOptions.secure is now
+        // `process.env.NODE_ENV === 'production'` (WebKit rejects a
+        // `Secure` cookie over plain http://localhost — see the comment
+        // on cookieOptions in actions.ts). Under vitest, NODE_ENV isn't
+        // 'production', so this correctly expects `false` here.
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      }),
     );
   });
 

@@ -14,7 +14,16 @@ export interface ValidatePasswordResult {
 
 const cookieOptions = {
   httpOnly: true,
-  secure: true,
+  // Not a bare `true`: WebKit (Safari/mobile-safari) refuses to store a
+  // `Secure` cookie set over plain `http://localhost` — unlike Chromium,
+  // which treats localhost as a secure context regardless of scheme.
+  // Verified directly: with `secure: true` unconditionally, the E2E cookie
+  // assertions in tests/e2e/access-gate.spec.ts passed on chromium but
+  // failed on mobile-safari (`esque_access` cookie never present after a
+  // correct password). Gating on NODE_ENV keeps the cookie Secure in every
+  // real deployment (production always sets NODE_ENV=production) while
+  // allowing local/E2E http development across all browsers.
+  secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   path: '/',
   maxAge: ACCESS_COOKIE_MAX_AGE_SECONDS,
