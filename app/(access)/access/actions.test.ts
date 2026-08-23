@@ -34,15 +34,45 @@ describe('validatePassword', () => {
       '1',
       expect.objectContaining({
         httpOnly: true,
-        // Not hardcoded `true`: cookieOptions.secure is now
-        // `process.env.NODE_ENV === 'production'` (WebKit rejects a
-        // `Secure` cookie over plain http://localhost — see the comment
-        // on cookieOptions in actions.ts). Under vitest, NODE_ENV isn't
-        // 'production', so this correctly expects `false` here.
-        secure: process.env.NODE_ENV === 'production',
+        // Hardcoded `false`, not recomputed from process.env.NODE_ENV here:
+        // cookieOptions is a module-level const in actions.ts, evaluated
+        // once when the module is first imported (at the top of this file,
+        // before any vi.stubEnv call runs) — vitest's ambient NODE_ENV at
+        // that time is 'test' (verified directly), so this branch's baked
+        // value is always `false` for every test in this file that uses
+        // the static `validatePassword` import. The production branch
+        // (`secure: true`) is pinned separately below via a module reset +
+        // dynamic re-import under a stubbed 'production' NODE_ENV — that
+        // is the only way to actually exercise the other side of the
+        // conditional, since reassigning process.env.NODE_ENV later never
+        // retroactively changes an already-evaluated module constant.
+        secure: false,
         sameSite: 'lax',
         path: '/',
       }),
+    );
+  });
+
+  test('sets the secure cookie flag when the module is loaded with NODE_ENV=production', async () => {
+    // cookieOptions.secure is `process.env.NODE_ENV === 'production'`, read
+    // once at module-evaluation time — vi.stubEnv alone cannot change a
+    // value already baked into a loaded module's module-level const. To
+    // actually exercise the production branch, the module must be
+    // re-evaluated *after* NODE_ENV is stubbed: reset vitest's module
+    // registry, then dynamically re-import './actions' so its top-level
+    // `cookieOptions` is recomputed under the stubbed environment.
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'letmein');
+    vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'vip-letmein');
+    vi.resetModules();
+    const { validatePassword: validatePasswordUnderProduction } = await import('./actions');
+
+    await expect(validatePasswordUnderProduction('letmein')).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mockCookieStore.set).toHaveBeenCalledWith(
+      'esque_access',
+      '1',
+      expect.objectContaining({ secure: true }),
     );
   });
 
