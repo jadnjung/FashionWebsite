@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { EntranceMotion } from './EntranceMotion';
 import { AccessForm } from './AccessForm';
 
 // A gate/utility page, not real content — excluded from indexing. Crawlers
@@ -19,8 +20,11 @@ export default function AccessPage() {
   // (mirrors the fix already applied to app/not-found.tsx and
   // app/error.tsx for the same shell-less reason).
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-esque-black px-4 py-16">
-      <AccessForm />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-esque-black px-4 py-16">
+      <EntranceMotion />
+      <div className="relative z-10">
+        <AccessForm />
+      </div>
     </main>
   );
 }

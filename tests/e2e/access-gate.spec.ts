@@ -177,3 +177,90 @@ test.describe('access gate — request access', () => {
     await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toBeVisible();
   });
 });
+
+test.describe('access gate — entrance motion', () => {
+  test('renders the background silhouettes and ESQUE typography behind the form', async ({
+    page,
+  }) => {
+    await page.goto('/access');
+    const entrance = page.locator('div[aria-hidden="true"]').first();
+    await expect(entrance.locator('svg')).toHaveCount(3);
+
+    // AccessForm renders its own <h1>ENTER ESQUE</h1> on this same page, but
+    // that element's full text is "ENTER ESQUE", not "ESQUE" — an exact-text
+    // match doesn't match it. Asserted as a count of exactly 1 (rather than
+    // reaching for `.first()`, which would silently mask a second match) to
+    // confirm this locator resolves only to EntranceMotion's background
+    // typography before checking its visibility.
+    const backgroundTypography = page.getByText('ESQUE', { exact: true });
+    await expect(backgroundTypography).toHaveCount(1);
+    await expect(backgroundTypography).toBeVisible();
+  });
+
+  test('respects prefers-reduced-motion: the typography renders instantly and cursor parallax is disabled', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/access');
+
+    const heading = page.getByText('ESQUE', { exact: true }).first();
+    await expect(heading).toHaveCSS('opacity', '1');
+
+    // Move the pointer and confirm the silhouette layers do not receive a
+    // transform-driven offset (motion/react's inline style, not a CSS
+    // transition the global reduced-motion rule already covers).
+    await page.mouse.move(100, 100);
+    await page.mouse.move(800, 50);
+    const svg = page.locator('div[aria-hidden="true"] svg').first();
+    const transform = await svg.evaluate((el) => getComputedStyle(el).transform);
+    expect(transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)').toBe(true);
+  });
+
+  test('cursor parallax moves silhouette layers, and different depths move by different amounts', async ({
+    page,
+  }) => {
+    // Reduced motion is NOT emulated here (default Playwright preference is
+    // "no-preference") — this is the positive complement to the test above:
+    // it fails if handlePointerMove is a no-op, or if every layer moved by
+    // the same amount regardless of `depth` (i.e. a uniform shift instead of
+    // actual parallax).
+    await page.goto('/access');
+    const svgs = page.locator('div[aria-hidden="true"] svg');
+    await expect(svgs).toHaveCount(3);
+
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('viewport size unavailable in this project');
+
+    const shallow = svgs.nth(0); // SILHOUETTE_LAYERS[0], depth 0.3
+    const deep = svgs.nth(2); // SILHOUETTE_LAYERS[2], depth 1.0
+    const identity = /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/;
+
+    // Moving into a corner the centered AccessForm never covers, so the
+    // pointermove actually lands on EntranceMotion's div rather than being
+    // captured by the form's higher z-indexed wrapper. The move is wrapped
+    // in expect.poll (rather than a single move + fixed wait) because it's
+    // dropped when it races React hydration — observed in practice on
+    // mobile-safari's WebKit engine, which hydrates measurably slower here
+    // than Chromium: a pointermove dispatched before the listener attaches
+    // is simply never seen by it, so retrying (bounded by the poll's own
+    // timeout) is what actually makes this robust, not a longer sleep.
+    await expect
+      .poll(
+        async () => {
+          await page.mouse.move(viewport.width / 2, viewport.height / 2);
+          await page.mouse.move(20, 20);
+          return shallow.evaluate((el) => getComputedStyle(el).transform);
+        },
+        { timeout: 10_000 },
+      )
+      .not.toMatch(identity);
+
+    const [shallowTransform, deepTransform] = await Promise.all([
+      shallow.evaluate((el) => getComputedStyle(el).transform),
+      deep.evaluate((el) => getComputedStyle(el).transform),
+    ]);
+    expect(shallowTransform).not.toMatch(identity);
+    expect(deepTransform).not.toMatch(identity);
+    expect(deepTransform).not.toBe(shallowTransform);
+  });
+});
