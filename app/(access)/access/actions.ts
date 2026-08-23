@@ -7,6 +7,7 @@ import {
   VIP_ACCESS_COOKIE_NAME,
   ACCESS_COOKIE_MAX_AGE_SECONDS,
 } from '@/lib/access/cookies';
+import { subscribeToAccessList } from '@/lib/klaviyo/subscribe';
 
 export interface ValidatePasswordResult {
   success: false;
@@ -65,4 +66,46 @@ export async function validatePassword(password: string): Promise<ValidatePasswo
   }
 
   return { success: false };
+}
+
+export interface RequestAccessState {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Validates the Request Access form's fields server-side (native HTML
+ * `required` attributes are the first line of defense client-side, but
+ * "client-side checks are not authorization" — this is the real
+ * boundary). Missing/invalid input is an expected, recoverable outcome
+ * and is returned as state (Next.js's own recommended pattern for form
+ * validation with useActionState), not thrown.
+ *
+ * A genuine failure calling Klaviyo (not configured, or a real API
+ * error) is different: that throws through to the nearest error.tsx
+ * boundary rather than being modeled as a return value, per Next.js's
+ * own distinction between expected and uncaught/unexpected errors, and
+ * per this feature's design spec's Error Handling section.
+ */
+export async function submitRequestAccess(
+  _prevState: RequestAccessState,
+  formData: FormData,
+): Promise<RequestAccessState> {
+  const firstName = String(formData.get('firstName') ?? '').trim();
+  const email = String(formData.get('email') ?? '').trim();
+  const consent = formData.get('consent') === 'on';
+
+  if (!firstName) {
+    return { success: false, error: 'First name is required.' };
+  }
+  if (!email) {
+    return { success: false, error: 'Email is required.' };
+  }
+  if (!consent) {
+    return { success: false, error: 'Consent is required to request access.' };
+  }
+
+  await subscribeToAccessList(email);
+
+  return { success: true };
 }

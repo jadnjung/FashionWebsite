@@ -114,3 +114,66 @@ test.describe('access gate — password entry', () => {
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
   });
 });
+
+test.describe('access gate — request access', () => {
+  test('REQUEST ACCESS on the entry screen reveals the request-access form', async ({ page }) => {
+    await page.goto('/access');
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+
+    // Guards the structural decision (made in the previous task) to hoist
+    // ENTER ESQUE above the showRequestAccess conditional in AccessForm —
+    // without that, this screen would render heading-less.
+    await expect(page.getByRole('heading', { name: 'ENTER ESQUE' })).toBeVisible();
+    await expect(page.getByLabel('FIRST NAME')).toBeVisible();
+    await expect(page.getByLabel('EMAIL', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('I agree to receive Esque emails, including access and collection updates.'),
+    ).toBeVisible();
+  });
+
+  test('the server rejects an unchecked consent box even when the client-side required check is bypassed', async ({
+    page,
+  }) => {
+    // Native `required` on the consent checkbox is only a first line of
+    // defense (client-side checks are not authorization) — submitting with
+    // it left unchecked would normally be blocked by the browser itself
+    // before submitRequestAccess ever runs, which would prove nothing about
+    // the server. Removing the attribute simulates a client that doesn't
+    // enforce it (e.g. a modified client, or one reimplementing the form),
+    // so this actually exercises the server's own validation branch and
+    // asserts its returned state renders — without navigating away and
+    // without hitting the error boundary.
+    await page.goto('/access');
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+    await page.getByLabel('FIRST NAME').fill('Sam');
+    await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
+    await page.evaluate(() => {
+      document.querySelector('input[name="consent"]')?.removeAttribute('required');
+    });
+
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+
+    await expect(accessErrorAlert(page)).toHaveText('Consent is required to request access.');
+    await expect(page).toHaveURL(/\/access$/);
+  });
+
+  test('submitting with valid input but Klaviyo not configured surfaces the error boundary honestly', async ({
+    page,
+  }) => {
+    // KLAVIYO_PRIVATE_API_KEY/KLAVIYO_LIST_ID are intentionally unset in
+    // this test run (mirroring the real current project state — no
+    // Klaviyo account exists yet, per the design spec's explicit scope).
+    // subscribeToAccessList throws, which is a genuine failure per
+    // actions.ts's own documented distinction — surfacing the existing,
+    // already-tested error.tsx boundary is the correct, honest behavior,
+    // not a workaround.
+    await page.goto('/access');
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+    await page.getByLabel('FIRST NAME').fill('Sam');
+    await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
+    await page.getByText('I agree to receive Esque emails').click();
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+
+    await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toBeVisible();
+  });
+});
