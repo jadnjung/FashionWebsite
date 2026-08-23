@@ -23,6 +23,32 @@ async function backgroundWordmark(page: Page) {
   return locator;
 }
 
+// Root-caused on mobile-safari (WebKit): PASSWORD is a React-controlled
+// input (AccessForm.tsx's onChange), and WebKit's mobile emulation here
+// hydrates measurably slower than Chromium — the same phenomenon Task 6
+// found for EntranceMotion's pointermove handler. If fill()'s `input` event
+// is dispatched before hydration attaches AccessForm's onChange listener,
+// the DOM shows the typed value (fill() sets it directly) but the
+// component's `password` state never leaves ''. handleSubmit still runs
+// (the click itself isn't affected) and genuinely, correctly calls
+// validatePassword('') — confirmed directly by inspecting the actual
+// Server Action POST body on a captured failure, which contained `[""]`
+// instead of the real password — so the branded incorrect-password branch
+// renders instead of navigating. This is a test/interaction-timing defect,
+// not a bug in validatePassword, AccessForm, or proxy.ts: proxy.ts is never
+// even reached when this races, since no request to `/` is ever issued.
+// Retrying the fill+submit is safe (this gate explicitly allows unlimited
+// attempts with no lockout — DECISIONS.md D-005) and proves the keystroke
+// actually reached React state on some attempt, rather than masking the
+// race with a fixed sleep or a test-level retry.
+async function submitPasswordExpectingRedirect(page: Page, password: string) {
+  await expect(async () => {
+    await page.getByLabel('PASSWORD').fill(password);
+    await page.getByRole('button', { name: 'ENTER' }).click();
+    await expect(page).toHaveURL('/', { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 test.describe('access gate — password entry', () => {
   test('renders ENTER ESQUE with a password field and both buttons', async ({ page }) => {
     await page.goto('/access');
@@ -35,10 +61,8 @@ test.describe('access gate — password entry', () => {
 
   test('the correct general password grants access and redirects home', async ({ page }) => {
     await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('ci-test-general-password');
-    await page.getByRole('button', { name: 'ENTER' }).click();
+    await submitPasswordExpectingRedirect(page, 'ci-test-general-password');
 
-    await expect(page).toHaveURL('/');
     // Override 5: control-flow assumption check — validatePassword's
     // redirect() should mean the code below it (which would set a branded
     // error line) never runs on a correct password. If this ever fails, it
@@ -53,10 +77,8 @@ test.describe('access gate — password entry', () => {
     page,
   }) => {
     await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('ci-test-vip-password');
-    await page.getByRole('button', { name: 'ENTER' }).click();
+    await submitPasswordExpectingRedirect(page, 'ci-test-vip-password');
 
-    await expect(page).toHaveURL('/');
     await expect(accessErrorAlert(page)).toHaveCount(0);
     const cookies = await page.context().cookies();
     expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
@@ -311,5 +333,89 @@ test.describe('access gate — entrance motion', () => {
 
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
+  });
+});
+
+test.describe('access gate — proxy enforcement', () => {
+  test('an ungated request to / redirects to /access', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/access$/);
+  });
+
+  test('an ungated request to /accessories (a bare-prefix match on "access") still redirects to /access', async ({
+    page,
+  }) => {
+    // Guards the matcher's segment anchoring: an unanchored
+    // `(?!access|api|...)` negative lookahead would treat any path merely
+    // STARTING WITH "access" as excluded from the gate, silently bypassing
+    // it. /accessories doesn't exist yet (a plausible Phase 4 category
+    // route) — the point is that the proxy redirects before Next.js's own
+    // router ever resolves the path, so a 404 here would prove the bypass
+    // bug and a redirect to /access proves the matcher is correctly
+    // segment-anchored.
+    await page.goto('/accessories');
+    await expect(page).toHaveURL(/\/access$/);
+  });
+
+  test('a normal browser user agent is still gated (proves the crawler bypass is UA-conditional)', async ({
+    browser,
+  }) => {
+    // Structurally identical to the Googlebot test below — only the
+    // user-agent differs — so together they prove isBot() is actually
+    // gating the decision, not something else about how the context was
+    // constructed.
+    const context = await browser.newContext({
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    });
+    const page = await context.newPage();
+
+    await page.goto('/');
+
+    await expect(page).toHaveURL(/\/access$/);
+    await context.close();
+  });
+
+  test('a simulated crawler (Googlebot) reaches the homepage with no access cookie set', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    });
+    const page = await context.newPage();
+
+    await page.goto('/');
+
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
+    const cookies = await context.cookies();
+    expect(cookies.find((c) => c.name === 'esque_access')).toBeFalsy();
+    await context.close();
+  });
+
+  test('a second real crawler (Bingbot) also reaches the homepage with no access cookie set', async ({
+    browser,
+  }) => {
+    // Confirms the bypass exercises isbot's maintained bot list generally
+    // (ARCHITECTURE.md §6's "bots/crawlers" plural), not a single
+    // hardcoded "Googlebot" string check.
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+    });
+    const page = await context.newPage();
+
+    await page.goto('/');
+
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
+    const cookies = await context.cookies();
+    expect(cookies.find((c) => c.name === 'esque_access')).toBeFalsy();
+    await context.close();
+  });
+
+  test('a granted visitor is not redirected away from /', async ({ page, context }) => {
+    await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
+    await page.goto('/');
+    await expect(page).toHaveURL('/');
   });
 });

@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ context }) => {
+  // The proxy (proxy.ts) now redirects any ungated request to /access.
+  // This suite exercises the storefront shell itself (Header, FullScreenMenu,
+  // Footer, homepage) — not the gate, which has its own dedicated coverage
+  // in access-gate.spec.ts — so every test here starts as an already-granted
+  // returning visitor, exactly like access-gate.spec.ts's own tests prove
+  // that state is reachable in the first place.
+  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
+});
+
 test.describe('shell', () => {
   test('homepage has Esque branding in the title', async ({ page }) => {
     await page.goto('/');
