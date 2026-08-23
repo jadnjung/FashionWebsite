@@ -10,6 +10,19 @@ function accessErrorAlert(page: Page) {
   return page.locator('[role="alert"]:not(#__next-route-announcer__)');
 }
 
+// EntranceMotion's giant background "ESQUE" typography (DESIGN_SYSTEM.md §53
+// layer 4) is targeted by an exact-text match. AccessForm's own
+// <h1>ENTER ESQUE</h1> lives on the same page, but its full text is
+// "ENTER ESQUE", not "ESQUE", so it doesn't match today — asserted here
+// (rather than just assumed) so a future change that splits "ENTER" and
+// "ESQUE" into separate styled text nodes fails this loudly instead of
+// silently resolving to the wrong element.
+async function backgroundWordmark(page: Page) {
+  const locator = page.getByText('ESQUE', { exact: true });
+  await expect(locator).toHaveCount(1);
+  return locator;
+}
+
 test.describe('access gate — password entry', () => {
   test('renders ENTER ESQUE with a password field and both buttons', async ({ page }) => {
     await page.goto('/access');
@@ -186,14 +199,7 @@ test.describe('access gate — entrance motion', () => {
     const entrance = page.locator('div[aria-hidden="true"]').first();
     await expect(entrance.locator('svg')).toHaveCount(3);
 
-    // AccessForm renders its own <h1>ENTER ESQUE</h1> on this same page, but
-    // that element's full text is "ENTER ESQUE", not "ESQUE" — an exact-text
-    // match doesn't match it. Asserted as a count of exactly 1 (rather than
-    // reaching for `.first()`, which would silently mask a second match) to
-    // confirm this locator resolves only to EntranceMotion's background
-    // typography before checking its visibility.
-    const backgroundTypography = page.getByText('ESQUE', { exact: true });
-    await expect(backgroundTypography).toHaveCount(1);
+    const backgroundTypography = await backgroundWordmark(page);
     await expect(backgroundTypography).toBeVisible();
   });
 
@@ -203,7 +209,7 @@ test.describe('access gate — entrance motion', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/access');
 
-    const heading = page.getByText('ESQUE', { exact: true }).first();
+    const heading = await backgroundWordmark(page);
     await expect(heading).toHaveCSS('opacity', '1');
 
     // Move the pointer and confirm the silhouette layers do not receive a
@@ -262,5 +268,48 @@ test.describe('access gate — entrance motion', () => {
     expect(shallowTransform).not.toMatch(identity);
     expect(deepTransform).not.toMatch(identity);
     expect(deepTransform).not.toBe(shallowTransform);
+  });
+
+  test('/access loads without console errors, including after cursor movement', async ({
+    page,
+  }) => {
+    // Mirrors smoke.spec.ts's "homepage loads without console errors" —
+    // listeners must be attached before navigation so nothing during initial
+    // load or hydration is missed.
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await page.goto('/access');
+
+    // Exercise the parallax code path itself, not just initial load — polling
+    // (rather than a single move) is what actually guarantees
+    // handlePointerMove ran before asserting, per the hydration-race finding
+    // in the "cursor parallax" test above: a pointermove dispatched before
+    // React attaches its listener is dropped, not merely delayed.
+    const svg = page.locator('div[aria-hidden="true"] svg').first();
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('viewport size unavailable in this project');
+    const identity = /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/;
+    await expect
+      .poll(
+        async () => {
+          await page.mouse.move(viewport.width / 2, viewport.height / 2);
+          await page.mouse.move(20, 20);
+          return svg.evaluate((el) => getComputedStyle(el).transform);
+        },
+        { timeout: 10_000 },
+      )
+      .not.toMatch(identity);
+
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
   });
 });
