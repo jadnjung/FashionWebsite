@@ -22,12 +22,22 @@ beforeEach(() => {
   mockCookieStore.set.mockClear();
 });
 
+function formData(fields: Record<string, string>) {
+  const data = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    data.set(key, value);
+  }
+  return data;
+}
+
 describe('validatePassword', () => {
   test('sets the general access cookie and redirects on a matching general password', async () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'letmein');
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'vip-letmein');
 
-    await expect(validatePassword('letmein')).rejects.toThrow('NEXT_REDIRECT');
+    await expect(
+      validatePassword({ success: false }, formData({ password: 'letmein' })),
+    ).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mockCookieStore.set).toHaveBeenCalledTimes(1);
     expect(mockCookieStore.set).toHaveBeenCalledWith(
@@ -68,7 +78,9 @@ describe('validatePassword', () => {
     vi.resetModules();
     const { validatePassword: validatePasswordUnderProduction } = await import('./actions');
 
-    await expect(validatePasswordUnderProduction('letmein')).rejects.toThrow('NEXT_REDIRECT');
+    await expect(
+      validatePasswordUnderProduction({ success: false }, formData({ password: 'letmein' })),
+    ).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mockCookieStore.set).toHaveBeenCalledWith(
       'esque_access',
@@ -81,7 +93,9 @@ describe('validatePassword', () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'letmein');
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'vip-letmein');
 
-    await expect(validatePassword('vip-letmein')).rejects.toThrow('NEXT_REDIRECT');
+    await expect(
+      validatePassword({ success: false }, formData({ password: 'vip-letmein' })),
+    ).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_access', '1', expect.any(Object));
@@ -92,7 +106,10 @@ describe('validatePassword', () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'letmein');
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'vip-letmein');
 
-    const result = await validatePassword('wrong-password');
+    const result = await validatePassword(
+      { success: false },
+      formData({ password: 'wrong-password' }),
+    );
 
     expect(result).toEqual({ success: false });
     expect(mockCookieStore.set).not.toHaveBeenCalled();
@@ -102,7 +119,7 @@ describe('validatePassword', () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', undefined);
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', undefined);
 
-    const result = await validatePassword('');
+    const result = await validatePassword({ success: false }, formData({ password: '' }));
 
     expect(result).toEqual({ success: false });
     expect(mockCookieStore.set).not.toHaveBeenCalled();
@@ -117,7 +134,23 @@ describe('validatePassword', () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', '');
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', '');
 
-    const result = await validatePassword('');
+    const result = await validatePassword({ success: false }, formData({ password: '' }));
+
+    expect(result).toEqual({ success: false });
+    expect(mockCookieStore.set).not.toHaveBeenCalled();
+  });
+
+  test('never matches when the password field is missing from the submitted form data entirely', async () => {
+    // New case specific to the FormData-based signature (distinct from "
+    // submitted as an empty string" above): exercises the `?? ''` fallback
+    // when formData.get('password') returns null outright because no
+    // `password` key is present at all. A hand-built FormData can produce
+    // this; a real <input name="password" required> submission normally
+    // cannot — covered anyway since it's a real branch in the function.
+    vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'letmein');
+    vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'vip-letmein');
+
+    const result = await validatePassword({ success: false }, new FormData());
 
     expect(result).toEqual({ success: false });
     expect(mockCookieStore.set).not.toHaveBeenCalled();
@@ -130,7 +163,9 @@ describe('validatePassword', () => {
     vi.stubEnv('ESQUE_ACCESS_PASSWORD', 'shared-secret');
     vi.stubEnv('ESQUE_EARLY_ACCESS_PASSWORD', 'shared-secret');
 
-    await expect(validatePassword('shared-secret')).rejects.toThrow('NEXT_REDIRECT');
+    await expect(
+      validatePassword({ success: false }, formData({ password: 'shared-secret' })),
+    ).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_access', '1', expect.any(Object));
@@ -139,14 +174,6 @@ describe('validatePassword', () => {
 });
 
 describe('submitRequestAccess', () => {
-  function formData(fields: Record<string, string>) {
-    const data = new FormData();
-    for (const [key, value] of Object.entries(fields)) {
-      data.set(key, value);
-    }
-    return data;
-  }
-
   test('returns a validation error when firstName is missing', async () => {
     const result = await submitRequestAccess(
       { success: false },

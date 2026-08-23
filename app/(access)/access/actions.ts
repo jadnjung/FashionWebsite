@@ -31,20 +31,41 @@ const cookieOptions = {
 };
 
 /**
- * Compares `password` against the general and early-access passwords
- * (plain string equality — intentionally not hashed/rate-limited; this is
- * a brand gate, not a security boundary, per CONTENT.md §5 and
- * DECISIONS.md D-005). On a match, sets the appropriate access cookie(s)
- * and redirects to `/`. redirect() throws internally by design (Next.js's
- * documented mechanism for triggering navigation from a Server Action,
- * verified against current docs) — this function never actually returns
- * on that path, so callers must never wrap it in a try/catch (that would
- * swallow the redirect). Only a non-matching password resolves normally,
- * with `{ success: false }` for the caller's branded incorrect-password
- * UI — never throws for a wrong password, since that's an expected
- * outcome, not a failure.
+ * Compares the submitted `password` field against the general and
+ * early-access passwords (plain string equality — intentionally not
+ * hashed/rate-limited; this is a brand gate, not a security boundary, per
+ * CONTENT.md §5 and DECISIONS.md D-005). On a match, sets the appropriate
+ * access cookie(s) and redirects to `/`. redirect() throws internally by
+ * design (Next.js's documented mechanism for triggering navigation from a
+ * Server Action, verified against current docs) — this function never
+ * actually returns on that path, so callers must never wrap it in a
+ * try/catch (that would swallow the redirect). Only a non-matching
+ * password resolves normally, with `{ success: false }` for the caller's
+ * branded incorrect-password UI — never throws for a wrong password,
+ * since that's an expected outcome, not a failure.
+ *
+ * Takes `(prevState, formData)` — React's useActionState shape — rather
+ * than a plain string argument, and is bound to AccessForm's
+ * `<form action={formAction}>`. This is not a stylistic choice: reading
+ * the password from the submitted FormData means the value always
+ * reflects whatever is actually in the DOM at submit time, via the
+ * browser's own native form serialization — with or without React having
+ * hydrated yet. The previous design passed a React-controlled `useState`
+ * mirror of the input instead; on mobile-safari, a keystroke's `input`
+ * event could fire before hydration attached AccessForm's `onChange`
+ * listener, silently leaving that state at `''` while the DOM showed the
+ * correctly-typed password — so a visitor's genuinely correct password
+ * could be submitted as empty and rejected. Root-caused by directly
+ * capturing the Server Action's actual POST body during a live failure
+ * (`[""]` instead of the real password) — see
+ * tests/e2e/access-gate.spec.ts's native-value regression test, which
+ * pins this exact defect.
  */
-export async function validatePassword(password: string): Promise<ValidatePasswordResult> {
+export async function validatePassword(
+  _prevState: ValidatePasswordResult,
+  formData: FormData,
+): Promise<ValidatePasswordResult> {
+  const password = String(formData.get('password') ?? '');
   const generalPassword = process.env.ESQUE_ACCESS_PASSWORD;
   const earlyAccessPassword = process.env.ESQUE_EARLY_ACCESS_PASSWORD;
   const cookieStore = await cookies();

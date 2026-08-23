@@ -23,32 +23,6 @@ async function backgroundWordmark(page: Page) {
   return locator;
 }
 
-// Root-caused on mobile-safari (WebKit): PASSWORD is a React-controlled
-// input (AccessForm.tsx's onChange), and WebKit's mobile emulation here
-// hydrates measurably slower than Chromium — the same phenomenon Task 6
-// found for EntranceMotion's pointermove handler. If fill()'s `input` event
-// is dispatched before hydration attaches AccessForm's onChange listener,
-// the DOM shows the typed value (fill() sets it directly) but the
-// component's `password` state never leaves ''. handleSubmit still runs
-// (the click itself isn't affected) and genuinely, correctly calls
-// validatePassword('') — confirmed directly by inspecting the actual
-// Server Action POST body on a captured failure, which contained `[""]`
-// instead of the real password — so the branded incorrect-password branch
-// renders instead of navigating. This is a test/interaction-timing defect,
-// not a bug in validatePassword, AccessForm, or proxy.ts: proxy.ts is never
-// even reached when this races, since no request to `/` is ever issued.
-// Retrying the fill+submit is safe (this gate explicitly allows unlimited
-// attempts with no lockout — DECISIONS.md D-005) and proves the keystroke
-// actually reached React state on some attempt, rather than masking the
-// race with a fixed sleep or a test-level retry.
-async function submitPasswordExpectingRedirect(page: Page, password: string) {
-  await expect(async () => {
-    await page.getByLabel('PASSWORD').fill(password);
-    await page.getByRole('button', { name: 'ENTER' }).click();
-    await expect(page).toHaveURL('/', { timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
-}
-
 test.describe('access gate — password entry', () => {
   test('renders ENTER ESQUE with a password field and both buttons', async ({ page }) => {
     await page.goto('/access');
@@ -61,8 +35,10 @@ test.describe('access gate — password entry', () => {
 
   test('the correct general password grants access and redirects home', async ({ page }) => {
     await page.goto('/access');
-    await submitPasswordExpectingRedirect(page, 'ci-test-general-password');
+    await page.getByLabel('PASSWORD').fill('ci-test-general-password');
+    await page.getByRole('button', { name: 'ENTER' }).click();
 
+    await expect(page).toHaveURL('/');
     // Override 5: control-flow assumption check — validatePassword's
     // redirect() should mean the code below it (which would set a branded
     // error line) never runs on a correct password. If this ever fails, it
@@ -77,12 +53,45 @@ test.describe('access gate — password entry', () => {
     page,
   }) => {
     await page.goto('/access');
-    await submitPasswordExpectingRedirect(page, 'ci-test-vip-password');
+    await page.getByLabel('PASSWORD').fill('ci-test-vip-password');
+    await page.getByRole('button', { name: 'ENTER' }).click();
 
+    await expect(page).toHaveURL('/');
     await expect(accessErrorAlert(page)).toHaveCount(0);
     const cookies = await page.context().cookies();
     expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
     expect(cookies.find((c) => c.name === 'esque_vip_access')).toBeTruthy();
+  });
+
+  test('a password set natively on the DOM input (bypassing React entirely) is still the value that gets validated', async ({
+    page,
+  }) => {
+    // Regression test pinning the actual mobile-safari defect directly and
+    // deterministically, without depending on a hydration-timing race:
+    // sets the input's value via the native DOM property with no
+    // `input`/`change` event dispatched at all, exactly the observable
+    // effect of a keystroke React's onChange never saw (confirmed by
+    // capturing the real Server Action POST body during a live failure —
+    // see actions.ts's validatePassword docstring). Against the previous
+    // controlled-input (`useState` + `onChange`) implementation, React
+    // would never learn about this value, so the submitted password would
+    // be empty and this test would fail exactly as the real defect did.
+    // Against the current implementation, the password is read from the
+    // submitted FormData — the browser's own native form serialization,
+    // which reflects the DOM's actual value regardless of whether React
+    // ever saw it change — so this must still succeed.
+    await page.goto('/access');
+    await page.evaluate((password) => {
+      const input = document.querySelector<HTMLInputElement>('input[name="password"]');
+      if (!input) throw new Error('password input not found');
+      input.value = password;
+    }, 'ci-test-general-password');
+
+    await page.getByRole('button', { name: 'ENTER' }).click();
+
+    await expect(page).toHaveURL('/');
+    const cookies = await page.context().cookies();
+    expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
   });
 
   test('an incorrect password shows a branded line, not a generic message, and does not navigate', async ({
