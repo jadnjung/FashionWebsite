@@ -434,4 +434,16 @@ test.describe('access gate — proxy enforcement', () => {
     await page.goto('/');
     await expect(page).toHaveURL('/');
   });
+
+  test('an ungated request to /robots.txt is not redirected to /access', async ({ page }) => {
+    // No app/robots.ts exists yet (that's ROADMAP.md Phase 12), so the
+    // correct current response is a plain 404 — the point of this test is
+    // only that the proxy's matcher doesn't intercept the path and
+    // 307-redirect it to /access, not that the file itself resolves.
+    // Asserting on response status/URL rather than page content keeps this
+    // test valid once Phase 12 adds a real robots.ts.
+    const response = await page.goto('/robots.txt');
+    expect(response?.status()).toBe(404);
+    await expect(page).toHaveURL(/\/robots\.txt$/);
+  });
 });

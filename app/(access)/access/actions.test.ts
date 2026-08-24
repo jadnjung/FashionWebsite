@@ -190,6 +190,28 @@ describe('submitRequestAccess', () => {
     expect(result).toEqual({ success: false, error: 'Email is required.' });
   });
 
+  test('returns a validation error when email is malformed', async () => {
+    const result = await submitRequestAccess(
+      { success: false },
+      formData({ firstName: 'Sam', email: 'notanemail', consent: 'on' }),
+    );
+    expect(result).toEqual({ success: false, error: 'Email is invalid.' });
+  });
+
+  test('accepts a well-formed email address rather than rejecting it as malformed', async () => {
+    const subscribeSpy = vi
+      .spyOn(subscribeModule, 'subscribeToAccessList')
+      .mockResolvedValue(undefined);
+
+    const result = await submitRequestAccess(
+      { success: false },
+      formData({ firstName: 'Sam', email: 'sam+test@mail.example.co.uk', consent: 'on' }),
+    );
+
+    expect(subscribeSpy).toHaveBeenCalledWith('sam+test@mail.example.co.uk');
+    expect(result).toEqual({ success: true });
+  });
+
   test('returns a validation error when consent is not checked', async () => {
     const result = await submitRequestAccess(
       { success: false },

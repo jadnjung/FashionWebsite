@@ -35,14 +35,23 @@ export const config = {
      * - /api (and any /api/* sub-path) — route handlers, if any need to
      *   bypass the gate
      * - _next/static, _next/image — Next.js internals
-     * - favicon.ico — metadata file
+     * - favicon.ico, robots.txt, sitemap.xml — metadata files. Next.js's
+     *   docs explicitly warn these must stay excluded from the matcher:
+     *   without this, a crawler/user-agent isbot doesn't recognise would
+     *   get 307-redirected to a `noindex, nofollow` /access page instead
+     *   of reaching the metadata file itself. No sitemap exists yet
+     *   (ROADMAP.md Phase 12), but this closes the gap before one lands,
+     *   protecting DECISIONS.md D-005's crawlability guarantee.
      *
      * Each of "access"/"api" is anchored to a full path segment via
      * `(?:$|/)` rather than left as a bare prefix — an unanchored
      * `(?!access|api|...)` would let any future path that merely STARTS
      * WITH one of these strings silently bypass the gate, e.g. a plausible
-     * Phase 4 category route like /accessories.
+     * Phase 4 category route like /accessories. The metadata filenames'
+     * dots are escaped (`\\.`) so they match a literal `.`, not regex
+     * "any character" — an unescaped `favicon.ico` would also exclude,
+     * e.g., "faviconXico".
      */
-    '/((?!access(?:$|/)|api(?:$|/)|_next/static|_next/image|favicon.ico).*)',
+    '/((?!access(?:$|/)|api(?:$|/)|_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)',
   ],
 };

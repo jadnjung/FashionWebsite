@@ -152,6 +152,14 @@ button:focus-visible {
 }
 
 .esque-access-error-message {
-  animation: esque-access-error-message 350ms var(--ease-esque);
-  animation-delay: 80ms;
+  /* `backwards` fill mode holds the keyframe's `from` state (opacity: 0)
+     for the 80ms delay, instead of rendering at the element's natural
+     computed style (opacity: 1) and snapping to `from` only once the
+     animation actually starts — which is what a separate
+     `animation-delay` line (with no fill-mode) produces: the message
+     flashes visible, then blinks out and widens, then fades back in.
+     Folding the delay into the shorthand with `backwards` is what makes
+     the message appear only after the shift, per DESIGN_SYSTEM.md §56's
+     choreography. */
+  animation: esque-access-error-message 350ms var(--ease-esque) 80ms backwards;
 }

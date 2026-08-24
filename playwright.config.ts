@@ -30,6 +30,16 @@ export default defineConfig({
     env: {
       ESQUE_ACCESS_PASSWORD: 'ci-test-general-password',
       ESQUE_EARLY_ACCESS_PASSWORD: 'ci-test-vip-password',
+      // Pinned empty (not omitted) for the same reason as the password
+      // fixtures above: getKlaviyoConfig() treats '' as unconfigured, same
+      // as unset, so this keeps access-gate.spec.ts's "Klaviyo not
+      // configured" test exercising the not-configured path deterministically
+      // — instead of, the moment a developer's own .env.local gains real
+      // Klaviyo credentials, silently switching to the real-API-call path
+      // and POSTing sam@example.com into a live marketing list on every
+      // local E2E run.
+      KLAVIYO_PRIVATE_API_KEY: '',
+      KLAVIYO_LIST_ID: '',
     },
   },
 });

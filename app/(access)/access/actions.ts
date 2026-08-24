@@ -94,6 +94,19 @@ export interface RequestAccessState {
   error?: string;
 }
 
+// Deliberately minimal — a sanity check, not an RFC-5322 validator: a
+// non-empty local part, an "@", and a non-empty domain containing a dot.
+// Hoisted to module scope so the regex is compiled once, not on every
+// submission. This exists because the client's `type="email"` constraint
+// (RequestAccessForm.tsx) is not itself a server-side guarantee — a client
+// that bypasses the form (exactly what the neighbouring consent-bypass E2E
+// test simulates) can submit anything as `email`, and Klaviyo's API
+// returning a 400 for a malformed address would otherwise surface as an
+// uncaught error-boundary crash for a recoverable typo instead of the
+// branded validation message this function already returns for the other
+// fields.
+const EMAIL_FORMAT_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Validates the Request Access form's fields server-side (native HTML
  * `required` attributes are the first line of defense client-side, but
@@ -121,6 +134,9 @@ export async function submitRequestAccess(
   }
   if (!email) {
     return { success: false, error: 'Email is required.' };
+  }
+  if (!EMAIL_FORMAT_PATTERN.test(email)) {
+    return { success: false, error: 'Email is invalid.' };
   }
   if (!consent) {
     return { success: false, error: 'Consent is required to request access.' };
