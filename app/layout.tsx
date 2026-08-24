@@ -7,7 +7,10 @@ export const metadata: Metadata = {
   description: 'Esque — a niche, experimental fashion house.',
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+// Typed explicitly rather than via the generated `LayoutProps<'/'>` global:
+// that type only exists in `.next/types/` after a build, so `pnpm typecheck`
+// on a fresh checkout (as CI does, before `pnpm build`) would fail to resolve it.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
