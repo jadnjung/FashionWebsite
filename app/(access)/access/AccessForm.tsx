@@ -113,7 +113,7 @@ export function AccessForm() {
                 // text-esque-text, not text-esque-error: --color-esque-error
                 // (#A74338) measures 3.40:1 against --color-esque-black
                 // (#050505) — below WCAG AA's 4.5:1 minimum for this text
-                // size. DESIGN_SYSTEM.md §56 also asks errors to rely on
+                // size. DESIGN_SYSTEM.md §4 (Error) also asks errors to rely on
                 // typography and motion rather than bright red UI, which the
                 // shift + letter-spacing split already provides. See
                 // DECISIONS.md D-021.
