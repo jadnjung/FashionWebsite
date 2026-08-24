@@ -274,28 +274,35 @@ test.describe('access gate — entrance motion', () => {
 
     // Moving into a corner the centered AccessForm never covers, so the
     // pointermove actually lands on EntranceMotion's div rather than being
-    // captured by the form's higher z-indexed wrapper. The move is wrapped
-    // in expect.poll (rather than a single move + fixed wait) because it's
-    // dropped when it races React hydration — observed in practice on
-    // mobile-safari's WebKit engine, which hydrates measurably slower here
-    // than Chromium: a pointermove dispatched before the listener attaches
-    // is simply never seen by it, so retrying (bounded by the poll's own
-    // timeout) is what actually makes this robust, not a longer sleep.
+    // captured by the form's higher z-indexed wrapper. The move (and both
+    // reads) live *inside* the poll callback, not just the shallow-layer
+    // read, and are retried together — a pointermove dispatched before
+    // React attaches its listener is simply dropped, not merely delayed,
+    // observed in practice on mobile-safari's WebKit engine (which
+    // hydrates measurably slower here than Chromium) and intermittently
+    // under full-suite load on any engine. Reading only the shallow layer
+    // inside the poll and the deep layer in a separate one-shot read
+    // afterward left a narrow gap where the deep layer's subscription
+    // hadn't flushed yet even though the shallow one had; capturing both
+    // together each iteration closes that gap without weakening either
+    // assertion below, which still run against the real last-read values.
+    let shallowTransform = '';
+    let deepTransform = '';
     await expect
       .poll(
         async () => {
           await page.mouse.move(viewport.width / 2, viewport.height / 2);
           await page.mouse.move(20, 20);
-          return shallow.evaluate((el) => getComputedStyle(el).transform);
+          [shallowTransform, deepTransform] = await Promise.all([
+            shallow.evaluate((el) => getComputedStyle(el).transform),
+            deep.evaluate((el) => getComputedStyle(el).transform),
+          ]);
+          return !identity.test(shallowTransform) && !identity.test(deepTransform);
         },
         { timeout: 10_000 },
       )
-      .not.toMatch(identity);
+      .toBe(true);
 
-    const [shallowTransform, deepTransform] = await Promise.all([
-      shallow.evaluate((el) => getComputedStyle(el).transform),
-      deep.evaluate((el) => getComputedStyle(el).transform),
-    ]);
     expect(shallowTransform).not.toMatch(identity);
     expect(deepTransform).not.toMatch(identity);
     expect(deepTransform).not.toBe(shallowTransform);
