@@ -145,3 +145,45 @@ An ADR-style record of durable technical/product decisions and why they were mad
 Committing ~500KB of deterministic, schema-derived generated code is a better tradeoff than the alternative (adding a live `pnpm graphql-codegen` step to CI/build): that would introduce a network dependency on `shopify.dev`'s public schema proxy at build time, so a transient network failure or upstream outage would break every build, including production deploys — the opposite of what a fix here should do. Keeping builds hermetic (no network calls required to typecheck or build) is worth the generated-file diff noise on regeneration.
 
 Regenerating and re-committing these two files when a query document under `lib/shopify/queries/` changes, or the pinned Storefront API version (`.graphqlrc.ts`, `lib/shopify/client.ts`'s `DEFAULT_API_VERSION`) bumps, is routine maintenance (documented in README.md's Setup section) — it does not need a new DECISIONS.md entry each time. A periodic/manual "codegen drift check" (confirming the committed files still match what `pnpm graphql-codegen` would currently produce) was considered as an optional CI gate; not implemented here, and noted only as a possible future manual/periodic check rather than a build-blocking one, since a drift gate re-run on every CI build would reintroduce the same live network dependency this decision exists to avoid.
+
+---
+
+## D-018 — Next.js Proxy (not Middleware) for access-gate enforcement
+
+**Decision:** Gate enforcement lives in `proxy.ts` at the repo root, exporting a named `proxy(request: NextRequest)` function, running on the Node.js runtime.
+
+**Reason:** Next.js renamed Middleware to Proxy as of the version this project pins (16.3.1) — confirmed against current Next.js docs, not assumed from training data, which still overwhelmingly reflects the deprecated `middleware.ts`/`export function middleware()` convention. Next.js ships a codemod (`npx @next/codemod@canary middleware-to-proxy .`) for projects migrating off the old convention; this project adopts the current one directly since it never had a `middleware.ts` to migrate from.
+
+---
+
+## D-019 — `isbot` for crawler detection
+
+**Decision:** Use the `isbot` package (`isBot(userAgentString): boolean`) in `proxy.ts` to let crawlers bypass the access gate unconditionally, rather than a hand-maintained user-agent pattern list.
+
+**Reason:** ARCHITECTURE.md §6 and DECISIONS.md D-005 require the gate to never block crawlers, regardless of cookie state — this is what keeps product/collection routes indexable once they exist (ROADMAP.md Phase 4/5). SEO correctness depends on this list staying current as crawlers change their user-agent strings over time; `isbot` is small, actively maintained (millions of weekly downloads), and purpose-built for exactly this, which a one-off in-house regex would not keep pace with as reliably.
+
+---
+
+## D-020 — Klaviyo integration via direct REST calls, not the official Node SDK
+
+**Decision:** `lib/klaviyo/client.ts` calls Klaviyo's REST API directly via `fetch` (`POST /api/profile-subscription-bulk-create-jobs/`), rather than adding `@klaviyo/klaviyo-api-node` or an equivalent SDK dependency.
+
+**Reason:** Mirrors the same reasoning already applied to Shopify's lightweight client choice (D-015): this integration needs exactly one endpoint (subscribing a profile to a list with marketing consent), and a single documented REST call doesn't justify a heavier dependency. Verified against Klaviyo's current docs directly — including resolving a real discrepancy mid-implementation between an older, now-superseded flat `subscriptions.email.marketing_newsletter: boolean` shape that some cached references still show, and the current `subscriptions.email.marketing.consent: "SUBSCRIBED"` shape (confirmed across four independent current examples, including Klaviyo's own changelog documenting the shape change). This pass covers only the list-subscription mechanism; the transactional "here's your access password" email (CONTENT.md §4's access-email structure) is not built — like Shopify's store, it needs the project owner's own Klaviyo account and a real email template/flow to exist first, mirroring D-016's reasoning for why cart/checkout were deferred pending a real Shopify store. `first_name` is collected and validated server-side but not forwarded to Klaviyo: the Subscribe Profiles endpoint's documented profile attributes cover identification and consent only, not name — attaching a name would need a separate profile-update call once a real account justifies adding one.
+
+The dated `revision` header (`2026-07-15`) was verified against Klaviyo's current documentation at implementation time and independently re-verified during review, along with the endpoint's trailing slash and the `subscriptions.email.marketing.consent: "SUBSCRIBED"` body shape — an older, now-superseded flat `marketing_newsletter` boolean shape still appears in parts of Klaviyo's own docs corpus and was deliberately avoided. Bump the revision alongside checking Klaviyo's changelog for breaking changes.
+
+---
+
+## D-021 — Access-gate and Request-Access error copy renders in `--color-esque-text`, not `--color-esque-error`
+
+**Decision:** The access gate's incorrect-password microcopy and the Request Access form's validation errors render in `--color-esque-text`, not `--color-esque-error`. This does not change the palette; `--color-esque-error` remains defined and correct for its other documented uses.
+
+**Reason:** `--color-esque-error` (`#A74338`) measures **3.40:1** against `--color-esque-black` (`#050505`) — computed with the WCAG 2.1 relative-luminance formula, not asserted — which is below WCAG 2.2 AA's 4.5:1 minimum for normal-size text (these are 13px `text-utility` strings). DESIGN_SYSTEM.md's own Error entry independently points the same way: the color "should be used extremely sparingly. Where possible, errors should rely on typography and motion rather than bright red UI" — which is exactly what the gate's shift-and-letter-spacing-split treatment already provides, so nothing is lost by dropping the red. Note explicitly that this is a *different* WCAG criterion from D-010's: D-010 concerned non-text/focus-indicator contrast (1.4.11, 3:1 minimum), this concerns text contrast (1.4.3, 4.5:1 minimum) — which is why it warrants its own entry rather than an amendment to D-010.
+
+---
+
+## D-022 — AccessForm submits via `useActionState` + uncontrolled input, not a controlled input with a manual handler
+
+**Decision:** `app/(access)/access/AccessForm.tsx` submits via `useActionState` bound to a Server Action through `<form action={formAction}>`, with uncontrolled inputs — matching `RequestAccessForm.tsx` — rather than a React-controlled input driving a manual `onSubmit` handler. The submitted password travels DOM → native `FormData` → `validatePassword`; no React state mediates it. `validatePassword`'s signature is correspondingly `(prevState, formData)`.
+
+**Reason:** The controlled-input pattern (originally specified in this feature's implementation plan) carried a real, user-facing defect. If a keystroke's `input` event fired before React attached its `onChange` listener — observed reproducibly on mobile Safari, and plausible via password-manager autofill on any browser — the DOM held the correctly-typed password while component state stayed `''`, so `validatePassword('')` ran and a *correct* password was rejected with the same branded microcopy a genuine mistake produces. That is a silent lockout on the site's front door, for exactly the early-access audience the gate exists to admit, and Phase 6's entrance motion had just widened the window by adding ~119KB of JS to that route. Reading the value from the form's own `FormData` eliminates the race structurally rather than timing around it, and a Server Action `action` is progressively enhanced by React 19, so a first submission works even before hydration. It also removes two competing patterns for one responsibility in the same directory, which CLAUDE.md prohibits. Record that the fix is pinned by a test that assigns the input's value natively (dispatching no event at all) and asserts access is still granted — a test that fails against the controlled implementation — plus 60/60 passing runs of the formerly-flaky tests at `--repeat-each=20` with no retry wrapper. Note that the incorrect-password microcopy rotation now derives during render from the action result's identity (React's documented "adjust state during render" pattern) rather than from a handler mutation, since `useActionState`'s state is server-returned and has nowhere to track which line was shown last.

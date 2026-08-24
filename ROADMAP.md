@@ -50,10 +50,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 6 — Access Gate
 
-- [ ] Password entry UI + branded incorrect-password microcopy
-- [ ] Access cookie (~30 day persistence), separate VIP/early-access claim
-- [ ] Request Access form → Klaviyo list + password email
-- [ ] Confirm SEO rule: product/collection routes stay crawlable regardless of access state ([DECISIONS.md D-005](./DECISIONS.md#d-005--access-gate-is-a-ui-layer-experience-not-an-seo-wall))
+- [x] Password entry UI + branded incorrect-password microcopy
+- [x] Access cookie (~30 day persistence), separate VIP/early-access claim
+- [~] Request Access form → Klaviyo list + password email — form submits to Klaviyo's list-subscription API with marketing consent (see DECISIONS.md D-020); the transactional password-delivery email itself is not yet built, since it needs a real Klaviyo account/email template that doesn't exist yet (same dependency D-016 already noted for Shopify checkout)
+- [x] Confirm SEO rule: product/collection routes stay crawlable regardless of access state ([DECISIONS.md D-005](./DECISIONS.md#d-005--access-gate-is-a-ui-layer-experience-not-an-seo-wall)) — verified architecturally (crawler bypass + homepage placeholder), since no real product/collection page exists yet (Phase 4/5)
 
 ## Phase 7 — Homepage
 
@@ -97,7 +97,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [ ] Accessibility pass (WCAG 2.2 AA, keyboard, screen reader, reduced motion)
 - [ ] SEO pass (metadata, structured data, sitemap, Open Graph, canonical URLs)
-- [ ] Performance pass (Core Web Vitals, image loading, bundle size)
+- [ ] Performance pass (Core Web Vitals, image loading, bundle size) — includes evaluating whether `/access`'s entrance motion should be dynamically imported: `motion`'s first use added ~119KB decoded JS to that route, and ARCHITECTURE.md §9 asks for heavy motion code to be dynamically imported. Deferred deliberately rather than applied blind, since deferring the layer would make the designed entrance appear after hydration, and no Core Web Vitals measurement exists yet to weigh that trade against.
 - [ ] Legal pages (Privacy, Terms, Shipping, Returns, Refunds)
 - [ ] Analytics wired (GA4, Search Console, Shopify Analytics, access funnel events)
 - [ ] Cross-device QA (mobile/tablet/laptop/desktop)
