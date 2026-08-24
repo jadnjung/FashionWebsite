@@ -190,6 +190,29 @@ describe('submitRequestAccess', () => {
     expect(result).toEqual({ success: false, error: 'Email is required.' });
   });
 
+  test('returns a validation error when firstName is whitespace-only', async () => {
+    // Present-but-blank, distinct from the omitted-key case above — this is
+    // what actually exercises `.trim()` on firstName. An omitted key alone
+    // would pass even with `.trim()` deleted, since `formData.get` already
+    // returns null and the `?? ''` fallback produces an empty string either
+    // way.
+    const result = await submitRequestAccess(
+      { success: false },
+      formData({ firstName: '   ', email: 'a@example.com', consent: 'on' }),
+    );
+    expect(result).toEqual({ success: false, error: 'First name is required.' });
+  });
+
+  test('returns a validation error when email is whitespace-only', async () => {
+    // Same rationale as the firstName case above, for `.trim()` on email —
+    // load-bearing since this value reaches Klaviyo.
+    const result = await submitRequestAccess(
+      { success: false },
+      formData({ firstName: 'Sam', email: '   ', consent: 'on' }),
+    );
+    expect(result).toEqual({ success: false, error: 'Email is required.' });
+  });
+
   test('returns a validation error when email is malformed', async () => {
     const result = await submitRequestAccess(
       { success: false },
