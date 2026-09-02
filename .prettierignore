@@ -1,0 +1,20 @@
+node_modules
+.next
+pnpm-lock.yaml
+
+# Hand-maintained project documentation — out of scope for automated
+# formatting; explicitly listed as do-not-touch for this implementation pass.
+CLAUDE.md
+README.md
+PROJECT.md
+DESIGN_SYSTEM.md
+INTERACTIONS.md
+CONTENT.md
+ARCHITECTURE.md
+DECISIONS.md
+ROADMAP.md
+docs/
+
+# Claude Code project config, including the pre-existing, unrelated worktree
+# under .claude/worktrees/ — not part of the application source tree.
+.claude/

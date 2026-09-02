@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // Next.js 16's `next dev`/`next build` auto-generate an AI-agent-rules
