@@ -6,3 +6,12 @@ test.describe('shell', () => {
     await expect(page).toHaveTitle(/Esque/);
   });
 });
+
+test.describe('design tokens', () => {
+  test('body uses the Esque dark background and off-white text tokens', async ({ page }) => {
+    await page.goto('/');
+    const body = page.locator('body');
+    await expect(body).toHaveCSS('background-color', 'rgb(5, 5, 5)'); // #050505
+    await expect(body).toHaveCSS('color', 'rgb(243, 241, 234)'); // #F3F1EA
+  });
+});

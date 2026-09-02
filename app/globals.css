@@ -1,26 +1,65 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Colors — DESIGN_SYSTEM.md §4 */
+  --color-esque-black: #050505;
+  --color-esque-surface: #0b0b0b;
+  --color-esque-elevated: #121212;
+  --color-esque-text: #f3f1ea;
+  --color-esque-text-secondary: #a5a5a0;
+  --color-esque-text-muted: #666662;
+  --color-esque-forest: #1f3d2b;
+  --color-esque-forest-highlight: #335b41;
+  --color-esque-error: #a74338;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Type scale — DESIGN_SYSTEM.md §9 */
+  --text-display-xl: clamp(72px, 11vw, 180px);
+  --text-display-l: clamp(56px, 8vw, 128px);
+  --text-heading-1: 48px;
+  --text-heading-2: 36px;
+  --text-heading-3: 26px;
+  --text-product-name: 16px;
+  --text-body: 15px;
+  --text-utility: 13px;
+  --text-metadata: 11px;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Spacing scale — DESIGN_SYSTEM.md §13 (base unit 4px) */
+  --spacing: 4px;
+
+  /* Letter spacing — DESIGN_SYSTEM.md §11 (midpoints of the documented ranges) */
+  --tracking-display: -0.02em;
+  --tracking-nav: 0.05em;
+  --tracking-metadata: 0.1em;
+
+  /* Motion — DESIGN_SYSTEM.md §20 */
+  --ease-esque: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Shape — DESIGN_SYSTEM.md §16 (mostly square, 0-4px radius) */
+  --radius-esque: 4px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-esque-black);
+  color: var(--color-esque-text);
+}
+
+/* Global focus-visible safety net — DESIGN_SYSTEM.md §22, PROJECT.md §78.
+   Button (Task 7) additionally sets its own branded outline; this covers
+   every other interactive element (nav links, footer links) so visibility
+   never depends on remembering to add focus classes per-component. */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-esque-forest);
+  outline-offset: 2px;
+}
+
+/* Generator-default font variable mapping (Geist, replaced by real
+   functional/display tokens in Task 6) — kept as-is since font wiring is
+   out of scope here. The generator's default light/dark --background /
+   --foreground toggle and its body rule were removed: Esque is a fixed
+   dark editorial theme, not an OS-preference-driven light/dark site, and
+   that boilerplate directly conflicted with the tokens above. */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
