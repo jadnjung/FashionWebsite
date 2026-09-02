@@ -36,6 +36,12 @@
 
   /* Shape — DESIGN_SYSTEM.md §16 (mostly square, 0-4px radius) */
   --radius-esque: 4px;
+
+  /* Fonts — DESIGN_SYSTEM.md §6-7. Values come from lib/fonts.ts (next/font
+     CSS variables set on <html>); registering them here exposes the
+     font-functional / font-display Tailwind utilities. */
+  --font-functional: var(--font-functional);
+  --font-display: var(--font-display);
 }
 
 body {
@@ -51,15 +57,4 @@ a:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--color-esque-forest);
   outline-offset: 2px;
-}
-
-/* Generator-default font variable mapping (Geist, replaced by real
-   functional/display tokens in Task 6) — kept as-is since font wiring is
-   out of scope here. The generator's default light/dark --background /
-   --foreground toggle and its body rule were removed: Esque is a fixed
-   dark editorial theme, not an OS-preference-driven light/dark site, and
-   that boilerplate directly conflicted with the tokens above. */
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
