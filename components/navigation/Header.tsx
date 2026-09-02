@@ -29,7 +29,15 @@ export function Header({ menuOpen, onMenuOpen }: HeaderProps) {
           className="text-utility"
           aria-expanded={menuOpen}
           aria-controls="esque-full-screen-menu"
-          onClick={onMenuOpen}
+          onClick={(event) => {
+            // WebKit/Safari doesn't focus <button> elements on mouse click
+            // by default (only Chromium/Firefox do), so FullScreenMenu's
+            // "restore focus to whatever opened it" logic can't rely on
+            // document.activeElement alone across browsers — force it here
+            // so the trigger is reliably focused before the menu opens.
+            event.currentTarget.focus();
+            onMenuOpen();
+          }}
         >
           MENU
         </Button>
