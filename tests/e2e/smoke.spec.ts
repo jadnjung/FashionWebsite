@@ -30,3 +30,33 @@ test.describe('fonts', () => {
     expect(functionalFont).not.toBe(displayFont);
   });
 });
+
+test.describe('header', () => {
+  test('renders ESQUE wordmark and utility nav, has a skip link and main landmark', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'ESQUE' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
+    await expect(page.getByText('SEARCH')).toBeVisible();
+    await expect(page.getByText('ACCOUNT')).toBeVisible();
+    await expect(page.getByText('BAG (0)')).toBeVisible();
+
+    await expect(page.getByRole('main')).toBeVisible();
+
+    const skipLink = page.getByRole('link', { name: /skip to content/i });
+    await expect(skipLink).toBeAttached();
+    await skipLink.focus();
+    await expect(skipLink).toBeVisible();
+  });
+
+  test('header adapts to mobile viewport without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+});
