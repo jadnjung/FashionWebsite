@@ -111,3 +111,11 @@ test.describe('footer', () => {
     await expect(footer.getByRole('link', { name: /contact/i })).toBeVisible();
   });
 });
+
+test.describe('homepage placeholder', () => {
+  test('shows the ESQUE wordmark and in-development notice', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
+    await expect(page.getByText('COLLECTION 001 — IN DEVELOPMENT')).toBeVisible();
+  });
+});
