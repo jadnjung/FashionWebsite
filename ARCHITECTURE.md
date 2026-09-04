@@ -137,7 +137,7 @@ Per [PROJECT.md §76](./PROJECT.md#76-performance-requirements) and [DESIGN_SYST
 
 These remain open until resolved (see [PROJECT.md §101](./PROJECT.md#101-items-still-intentionally-open)):
 
-- Exact CSS approach (Tailwind vs CSS Modules vs vanilla-extract) — pick at scaffold time, whichever is fastest to keep consistent with the token system.
+- ~~Exact CSS approach (Tailwind vs CSS Modules vs vanilla-extract)~~ — resolved: Tailwind CSS v4, configured via a CSS-first `@theme` block in `app/globals.css`. See [DECISIONS.md D-009](./DECISIONS.md#d-009--tailwind-css-as-the-styling-approach-configured-via-css-theme).
 - Whether cart state uses Shopify's Cart API directly or a thin wrapper/store (Zustand/Context) around it.
 - Whether the interactive-model hotspot coordinates are authored as SVG masks checked into the repo per product, or stored as metafield JSON per product (affects whether non-engineers can adjust hotspots without a deploy).
 </content>
