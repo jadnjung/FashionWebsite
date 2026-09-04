@@ -67,4 +67,30 @@ An ADR-style record of durable technical/product decisions and why they were mad
 **Decision:** `PROJECT.md`, `DESIGN_SYSTEM.md`, `ARCHITECTURE.md`, `DECISIONS.md`, and `ROADMAP.md` live at the repository root alongside `CLAUDE.md`, rather than under a `/docs` directory as suggested in [PROJECT.md §100](./PROJECT.md#100-recommended-product-documentation) and [DESIGN_SYSTEM.md §71](./DESIGN_SYSTEM.md#71-repository-documentation-structure).
 
 **Reason:** The repository already had these five files scaffolded at the root before this documentation pass began. Matching the existing scaffolding avoids an unnecessary file-move churn commit. Revisit if the project later wants the `/docs` structure — it's a pure relocation, not a rewrite.
+
+**Reaffirmed 2026-08-17:** a later prompt referenced `docs/PRODUCT.md`-style paths; project owner confirmed keeping this repo's existing root-level layout rather than moving to match. No change to the decision itself.
+
+---
+
+## D-009 — Tailwind CSS as the styling approach, configured via CSS `@theme`
+
+**Decision:** Use Tailwind CSS v4 for all styling. Design tokens (colors, type scale, spacing, letter-spacing, easing) are declared in a single `@theme` block in `app/globals.css`, not a separate `tailwind.config.ts`.
+
+**Reason:** Resolves the open item in [ARCHITECTURE.md §10](./ARCHITECTURE.md#10-open-architecture-decisions). Tailwind v4's current convention is CSS-first configuration — there is no JS/TS config file for basic theming as there was in v3. `DESIGN_SYSTEM.md`'s token system (exact hex values, a `clamp()`-based type scale, a fixed spacing scale, a named easing curve) maps directly onto `@theme` custom properties. Verified against current Tailwind docs before implementation (the original design spec assumed a `tailwind.config.ts` file, which is no longer how the library works).
+
+---
+
+## D-010 — Placeholder data over a mock Shopify client for pre-commerce UI work
+
+**Decision:** Where the storefront shell needs data that will eventually come from Shopify (navigation categories), use a small, clearly-commented, typed placeholder data file (`lib/navigation-data.ts`) rather than building a mock Shopify Storefront API client.
+
+**Reason:** No Shopify store exists yet, so there's nothing to validate a client interface against — building one now risks guessing wrong about the real API's shape and having to redo it in [ROADMAP.md Phase 2](./ROADMAP.md#phase-2--commerce-foundation). YAGNI per [CLAUDE.md](./CLAUDE.md)'s "do not introduce unnecessary abstractions."
+
+---
+
+## D-011 — View Transitions API (native) as the starting motion implementation
+
+**Decision:** Use CSS transitions and the native View Transitions API for motion in the storefront shell (menu open/close) before introducing a JS animation library.
+
+**Reason:** Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack)'s layered stack, use the cheapest tier that satisfies the need. The shell's only transition this pass (the full-screen menu) doesn't require spring physics, gesture-driven animation, or orchestrated sequences — a CSS `transition` on `opacity`/`transform` is sufficient and adds zero bundle weight. Cross-page shared-element transitions (which would more plausibly need Motion/Framer Motion) are deferred until a second real page exists to transition to.
 </content>
