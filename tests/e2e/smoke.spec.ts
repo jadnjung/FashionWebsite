@@ -100,3 +100,14 @@ test.describe('full-screen menu', () => {
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
   });
 });
+
+test.describe('footer', () => {
+  test('renders as a landmark with utility links', async ({ page }) => {
+    await page.goto('/');
+    const footer = page.getByRole('contentinfo');
+    await expect(footer).toBeVisible();
+    await expect(footer.getByRole('link', { name: /privacy/i })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /terms/i })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /contact/i })).toBeVisible();
+  });
+});

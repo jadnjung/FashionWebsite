@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Header } from '@/components/navigation/Header';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
+import { Footer } from '@/components/navigation/Footer';
 
 // Next.js does not allow a `metadata` export in a Client Component, so the
 // shell's interactive state (menuOpen, shared by Header and FullScreenMenu)
@@ -16,6 +17,7 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
       <Header menuOpen={menuOpen} onMenuOpen={() => setMenuOpen(true)} />
       <FullScreenMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <main id="main-content">{children}</main>
+      <Footer />
     </>
   );
 }
