@@ -6,18 +6,18 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 0 — Project Foundation
 
-- [ ] Create Shopify development store
-- [ ] Scaffold Next.js (App Router, TypeScript) app on pnpm
-- [ ] Connect Vercel project + preview deployments
-- [ ] Set up environment variable scaffolding (see [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-environment-variables-draft--fill-in-once-the-shopify-store-exists))
-- [ ] Wire up CI (lint, typecheck, Playwright)
+- [ ] Create Shopify development store — blocked on the project owner's action (requires their Shopify account)
+- [x] Scaffold Next.js (App Router, TypeScript) app on pnpm
+- [ ] Connect Vercel project + preview deployments — blocked on the project owner's action (requires their Vercel account)
+- [x] Set up environment variable scaffolding (see [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-environment-variables-draft--fill-in-once-the-shopify-store-exists))
+- [x] Wire up CI (lint, typecheck, Playwright)
 
 ## Phase 1 — Design System / Tokens
 
-- [ ] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
-- [ ] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
-- [ ] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system))
-- [ ] Build base components: buttons, inputs, form fields
+- [x] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
+- [x] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
+- [~] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system)) — spacing scale implemented as a Tailwind `@theme` token; the 12/8/4-column responsive grid is not yet built as its own primitive (no layout in this pass has needed it)
+- [~] Build base components: buttons, inputs, form fields — Button implemented (primary/secondary/editorial variants); Input and form fields deferred to whichever later task first needs them (no form exists yet in this pass)
 
 ## Phase 2 — Commerce Foundation
 
@@ -28,10 +28,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 3 — Core Storefront Shell
 
-- [ ] Global layout, header (`ESQUE MENU SEARCH ACCOUNT BAG`)
-- [ ] Full-screen experimental menu
-- [ ] Footer
-- [ ] Base page transitions
+- [x] Global layout, header (`ESQUE MENU SEARCH ACCOUNT BAG`)
+- [x] Full-screen experimental menu
+- [x] Footer
+- [x] Base page transitions — full-screen menu open/close (CSS transition, respects `prefers-reduced-motion`); cross-page transitions deferred until a second real route exists, per the approved spec's explicit scope decision (see [DECISIONS.md D-011](./DECISIONS.md#d-011--view-transitions-api-native-as-the-starting-motion-implementation))
 
 ## Phase 4 — Catalog
 
