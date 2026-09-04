@@ -16,8 +16,8 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [x] Implement color tokens ([DESIGN_SYSTEM.md §4](./DESIGN_SYSTEM.md#4-core-color-system))
 - [x] Implement type scale + two-typeface system ([DESIGN_SYSTEM.md §6–9](./DESIGN_SYSTEM.md#6-typography-system))
-- [~] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system)) — spacing scale implemented as a Tailwind `@theme` token; the 12/8/4-column responsive grid is not yet built as its own primitive (no layout in this pass has needed it)
-- [~] Build base components: buttons, inputs, form fields — Button implemented (primary/secondary/editorial variants); Input and form fields deferred to whichever later task first needs them (no form exists yet in this pass)
+- [x] Implement spacing scale + responsive grid ([DESIGN_SYSTEM.md §13–15](./DESIGN_SYSTEM.md#13-spacing-system)) — spacing scale as a Tailwind `@theme` token; responsive grid implemented as `components/ui/Grid.tsx` (4/8/12 columns, documented page margins, and a 24px gutter — the one value §15 leaves undocumented, chosen and explained in the component's own comment). No new `@theme` tokens needed: columns and margins are already expressible through Tailwind's default scale. No real page consumes it yet; verified via a dev-only preview route (see [DECISIONS.md D-012](./DECISIONS.md#d-012--dev-only-preview-route-for-testing-ui-primitives-built-ahead-of-a-real-consumer))
+- [x] Build base components: buttons, inputs, form fields — Button (primary/secondary/editorial variants) and Input (input-surface color, shared focus ring, `aria-invalid` error-state styling per DESIGN_SYSTEM.md §4/§22) implemented. Neither has a real form to live in yet, so Input is verified via the same dev-only preview route as Grid ([DECISIONS.md D-012](./DECISIONS.md#d-012--dev-only-preview-route-for-testing-ui-primitives-built-ahead-of-a-real-consumer)). Additional field types (checkbox, select, etc.) aren't specified anywhere in DESIGN_SYSTEM.md yet and will be built when a real form (e.g. Request Access, Phase 6) first needs them
 
 ## Phase 2 — Commerce Foundation
 
