@@ -119,3 +119,63 @@ test.describe('homepage placeholder', () => {
     await expect(page.getByText('COLLECTION 001 — IN DEVELOPMENT')).toBeVisible();
   });
 });
+
+// Grid and Input (ROADMAP.md Phase 1) have no real page consuming them yet
+// — both are tested against the dev-only preview route at /dev/ui instead
+// of a real page, per DECISIONS.md D-012.
+test.describe('grid primitive', () => {
+  test('renders 4 columns on mobile, 8 on tablet, 12 on desktop and large desktop', async ({
+    page,
+  }) => {
+    await page.goto('/dev/ui');
+    const grid = page.locator('#grid-preview');
+    const columnCount = () =>
+      grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+
+    await page.setViewportSize({ width: 375, height: 812 }); // mobile
+    await expect(grid).toHaveCSS('padding-left', '16px');
+    expect(await columnCount()).toBe(4);
+
+    await page.setViewportSize({ width: 800, height: 1024 }); // tablet
+    await expect(grid).toHaveCSS('padding-left', '24px');
+    expect(await columnCount()).toBe(8);
+
+    await page.setViewportSize({ width: 1100, height: 800 }); // desktop
+    await expect(grid).toHaveCSS('padding-left', '32px');
+    expect(await columnCount()).toBe(12);
+
+    await page.setViewportSize({ width: 1440, height: 900 }); // large desktop
+    await expect(grid).toHaveCSS('padding-left', '64px');
+    expect(await columnCount()).toBe(12);
+  });
+
+  test('uses a 24px gutter between columns', async ({ page }) => {
+    await page.goto('/dev/ui');
+    await expect(page.locator('#grid-preview')).toHaveCSS('column-gap', '24px');
+  });
+});
+
+test.describe('input component', () => {
+  test('is labeled and accepts typed input', async ({ page }) => {
+    await page.goto('/dev/ui');
+    const email = page.getByLabel('Email');
+    await email.fill('visitor@esque.com');
+    await expect(email).toHaveValue('visitor@esque.com');
+  });
+
+  test('is reachable and focusable via keyboard', async ({ page }) => {
+    await page.goto('/dev/ui');
+    await page.getByLabel('Email').focus();
+    await expect(page.getByLabel('Email')).toBeFocused();
+  });
+
+  test('disabled example cannot be edited', async ({ page }) => {
+    await page.goto('/dev/ui');
+    await expect(page.getByLabel('Disabled example')).toBeDisabled();
+  });
+
+  test('aria-invalid renders the documented error color', async ({ page }) => {
+    await page.goto('/dev/ui');
+    await expect(page.getByLabel('Invalid example')).toHaveCSS('border-color', 'rgb(167, 67, 56)'); // #A74338
+  });
+});

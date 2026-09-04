@@ -1,17 +1,11 @@
 import type { ButtonHTMLAttributes } from 'react';
+import { focusRing } from './focus-ring';
 
 type ButtonVariant = 'primary' | 'secondary' | 'editorial';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
 }
-
-// Applied to every variant — DESIGN_SYSTEM.md §22's cursor/focus rules and
-// PROJECT.md §78 both require a visible focus state on every interactive
-// element; this is not optional regardless of how restrained the resting
-// visual style is.
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-forest';
 
 const variantClasses: Record<ButtonVariant, string> = {
   // DESIGN_SYSTEM.md §17 — Primary: bg #F3F1EA, text #050505, rectangular
