@@ -35,10 +35,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 4 — Catalog
 
-- [ ] New / Tops / Bottoms / Etc. category pages
-- [ ] Search (predictive, full-screen overlay)
-- [ ] Filters (category, size, color, availability, collection, price, sort)
-- [ ] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-page))
+- [x] New / Tops / Bottoms / Etc. category pages — seven routes (`/new`, `/tops`(+`/[subcategory]`), `/bottoms`(+`/[subcategory]`), `/etc`(+`/[subcategory]`)), server-rendered against the typed Shopify client; see DECISIONS.md D-023 for the category→product-type query architecture
+- [ ] Search (predictive, full-screen overlay) — deferred in full; see DECISIONS.md D-025
+- [~] Filters (category, size, color, availability, collection, price, sort) — Category/Subcategory satisfied by routing; Sort (all four PROJECT.md §34 options), Availability, and Price range implemented as zero-JavaScript URL-driven filters, fixture-tested against the typed client; Size, Color, and Collection deferred — see DECISIONS.md D-024
+- [x] Product grid (unconventional layout per [DESIGN_SYSTEM.md §37–38](./DESIGN_SYSTEM.md#37-collection-page)) — periodic featured/standard layout across the now-implemented 12/8/4-column responsive grid; the editorial-image insert from DESIGN_SYSTEM's illustrative example sequence is deferred until real campaign photography exists to place there
 
 ## Phase 5 — Product Detail Page
 
