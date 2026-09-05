@@ -236,6 +236,32 @@ test.describe('full-screen menu', () => {
     await expect(menu).toBeHidden();
   });
 
+  // Regression: before ROADMAP.md Phase 4, every one of these hrefs 404'd
+  // like every other category link did — this proves they now resolve to
+  // real routes (tests/e2e/catalog.spec.ts covers what each route does once
+  // there, including the Shopify-unconfigured error boundary). Each
+  // iteration re-navigates to '/' first, rather than reusing one open-menu
+  // session across all three: landing on a category route in this
+  // Shopify-unconfigured environment throws up to the root app/error.tsx
+  // boundary, which unmounts app/(storefront)/layout.tsx — Header and its
+  // MENU button included — so a shared session would only survive the
+  // first iteration before timing out waiting for a MENU button that's no
+  // longer mounted.
+  for (const [name, path] of [
+    ['TOPS', '/tops'],
+    ['BOTTOMS', '/bottoms'],
+    ['ETC.', '/etc'],
+  ] as const) {
+    test(`${name} link navigates to a real page, not a 404`, async ({ page }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'MENU' }).click();
+      await page.getByRole('link', { name }).click();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      // Not a 404 — the branded not-found heading must not be present.
+      await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toHaveCount(0);
+    });
+  }
+
   test('background content is inert while the menu is open', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'MENU' }).click();
