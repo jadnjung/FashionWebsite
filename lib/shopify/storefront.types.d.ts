@@ -2783,7 +2783,7 @@ export type Country = {
   /** The ISO code of the country. */
   isoCode: CountryCode;
   /**
-   * The market that includes this country.
+   * The market that applies to this country. In cases where multiple markets match, this returns the most-specific country region market.
    * @deprecated This `market` field will be removed in a future version of the API.
    */
   market?: Maybe<Market>;
@@ -5129,7 +5129,7 @@ export type Localization = {
   /** The language of the active localized experience. Use the `@inContext` directive to change this value. */
   language: Language;
   /**
-   * The market including the country of the active localized experience. Use the `@inContext` directive to change this value.
+   * The market that applies to the buyer's country. In cases where multiple markets match, this returns the most-specific country region market. Use the `@inContext` directive to change this value.
    * @deprecated This `market` field will be removed in a future version of the API.
    */
   market: Market;

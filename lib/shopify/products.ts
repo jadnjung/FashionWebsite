@@ -2,7 +2,9 @@ import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
   GET_PRODUCT_QUERY,
   GET_PRODUCTS_BY_COLLECTION_QUERY,
+  GET_PRODUCTS_QUERY,
 } from '@/lib/shopify/queries/products';
+import type { ProductSortKeys } from '@/lib/shopify/storefront.types';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -139,5 +141,88 @@ export async function getProductsByCollection(
     }),
     hasNextPage: collection.products.pageInfo.hasNextPage,
     endCursor: collection.products.pageInfo.endCursor ?? null,
+  };
+}
+
+export interface ProductListItem {
+  id: string;
+  handle: string;
+  title: string;
+  productType: string;
+  tags: string[];
+  minPrice: { amount: string; currencyCode: string };
+  availableForSale: boolean;
+  images: ProductImage[];
+}
+
+export interface GetProductsOptions {
+  query?: string;
+  // Plain string literals, not the generated ProductSortKeys enum: that
+  // enum is only ever `import type`-able here (storefront.types.d.ts has
+  // no corresponding runtime .js for its enum members to be referenced as
+  // values from), and only these two members are ever produced by
+  // lib/catalog/filters.ts's getSortVariables. Cast at the one point below
+  // where this crosses into the generated GraphQL variable type.
+  sortKey?: 'CREATED_AT' | 'PRICE';
+  reverse?: boolean;
+  first?: number;
+  after?: string;
+}
+
+/**
+ * Fetches a page of products from Shopify's root `products` connection,
+ * filtered/sorted by the given search-query string and sort variables.
+ * Used by category listing pages, which filter by product type rather
+ * than a specific Collection (DECISIONS.md D-023, ARCHITECTURE.md §5) —
+ * lib/catalog/taxonomy.ts and lib/catalog/filters.ts build the `query`/
+ * `sortKey`/`reverse` options this function just passes through.
+ *
+ * Deliberately separate from getProductsByCollection: different query
+ * shape (root products vs. a collection's products), different result
+ * shape (ProductListItem carries availableForSale, for the Availability
+ * filter and the SOLD OUT badge, and up to two images, for the product
+ * card's hover crossfade — neither of which ProductSummary needs for its
+ * own, unrelated PDP/collection-page use). Throws if the Storefront API
+ * response includes `errors` — same contract as every other fetch
+ * function in this file.
+ */
+export async function getProducts(
+  options: GetProductsOptions = {},
+): Promise<{ products: ProductListItem[]; hasNextPage: boolean; endCursor: string | null }> {
+  const client = getStorefrontClient();
+  const { data, errors } = await client.request(GET_PRODUCTS_QUERY, {
+    variables: {
+      first: options.first ?? 24,
+      after: options.after ?? null,
+      query: options.query ?? null,
+      sortKey: (options.sortKey as ProductSortKeys | undefined) ?? null,
+      reverse: options.reverse ?? null,
+    },
+  });
+
+  if (errors) {
+    throw toRequestError(errors);
+  }
+
+  const connection = data?.products;
+
+  return {
+    products: (connection?.edges ?? []).map(({ node }) => ({
+      id: node.id,
+      handle: node.handle,
+      title: node.title,
+      productType: node.productType,
+      tags: node.tags,
+      minPrice: node.priceRange.minVariantPrice,
+      availableForSale: node.availableForSale,
+      images: node.images.edges.map(({ node: image }) => ({
+        url: image.url,
+        altText: image.altText ?? null,
+        width: image.width ?? null,
+        height: image.height ?? null,
+      })),
+    })),
+    hasNextPage: connection?.pageInfo?.hasNextPage ?? false,
+    endCursor: connection?.pageInfo?.endCursor ?? null,
   };
 }
