@@ -21,10 +21,17 @@ export interface ProductImage {
   height: number | null;
 }
 
+export interface ProductOption {
+  id: string;
+  name: string;
+  values: string[];
+}
+
 export interface ProductVariant {
   id: string;
   title: string;
   availableForSale: boolean;
+  quantityAvailable: number | null;
   price: { amount: string; currencyCode: string };
   selectedOptions: { name: string; value: string }[];
 }
@@ -38,6 +45,7 @@ export interface ProductDetail {
   tags: string[];
   minPrice: { amount: string; currencyCode: string };
   images: ProductImage[];
+  options: ProductOption[];
   variants: ProductVariant[];
 }
 
@@ -86,7 +94,19 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
       width: node.width ?? null,
       height: node.height ?? null,
     })),
-    variants: product.variants.edges.map(({ node }) => node),
+    options: product.options.map((option) => ({
+      id: option.id,
+      name: option.name,
+      values: option.optionValues.map((value) => value.name),
+    })),
+    variants: product.variants.edges.map(({ node }) => ({
+      id: node.id,
+      title: node.title,
+      availableForSale: node.availableForSale,
+      quantityAvailable: node.quantityAvailable ?? null,
+      price: node.price,
+      selectedOptions: node.selectedOptions,
+    })),
   };
 }
 

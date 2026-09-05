@@ -38,6 +38,16 @@ describe('getProduct', () => {
               },
             ],
           },
+          options: [
+            {
+              id: 'gid://shopify/ProductOption/1',
+              name: 'Size',
+              optionValues: [
+                { id: 'gid://shopify/ProductOptionValue/1', name: 'S' },
+                { id: 'gid://shopify/ProductOptionValue/2', name: 'M' },
+              ],
+            },
+          ],
           variants: {
             edges: [
               {
@@ -45,6 +55,7 @@ describe('getProduct', () => {
                   id: 'gid://shopify/ProductVariant/1',
                   title: 'M',
                   availableForSale: true,
+                  quantityAvailable: 12,
                   price: { amount: '120.00', currencyCode: 'USD' },
                   selectedOptions: [{ name: 'Size', value: 'M' }],
                 },
@@ -68,16 +79,89 @@ describe('getProduct', () => {
       images: [
         { url: 'https://cdn.example/item-one.jpg', altText: null, width: 800, height: 1000 },
       ],
+      options: [{ id: 'gid://shopify/ProductOption/1', name: 'Size', values: ['S', 'M'] }],
       variants: [
         {
           id: 'gid://shopify/ProductVariant/1',
           title: 'M',
           availableForSale: true,
+          quantityAvailable: 12,
           price: { amount: '120.00', currencyCode: 'USD' },
           selectedOptions: [{ name: 'Size', value: 'M' }],
         },
       ],
     });
+  });
+
+  test('maps a product with no options to an empty options array', async () => {
+    mockClient({
+      data: {
+        product: {
+          id: 'gid://shopify/Product/2',
+          handle: 'simple-item',
+          title: 'Simple Item',
+          description: 'One size, one color.',
+          productType: 'Etc.',
+          tags: [],
+          priceRange: { minVariantPrice: { amount: '50.00', currencyCode: 'USD' } },
+          images: { edges: [] },
+          options: [],
+          variants: {
+            edges: [
+              {
+                node: {
+                  id: 'gid://shopify/ProductVariant/2',
+                  title: 'Default Title',
+                  availableForSale: true,
+                  quantityAvailable: null,
+                  price: { amount: '50.00', currencyCode: 'USD' },
+                  selectedOptions: [],
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const result = await getProduct('simple-item');
+    expect(result?.options).toEqual([]);
+    expect(result?.variants[0].quantityAvailable).toBeNull();
+  });
+
+  test('passes quantityAvailable: null through as null, not coerced to 0', async () => {
+    mockClient({
+      data: {
+        product: {
+          id: 'gid://shopify/Product/3',
+          handle: 'unknown-inventory-item',
+          title: 'Unknown Inventory Item',
+          description: '',
+          productType: 'Tops',
+          tags: [],
+          priceRange: { minVariantPrice: { amount: '90.00', currencyCode: 'USD' } },
+          images: { edges: [] },
+          options: [],
+          variants: {
+            edges: [
+              {
+                node: {
+                  id: 'gid://shopify/ProductVariant/3',
+                  title: 'Default Title',
+                  availableForSale: true,
+                  quantityAvailable: null,
+                  price: { amount: '90.00', currencyCode: 'USD' },
+                  selectedOptions: [],
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const result = await getProduct('unknown-inventory-item');
+    expect(result?.variants[0].quantityAvailable).toBeNull();
   });
 
   test('throws when the response includes errors, rather than treating it as not-found', async () => {

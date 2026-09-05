@@ -28,12 +28,21 @@ export const GET_PRODUCT_QUERY = `#graphql
           }
         }
       }
+      options {
+        id
+        name
+        optionValues {
+          id
+          name
+        }
+      }
       variants(first: 100) {
         edges {
           node {
             id
             title
             availableForSale
+            quantityAvailable
             price {
               amount
               currencyCode
