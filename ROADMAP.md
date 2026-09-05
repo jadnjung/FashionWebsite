@@ -42,11 +42,11 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 5 — Product Detail Page
 
-- [ ] PDP layout (60/40 media/info split)
-- [ ] Size/color selection, size guide
-- [ ] Quick Add (desktop overlay + mobile bottom sheet)
-- [ ] Scarcity UI (low stock / final pieces — real inventory only)
-- [ ] Related products / Complete the Look / Recently viewed
+- [x] PDP layout (60/40 media/info split) — real, server-rendered `/products/[handle]` route (`ProductDetail`/`ProductGallery`/`ProductPurchasePanel`), gallery `lg:col-span-7` / sticky purchase panel `lg:col-span-5` on the existing 12-column grid, single column below `lg`
+- [x] Size/color selection, size guide — generic, data-driven selector (native radio groups, D-010 focus rings) against real `product.options`/`variants` (now fetched — see DECISIONS.md D-028); Size Guide is a real native-`<dialog>` panel (side panel desktop / bottom sheet mobile) with clearly-labeled placeholder measurements — final sizes are still an open product decision (PROJECT.md §101) — see DECISIONS.md D-027
+- [~] Quick Add (desktop overlay + mobile bottom sheet) — the underlying variant-selection mechanism is built in full (above) and directly reusable; the on-grid entry point itself is deferred (needs new on-demand data-fetching plumbing with no other consumer yet) — see DECISIONS.md D-029
+- [~] Scarcity UI (low stock / final pieces — real inventory only) — real, fixture-tested display-tier logic against Shopify's actual `quantityAvailable`; renders nothing when the count is unknown rather than fabricating one; whether a real store ever populates a non-null value is unverifiable without one — see DECISIONS.md D-028
+- [~] Related products / Complete the Look / Recently viewed — Related Products (mechanically derived, same product type, reusing the existing `ProductGrid`) and Recently Viewed (versioned `localStorage`, `useSyncExternalStore`) built; Complete the Look deferred (needs real curatorial outfit-pairing data that doesn't exist) — see DECISIONS.md D-030/D-031
 
 ## Phase 6 — Access Gate
 
