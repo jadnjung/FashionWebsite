@@ -41,6 +41,15 @@ function resolveProductTypes(
 ): string[] | null {
   if (!subcategory) return getCategoryProductTypes(category);
   const productType = getSubcategoryProductType(category, subcategory);
+  // Defensive fallback only — each [subcategory]/page.tsx already performs
+  // this same check before rendering <CategoryListing> at all, so an
+  // unknown subcategory never reaches this line in the current call
+  // path (and never triggers the Shopify call below it). Kept here as a
+  // safety net for any future caller that skips the page-level check.
+  // Note this doesn't change the HTTP status outcome either way — see
+  // DECISIONS.md D-026: a dynamically-rendered page calling notFound()
+  // returns 200 + noindex in this Next.js version regardless of whether
+  // the call happens here or in page.tsx.
   if (!productType) notFound();
   return [productType];
 }
@@ -48,9 +57,7 @@ function resolveProductTypes(
 // Shared by all seven category/subcategory routes — resolves the taxonomy,
 // parses URL filters, queries Shopify's root products connection
 // (DECISIONS.md D-023), and renders the filter bar + grid + empty/no-match
-// states. See the design spec's Architecture section. An unknown
-// subcategory 404s here (via notFound(), before any Shopify call is
-// attempted) — a real 404, not the error boundary.
+// states. See the design spec's Architecture section.
 export async function CategoryListing({
   category,
   subcategory,
