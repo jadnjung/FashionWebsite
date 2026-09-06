@@ -163,3 +163,30 @@ button:focus-visible {
      choreography. */
   animation: esque-access-error-message 350ms var(--ease-esque) 80ms backwards;
 }
+
+/* Homepage Hero entrance — DESIGN_SYSTEM.md §28: a quick, one-time reveal
+   on first load (well under the ~900ms total budget), not a multi-second
+   splash. A plain fade + slight rise, using the same animation-delay +
+   `backwards` fill-mode technique as esque-access-error-message above,
+   rather than a JS sequence — this is ordinary page-load polish, not the
+   cursor-tracked depth/parallax DECISIONS.md D-032 defers to ROADMAP.md
+   Phase 9, so it needs no animation library. Applied only to Hero's
+   foreground text group (components/home/CollectionHero.tsx) — the
+   background layer and the atmospheric ESQUE heading render at full
+   opacity immediately so neither can delay this page's LCP paint.
+   Already covered by the sitewide prefers-reduced-motion rule above
+   (zeroes animation-duration), no separate handling needed. */
+@keyframes esque-hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.esque-hero-reveal {
+  animation: esque-hero-reveal 500ms var(--ease-esque) backwards;
+}
