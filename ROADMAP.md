@@ -57,13 +57,13 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 7 — Homepage
 
-- [ ] Scene 01: Collection Hero
-- [ ] Scene 02: Interactive Model (see Phase 8)
-- [ ] Scene 03: Collection Statement
-- [ ] Scene 04: Selected Pieces
-- [ ] Scene 05: Categories
-- [ ] Scene 06: Drop Status
-- [ ] Scene 07: Archive Preview (minimal/hidden until Collection 002 exists)
+- [~] Scene 01: Collection Hero — real structure, copy slots, and `ENTER COLLECTION` CTA built; hero imagery and the campaign statement are clearly-labeled placeholders (no real photography/campaign direction exists yet — PROJECT.md §101); cursor-driven depth motion (DESIGN_SYSTEM.md §27) deferred whole-cloth to ROADMAP.md Phase 9's own "Parallax / depth on homepage scenes" — see DECISIONS.md D-032
+- [~] Scene 02: Interactive Model (see Phase 8) — clearly-labeled placeholder/coming-soon slot only, per this phase's own scope; the real feature is Phase 8's
+- [x] Scene 03: Collection Statement — fully built, real copy (DESIGN_SYSTEM.md §32), zero Shopify dependency
+- [~] Scene 04: Selected Pieces — real, Shopify-backed mechanism (up to 3 real products via a page-isolated `getSelectedPieces`, reusing the existing `ProductCard`); renders whatever photography Shopify has (none yet); the entire section is omitted when no products are available (unconfigured store today) rather than fabricating content — see DECISIONS.md D-033
+- [x] Scene 05: Categories — fully built, real taxonomy-backed navigation (TOPS/BOTTOMS/ETC., linking to the real Phase 4 category routes)
+- [x] Scene 06: Drop Status — fully built, real copy verbatim from DESIGN_SYSTEM.md §35/CONTENT.md §8; piece count is static (PROJECT.md §8's committed 6-piece launch catalog) rather than live-queried — same "only one real collection exists to prove a query isn't just hardcoding" reasoning as D-030 — see DECISIONS.md D-032
+- [ ] Scene 07: Archive Preview (minimal/hidden until Collection 002 exists) — omitted this pass; no past collection exists yet to preview, `/archive` doesn't exist until Phase 11, and DESIGN_SYSTEM.md §58's own mobile homepage sequence already excludes it — matches this line's own "minimal/hidden" allowance — see DECISIONS.md D-032
 
 ## Phase 8 — Interactive Model (signature feature)
 
