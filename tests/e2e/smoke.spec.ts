@@ -20,9 +20,19 @@ test.describe('shell', () => {
     const consoleErrors: string[] = [];
     const pageErrors: string[] = [];
     page.on('console', (message) => {
-      if (message.type() === 'error') {
-        consoleErrors.push(message.text());
-      }
+      if (message.type() !== 'error') return;
+      // The one expected exception: Selected Pieces' isolated Shopify fetch
+      // (lib/home/selected-pieces.ts, DECISIONS.md D-033) deliberately
+      // console.errors on failure so the failure stays operationally
+      // visible — Next.js's dev server mirrors that server-side log into
+      // the browser console too. SHOPIFY_STORE_DOMAIN/TOKEN are
+      // intentionally unset in this E2E environment (playwright.config.ts),
+      // so this exact, known message is expected every run here — the same
+      // "Shopify Storefront API is not configured" condition catalog.spec.ts/
+      // pdp.spec.ts already assert produces the error boundary on other
+      // routes. Any other console error still fails this test.
+      if (message.text().includes('Shopify Storefront API is not configured')) return;
+      consoleErrors.push(message.text());
     });
     page.on('pageerror', (error) => {
       pageErrors.push(error.message);
@@ -149,7 +159,13 @@ test.describe('full-screen menu', () => {
 
     await page.getByRole('button', { name: 'MENU' }).click();
     await expect(menu).toBeVisible();
-    await expect(page.getByRole('link', { name: 'TOPS' })).toBeVisible();
+    // Scoped to the menu dialog: the homepage's own CategoryShowcase scene
+    // (ROADMAP.md Phase 7) now has a real "TOPS" link too, so an unscoped
+    // page-wide query is ambiguous once the menu is open (both sit in the
+    // DOM simultaneously — CategoryShowcase's copy is correctly `inert`
+    // while the menu is open, per ShellClient.tsx, but that doesn't change
+    // how many elements a role query can find).
+    await expect(menu.getByRole('link', { name: 'TOPS' })).toBeVisible();
   });
 
   test('Escape closes the menu and returns focus to the MENU trigger', async ({ page }) => {
@@ -166,8 +182,13 @@ test.describe('full-screen menu', () => {
   test('Tab cycles focus within the open menu (focus trap)', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'MENU' }).click();
-    const firstLink = page.getByRole('link', { name: 'NEW' });
-    const lastLink = page.getByRole('link', { name: 'ABOUT' });
+    // Scoped to the menu dialog throughout this test: the homepage's own
+    // CategoryShowcase scene (ROADMAP.md Phase 7) now has real "TOPS"/
+    // "BOTTOMS"/"ETC." links too, ambiguous against an unscoped page-wide
+    // query while the menu is open (both sit in the DOM simultaneously).
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const firstLink = menu.getByRole('link', { name: 'NEW' });
+    const lastLink = menu.getByRole('link', { name: 'ABOUT' });
     await expect(firstLink).toBeFocused();
 
     // Forward: Tab through every category link, ending back on the first —
@@ -175,7 +196,7 @@ test.describe('full-screen menu', () => {
     // the initial-focus-on-open behavior.
     for (const name of ['TOPS', 'BOTTOMS', 'ETC.', 'COLLECTIONS', 'ABOUT']) {
       await page.keyboard.press('Tab');
-      await expect(page.getByRole('link', { name })).toBeFocused();
+      await expect(menu.getByRole('link', { name })).toBeFocused();
     }
     await expect(lastLink).toBeFocused();
     await page.keyboard.press('Tab');
@@ -255,7 +276,10 @@ test.describe('full-screen menu', () => {
     test(`${name} link navigates to a real page, not a 404`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('button', { name: 'MENU' }).click();
-      await page.getByRole('link', { name }).click();
+      // Scoped to the menu dialog — the homepage's own CategoryShowcase
+      // scene (ROADMAP.md Phase 7) now has a same-named "TOPS"/"BOTTOMS"/
+      // "ETC." link too, ambiguous against an unscoped page-wide query.
+      await page.getByRole('dialog', { name: /menu/i }).getByRole('link', { name }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       // Not a 404 — the branded not-found heading must not be present.
       await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toHaveCount(0);
@@ -327,14 +351,6 @@ test.describe('footer', () => {
     await expect(footer.getByRole('link', { name: /privacy/i })).toBeVisible();
     await expect(footer.getByRole('link', { name: /terms/i })).toBeVisible();
     await expect(footer.getByRole('link', { name: /contact/i })).toBeVisible();
-  });
-});
-
-test.describe('homepage placeholder', () => {
-  test('shows the ESQUE wordmark and in-development notice', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
-    await expect(page.getByText('COLLECTION 001 — IN DEVELOPMENT')).toBeVisible();
   });
 });
 
