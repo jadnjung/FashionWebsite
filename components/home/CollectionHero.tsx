@@ -18,7 +18,10 @@ import Link from 'next/link';
 // DECISIONS.md D-032.
 export function CollectionHero() {
   return (
-    <section className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-esque-black px-4 pb-16 pt-24 md:px-8">
+    <section
+      aria-label="Collection Hero"
+      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-esque-black px-4 pb-16 pt-24 md:px-8"
+    >
       {/* Placeholder campaign imagery — DESIGN_SYSTEM.md §65. Renders
           immediately (no entrance animation) so it can never delay LCP. */}
       <div
