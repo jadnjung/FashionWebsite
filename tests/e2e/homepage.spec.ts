@@ -72,6 +72,22 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
   });
 });
 
+test.describe('homepage — motion', () => {
+  // Mirrors FullScreenMenu's existing "respects prefers-reduced-motion"
+  // test technique — direct proof for this phase's one new animation
+  // (.esque-hero-reveal, app/globals.css) rather than relying only on the
+  // pre-existing sitewide rule being correct by inference.
+  test('the hero entrance fade respects prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const duration = await page
+      .locator('.esque-hero-reveal')
+      .evaluate((el) => getComputedStyle(el).animationDuration);
+    // "0.01ms" per the sitewide override, not the authored 500ms.
+    expect(parseFloat(duration)).toBeLessThan(0.05);
+  });
+});
+
 test.describe('homepage — structure and responsiveness', () => {
   test('has exactly one h1', async ({ page }) => {
     await page.goto('/');
