@@ -20,6 +20,13 @@ const IMAGE_SIZES: Record<GridItemLayout, string> = {
 interface ProductCardProps {
   product: ProductListItem;
   layout: GridItemLayout;
+  // Optional override for next/image's `sizes` hint. IMAGE_SIZES[layout]
+  // assumes ProductGrid's own periodic column widths; a caller whose card
+  // renders at different real widths (e.g. SelectedPieces' curated
+  // 2-column composition) passes its own accurate hint here instead of
+  // forcing a mismatched fit onto `layout` — which still governs nothing
+  // else (SOLD OUT badge, hover crossfade, focus ring are unaffected).
+  sizes?: string;
 }
 
 // DESIGN_SYSTEM.md §39 — default: image + name, no price. Hover: crossfade
@@ -32,8 +39,9 @@ interface ProductCardProps {
 // PROJECT.md §40 / CONTENT.md §8: sold-out products stay visible with a
 // SOLD OUT badge, independent of the Availability filter's state — this
 // checks the product's own `availableForSale`, never the filter.
-export function ProductCard({ product, layout }: ProductCardProps) {
+export function ProductCard({ product, layout, sizes }: ProductCardProps) {
   const [primary, secondary] = product.images;
+  const sizesAttr = sizes ?? IMAGE_SIZES[layout];
 
   return (
     <Link
@@ -46,7 +54,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
             src={primary.url}
             alt={primary.altText ?? product.title}
             fill
-            sizes={IMAGE_SIZES[layout]}
+            sizes={sizesAttr}
             className="object-cover"
           />
         )}
@@ -59,7 +67,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
             alt=""
             aria-hidden="true"
             fill
-            sizes={IMAGE_SIZES[layout]}
+            sizes={sizesAttr}
             className="object-cover opacity-0 transition-opacity duration-200 ease-esque group-hover:opacity-100"
           />
         )}
