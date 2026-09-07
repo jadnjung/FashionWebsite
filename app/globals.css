@@ -258,3 +258,30 @@ button:focus-visible {
      also disappear rather than sit on top of it. */
   opacity: 0;
 }
+
+/* Homepage Hero parallax — DESIGN_SYSTEM.md §27, DECISIONS.md D-032/D-041.
+   Depth-scaled translate driven by --parallax-x/-y custom properties (set
+   on the nearest [data-hero-parallax] ancestor by HeroParallax.tsx's
+   pointermove handler, never via React state — a direct DOM style write
+   keeps every pointer-move frame allocation-free). --depth is set per
+   layer via inline style; both custom properties default to 0 (the safe,
+   no-offset state whenever JS hasn't run yet, is disabled, or the
+   capability checks failed), so no layout shift is possible on first
+   paint. Small, "a few pixels" per DESIGN_SYSTEM §27 — not a large-motion
+   effect. */
+.esque-parallax-layer {
+  transform: translate3d(
+    calc(var(--parallax-x, 0) * var(--depth, 0) * 24px),
+    calc(var(--parallax-y, 0) * var(--depth, 0) * 14px),
+    0
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Defense in depth alongside HeroParallax.tsx's own JS-level
+     prefersReducedMotion gate (which never attaches the listener at all) —
+     forces no offset even if a custom property were ever somehow set. */
+  .esque-parallax-layer {
+    transform: none;
+  }
+}

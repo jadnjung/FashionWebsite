@@ -101,6 +101,76 @@ test.describe('homepage — motion', () => {
   });
 });
 
+test.describe('homepage — hero parallax (ROADMAP Phase 9, picks up DECISIONS.md D-032)', () => {
+  // HeroParallax only attaches its pointermove listener once client-side
+  // hydration completes — see custom-cursor.spec.ts's identical, directly
+  // verified finding. Spreading a few moves over a short window makes at
+  // least one reliably land after hydration regardless of machine speed.
+  async function movePointer(page: import('@playwright/test').Page, x = 200, y = 200) {
+    for (let i = 0; i < 5; i++) {
+      await page.mouse.move(x + i, y + i);
+      await page.waitForTimeout(100);
+    }
+  }
+
+  function readParallaxProps(page: import('@playwright/test').Page) {
+    return page.locator('[data-hero-parallax]').evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        x: style.getPropertyValue('--parallax-x').trim(),
+        y: style.getPropertyValue('--parallax-y').trim(),
+      };
+    });
+  }
+
+  test('applies no offset before any pointer movement (no layout shift on load)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const props = await readParallaxProps(page);
+    expect(props.x).toBe('');
+    expect(props.y).toBe('');
+  });
+
+  test('sets non-zero depth offsets after a real pointer move on desktop', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'pointer-tracked parallax is desktop-only by design');
+    await page.goto('/');
+    await movePointer(page);
+    const props = await readParallaxProps(page);
+    expect(props.x).not.toBe('');
+    expect(props.y).not.toBe('');
+  });
+
+  test('never applies an offset when the user prefers reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await movePointer(page);
+    const props = await readParallaxProps(page);
+    expect(props.x).toBe('');
+    expect(props.y).toBe('');
+
+    // Defense-in-depth CSS backstop: even if a custom property were ever
+    // set, the reduced-motion rule forces transform: none on the layers.
+    const transform = await page
+      .locator('.esque-parallax-layer')
+      .first()
+      .evaluate((el) => getComputedStyle(el).transform);
+    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
+  });
+
+  test('never applies an offset on a touch-only project', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'touch-specific assertion; runs on the mobile-safari project');
+    await page.goto('/');
+    await movePointer(page);
+    const props = await readParallaxProps(page);
+    expect(props.x).toBe('');
+    expect(props.y).toBe('');
+  });
+});
+
 test.describe('homepage — structure and responsiveness', () => {
   test('has exactly one h1', async ({ page }) => {
     await page.goto('/');
