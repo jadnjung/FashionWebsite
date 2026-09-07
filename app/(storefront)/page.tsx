@@ -2,7 +2,7 @@ import { CategoryShowcase } from '@/components/home/CategoryShowcase';
 import { CollectionHero } from '@/components/home/CollectionHero';
 import { CollectionStatement } from '@/components/home/CollectionStatement';
 import { DropStatus } from '@/components/home/DropStatus';
-import { InteractiveModelPlaceholder } from '@/components/home/InteractiveModelPlaceholder';
+import { InteractiveModel } from '@/components/interactive-model/InteractiveModel';
 import { SelectedPieces } from '@/components/home/SelectedPieces';
 import { getSelectedPieces } from '@/lib/home/selected-pieces';
 
@@ -20,7 +20,7 @@ export default async function Home() {
   return (
     <>
       <CollectionHero />
-      <InteractiveModelPlaceholder />
+      <InteractiveModel garments={[]} />
       <CollectionStatement />
       <SelectedPieces products={selectedPieces} />
       <CategoryShowcase />
