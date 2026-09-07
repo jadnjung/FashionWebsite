@@ -46,6 +46,7 @@ export function ProductCard({ product, layout, sizes }: ProductCardProps) {
   return (
     <Link
       href={`/products/${product.handle}`}
+      data-cursor="VIEW"
       className="group flex flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-esque-surface">

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Header } from '@/components/navigation/Header';
 import { Footer } from '@/components/navigation/Footer';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
+import { CustomCursor } from '@/components/navigation/CustomCursor';
 
 // Owns the shell-wide client state (currently just menu-open) so that
 // app/layout.tsx can stay a Server Component and keep its `metadata`
@@ -64,6 +65,7 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
         onClose={() => setMenuOpen(false)}
         triggerRef={menuTriggerRef}
       />
+      <CustomCursor />
     </>
   );
 }

@@ -129,6 +129,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
             href={category.href}
             ref={index === 0 ? firstLinkRef : undefined}
             onClick={onClose}
+            data-cursor="OPEN"
             // Explicit tabIndex, not left to the anchor's default: WebKit
             // (desktop and iOS Safari) only includes links in the Tab
             // sequence when the system-level "Full Keyboard Access"

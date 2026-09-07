@@ -190,3 +190,71 @@ button:focus-visible {
 .esque-hero-reveal {
   animation: esque-hero-reveal 500ms var(--ease-esque) backwards;
 }
+
+/* Custom cursor — DESIGN_SYSTEM.md §22-23, INTERACTIONS.md §7.
+   `esque-cursor-none` is only ever added by CustomCursor.tsx after a real
+   pointermove has been observed (never on initial/server render), so the
+   OS cursor is never hidden before the replacement is actually positioned
+   and visible. The universal `*` reach-down guarantees the custom cursor
+   is authoritative everywhere except the one documented exception (form
+   inputs) even against an element with its own explicit `cursor-pointer`/
+   `cursor-not-allowed` utility (e.g. VariantPicker, ShopTheLookPanel) —
+   DESIGN_SYSTEM §23 lists a closed set of four exceptions, and disabled/
+   pointer controls are not one of them. The form-field re-enable wins by
+   plain CSS specificity (an element+class selector beats a universal+class
+   selector) with no `!important` needed. */
+.esque-cursor-none,
+.esque-cursor-none * {
+  cursor: none;
+}
+.esque-cursor-none input,
+.esque-cursor-none textarea,
+.esque-cursor-none select,
+.esque-cursor-none [contenteditable='true'] {
+  cursor: auto;
+}
+
+.esque-custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--color-esque-text);
+  color: var(--color-esque-black);
+  font-size: var(--text-metadata);
+  letter-spacing: var(--tracking-metadata);
+  text-transform: uppercase;
+  pointer-events: none;
+  will-change: transform;
+  /* Micro tier (DESIGN_SYSTEM §21: 120-200ms) for the discrete size/label
+     state change — already covered by the sitewide prefers-reduced-motion
+     rule above (plain CSS transition-duration), no separate handling
+     needed here. Position itself is never transitioned — it is written
+     directly per pointermove frame (see CustomCursor.tsx), so lag stays
+     at zero as DESIGN_SYSTEM §22 requires. */
+  transition:
+    width 200ms var(--ease-esque),
+    height 200ms var(--ease-esque),
+    margin 200ms var(--ease-esque),
+    opacity 200ms var(--ease-esque);
+}
+
+.esque-custom-cursor[data-active='true'] {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+}
+
+.esque-custom-cursor[data-hidden='true'] {
+  /* Precision text-entry contexts show the native I-beam instead (the
+     .esque-cursor-none input override above) — the replacement dot must
+     also disappear rather than sit on top of it. */
+  opacity: 0;
+}
