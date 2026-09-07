@@ -43,7 +43,10 @@ interface SilhouetteIllustrationProps {
 // pointer-event hit-testing, not just paint, in every evergreen browser.
 // See DECISIONS.md D-035 for the full reasoning (why not SVG-path-as-
 // button, why not an ARIA tablist, why click toggles rather than
-// navigates).
+// navigates) and D-037 for why focus alone does NOT trigger onHover
+// (mouse-only preview; keyboard activates explicitly via Enter/Space,
+// which fires onClick regardless of this) — merely tabbing past a hotspot
+// must never silently replace what the info panel is currently showing.
 export function SilhouetteIllustration({
   garments,
   activeRegion,
@@ -74,13 +77,12 @@ export function SilhouetteIllustration({
             aria-label={`${garment.regionLabel} — ${garment.product.title}`}
             aria-pressed={isActive}
             onMouseEnter={() => onHover(garment.region)}
-            onFocus={() => onHover(garment.region)}
             onClick={() => onToggle(garment.region)}
             className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
               isActive
                 ? 'bg-esque-forest-highlight'
                 : isDimmed
-                  ? 'bg-esque-text-muted/25'
+                  ? 'bg-esque-text-muted/40'
                   : 'bg-esque-text-muted/60'
             }`}
           />

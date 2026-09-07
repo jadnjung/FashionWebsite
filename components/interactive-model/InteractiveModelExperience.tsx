@@ -41,12 +41,21 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
 
   const activeGarment = garments.find((garment) => garment.region === activeRegion) ?? null;
 
-  // Hover AND focus both activate/preview a region (mouse and keyboard
-  // parity — DESIGN_SYSTEM.md §29's "hovering a garment" applies equally
-  // to a keyboard user focusing it). Click/Enter/Space/tap TOGGLE the
-  // region instead of navigating — DECISIONS.md D-035. Deliberately no
-  // onMouseLeave/onBlur handler: the panel never auto-closes when the
-  // pointer/focus leaves a hotspot, so moving the mouse from the hotspot
+  // Mouse hover previews a region (DESIGN_SYSTEM.md §29's "hovering a
+  // garment"). Click/Enter/Space/tap TOGGLE the region instead of
+  // navigating — DECISIONS.md D-035. Deliberately NOT wired to focus too
+  // (DECISIONS.md D-037): both hotspot buttons sit before the shared info
+  // panel in DOM order, so if merely focusing a button also previewed it,
+  // tabbing from the first hotspot to the second would silently replace
+  // the panel before a keyboard user could ever tab forward into the
+  // first garment's own VIEW PRODUCT/QUICK ADD/size controls — a real,
+  // confirmed keyboard-accessibility failure caught by independent review.
+  // Requiring an explicit press (Enter/Space, which fires onClick exactly
+  // like a click) means the panel a keyboard user reaches via subsequent
+  // Tab presses is always the one they deliberately activated, never
+  // whichever hotspot they last happened to tab past. Deliberately no
+  // onMouseLeave/onBlur handler either: the panel never auto-closes when
+  // the pointer leaves a hotspot, so moving the mouse from the hotspot
   // toward the panel's own controls never races the panel closing before
   // you get there.
   function handleHover(region: HotspotRegion) {

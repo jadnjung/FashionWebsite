@@ -9,7 +9,11 @@ import {
   type LookItemSelectionState,
 } from '@/lib/interactive-model/look-selection';
 import { formatPrice } from '@/lib/product/price';
-import { findMatchingVariant, getInitialSelections } from '@/lib/product/variants';
+import {
+  findMatchingVariant,
+  getInitialSelections,
+  isProductSoldOut,
+} from '@/lib/product/variants';
 
 interface ShopTheLookPanelProps {
   garments: InteractiveModelGarment[];
@@ -24,7 +28,13 @@ function initialSelectionMap(garments: InteractiveModelGarment[]): LookSelection
     garments.map((garment) => [
       garment.region,
       {
-        included: true,
+        // A sold-out garment starts (and, since its checkbox is disabled
+        // below, stays) excluded — DECISIONS.md D-037: without this, a
+        // product whose only option isn't named "Size" (getInitialSelections
+        // auto-fills any single-value non-Size option) could auto-complete
+        // its "selection" and pass isLookAddValid despite being entirely
+        // unavailable, the one case it exists to prevent.
+        included: !isProductSoldOut(garment.product.variants),
         options: garment.product.options,
         selections: getInitialSelections(garment.product.options),
       },
@@ -98,6 +108,7 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
       <div className="flex flex-col gap-6">
         {garments.map((garment, index) => {
           const item = selectionMap[garment.region];
+          const soldOut = isProductSoldOut(garment.product.variants);
           const matchedVariant = findMatchingVariant(garment.product.variants, item.selections);
           const displayPrice = matchedVariant?.price ?? garment.product.minPrice;
           return (
@@ -109,8 +120,14 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
                 <input
                   type="checkbox"
                   checked={item.included}
+                  disabled={soldOut}
                   onChange={() => handleToggleIncluded(garment.region)}
-                  className="mt-1 h-4 w-4 accent-esque-forest"
+                  // aria-label wins over the <label>'s own (much longer,
+                  // multi-line) computed accessible name — DECISIONS.md
+                  // D-037 — while the <label> wrapper is kept for its larger
+                  // click target.
+                  aria-label={`Include ${garment.product.title}`}
+                  className="mt-1 h-4 w-4 accent-esque-forest disabled:cursor-not-allowed disabled:opacity-40"
                 />
                 <div className="flex flex-col gap-1">
                   <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
@@ -120,26 +137,39 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
                   <p className="text-body text-esque-text-secondary">{formatPrice(displayPrice)}</p>
                 </div>
               </label>
-              {item.included && (
-                <VariantPicker
-                  namePrefix={`look-${garment.product.handle}`}
-                  options={garment.product.options}
-                  variants={garment.product.variants}
-                  selections={item.selections}
-                  onChange={(optionName, value) =>
-                    handleOptionChange(garment.region, optionName, value)
-                  }
-                />
+              {soldOut ? (
+                <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                  NO LONGER AVAILABLE.
+                </p>
+              ) : (
+                item.included && (
+                  <VariantPicker
+                    namePrefix={`look-${garment.product.handle}`}
+                    options={garment.product.options}
+                    variants={garment.product.variants}
+                    selections={item.selections}
+                    onChange={(optionName, value) =>
+                      handleOptionChange(garment.region, optionName, value)
+                    }
+                  />
+                )
               )}
             </div>
           );
         })}
       </div>
 
-      <div className="pt-6">
+      <div className="flex flex-col gap-2 pt-6">
         <Button type="button" variant="primary" disabled={!canAddLook} onClick={() => {}}>
           ADD LOOK
         </Button>
+        {!canAddLook && (
+          <p className="text-utility text-esque-text-secondary">
+            {garments.every((garment) => !selectionMap[garment.region].included)
+              ? 'Select at least one piece to continue.'
+              : 'Select all options to continue.'}
+          </p>
+        )}
       </div>
     </dialog>
   );
