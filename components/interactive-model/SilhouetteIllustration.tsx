@@ -1,5 +1,11 @@
+/// <reference types="react/experimental" />
+// Activates react/experimental's ambient ViewTransition types — see
+// ProductCard.tsx for the full explanation of why this is a triple-slash
+// directive, not `import {} from 'react/experimental'`. DECISIONS.md D-038.
 import type { CSSProperties } from 'react';
+import { ViewTransition } from 'react';
 import type { HotspotRegion, InteractiveModelGarment } from '@/lib/interactive-model/look';
+import { getProductViewTransitionName } from '@/lib/product/view-transition';
 
 interface RegionShape {
   box: { top: string; left: string; width: string; height: string };
@@ -47,6 +53,11 @@ interface SilhouetteIllustrationProps {
 // (mouse-only preview; keyboard activates explicitly via Enter/Space,
 // which fires onClick regardless of this) — merely tabbing past a hotspot
 // must never silently replace what the info panel is currently showing.
+// D-039 (ROADMAP.md Phase 9) resolves D-034/D-035's deferred click-vs-
+// navigate question: this interaction model is unchanged, but each
+// hotspot now carries a shared-element transition name so that the
+// panel's own VIEW PRODUCT link (the real navigation trigger, unchanged)
+// morphs into the PDP rather than hard-cutting to it.
 export function SilhouetteIllustration({
   garments,
   activeRegion,
@@ -70,22 +81,37 @@ export function SilhouetteIllustration({
           clipPath: shape.clipPath,
         };
         return (
-          <button
+          // DECISIONS.md D-039 — each hotspot always carries the
+          // shared-element transition name for its own garment
+          // (unconditionally, like ProductCard — the two regions are
+          // always different products from different categories, so both
+          // can safely carry a name at all times with no collision
+          // between them). This does NOT change the click/hover/toggle
+          // interaction model at all (D-035 stands unchanged): the panel's
+          // own VIEW PRODUCT link is what actually navigates and is what
+          // now carries the shared-element morph into the PDP.
+          <ViewTransition
             key={garment.region}
-            type="button"
-            style={style}
-            aria-label={`${garment.regionLabel} — ${garment.product.title}`}
-            aria-pressed={isActive}
-            onMouseEnter={() => onHover(garment.region)}
-            onClick={() => onToggle(garment.region)}
-            className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
-              isActive
-                ? 'bg-esque-forest-highlight'
-                : isDimmed
-                  ? 'bg-esque-text-muted/40'
-                  : 'bg-esque-text-muted/60'
-            }`}
-          />
+            name={getProductViewTransitionName(garment.product.handle)}
+            share="morph"
+            default="none"
+          >
+            <button
+              type="button"
+              style={style}
+              aria-label={`${garment.regionLabel} — ${garment.product.title}`}
+              aria-pressed={isActive}
+              onMouseEnter={() => onHover(garment.region)}
+              onClick={() => onToggle(garment.region)}
+              className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
+                isActive
+                  ? 'bg-esque-forest-highlight'
+                  : isDimmed
+                    ? 'bg-esque-text-muted/40'
+                    : 'bg-esque-text-muted/60'
+              }`}
+            />
+          </ViewTransition>
         );
       })}
     </div>
