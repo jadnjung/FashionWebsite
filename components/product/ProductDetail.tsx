@@ -23,6 +23,7 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
         <div className="lg:col-span-5">
           <ProductPurchasePanel
             title={product.title}
+            handle={product.handle}
             minPrice={product.minPrice}
             options={product.options}
             variants={product.variants}

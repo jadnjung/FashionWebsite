@@ -4,11 +4,12 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SizeGuidePanel } from '@/components/product/SizeGuidePanel';
+import { VariantPicker } from '@/components/product/VariantPicker';
+import { formatPrice } from '@/lib/product/price';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
 import {
   findMatchingVariant,
   getInitialSelections,
-  isOptionValueAvailable,
   isProductSoldOut,
   isSelectionComplete,
   type OptionSelections,
@@ -17,6 +18,9 @@ import type { ProductOption, ProductVariant } from '@/lib/shopify/products';
 
 interface ProductPurchasePanelProps {
   title: string;
+  // Used only to build VariantPicker's namePrefix (`pdp-${handle}`) — see
+  // DECISIONS.md D-036. Not rendered.
+  handle: string;
   minPrice: { amount: string; currencyCode: string };
   options: ProductOption[];
   variants: ProductVariant[];
@@ -26,22 +30,17 @@ interface ProductPurchasePanelProps {
   children?: ReactNode;
 }
 
-function formatPrice(price: { amount: string; currencyCode: string }): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: price.currencyCode,
-  }).format(Number(price.amount));
-}
-
 // DESIGN_SYSTEM.md §42-45 — the sticky right column: name, price (reflects
 // the matched variant once fully selected, otherwise the product's
 // minPrice), scarcity, size/color selection, quantity, Add to Bag. See
-// DECISIONS.md D-027 (native radio groups) and D-029 (Add to Bag is a
-// real, disabled-until-valid button whose click handler is a deliberate
-// no-op — no cart exists yet — matching Header.tsx's existing
-// SEARCH/ACCOUNT/BAG onClick={() => {}} precedent, not a new pattern).
+// DECISIONS.md D-027 (native radio groups, now shared via VariantPicker —
+// D-036) and D-029 (Add to Bag is a real, disabled-until-valid button
+// whose click handler is a deliberate no-op — no cart exists yet —
+// matching Header.tsx's existing SEARCH/ACCOUNT/BAG onClick={() => {}}
+// precedent, not a new pattern).
 export function ProductPurchasePanel({
   title,
+  handle,
   minPrice,
   options,
   variants,
@@ -91,40 +90,15 @@ export function ProductPurchasePanel({
 
       {children}
 
-      {!soldOut &&
-        options.map((option) => (
-          <fieldset key={option.id} className="flex flex-col gap-3">
-            <legend className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-              {option.name}
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              {option.values.map((value) => {
-                const available = isOptionValueAvailable(variants, option.name, value);
-                const inputId = `option-${option.id}-${value}`;
-                return (
-                  <div key={value}>
-                    <input
-                      type="radio"
-                      id={inputId}
-                      name={option.name}
-                      value={value}
-                      checked={selections[option.name] === value}
-                      disabled={!available}
-                      onChange={() => handleOptionChange(option.name, value)}
-                      className="peer sr-only"
-                    />
-                    <label
-                      htmlFor={inputId}
-                      className="block cursor-pointer border border-esque-text-secondary px-4 py-2 text-utility uppercase tracking-metadata text-esque-text transition-colors duration-200 ease-esque peer-checked:border-esque-text peer-checked:bg-esque-text peer-checked:text-esque-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-esque-text peer-disabled:cursor-not-allowed peer-disabled:text-esque-text-muted peer-disabled:line-through peer-disabled:opacity-40"
-                    >
-                      {value}
-                    </label>
-                  </div>
-                );
-              })}
-            </div>
-          </fieldset>
-        ))}
+      {!soldOut && (
+        <VariantPicker
+          namePrefix={`pdp-${handle}`}
+          options={options}
+          variants={variants}
+          selections={selections}
+          onChange={handleOptionChange}
+        />
+      )}
 
       {!soldOut && options.length > 0 && (
         <button
