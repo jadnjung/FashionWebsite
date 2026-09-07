@@ -58,7 +58,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 ## Phase 7 — Homepage
 
 - [~] Scene 01: Collection Hero — real structure, copy slots, and `ENTER COLLECTION` CTA built; hero imagery and the campaign statement are clearly-labeled placeholders (no real photography/campaign direction exists yet — PROJECT.md §101); cursor-driven depth motion (DESIGN_SYSTEM.md §27) deferred whole-cloth to ROADMAP.md Phase 9's own "Parallax / depth on homepage scenes" — see DECISIONS.md D-032
-- [~] Scene 02: Interactive Model (see Phase 8) — clearly-labeled placeholder/coming-soon slot only, per this phase's own scope; the real feature is Phase 8's
+- [x] Scene 02: Interactive Model — the real feature now exists (Phase 8, below): hotspots, a live product info panel, and Shop the Look. `InteractiveModelPlaceholder` (this phase's original placeholder-slot build) is retained as Phase 8's own honest fallback for when Shopify hasn't resolved a real product for every hotspot region, rather than being discarded — see DECISIONS.md D-034
 - [x] Scene 03: Collection Statement — fully built, real copy (DESIGN_SYSTEM.md §32), zero Shopify dependency
 - [~] Scene 04: Selected Pieces — real, Shopify-backed mechanism (up to 3 real products via a page-isolated `getSelectedPieces`, reusing the existing `ProductCard`); renders whatever photography Shopify has (none yet); the entire section is omitted when no products are available (unconfigured store today) rather than fabricating content — see DECISIONS.md D-033
 - [x] Scene 05: Categories — fully built, real taxonomy-backed navigation (TOPS/BOTTOMS/ETC., linking to the real Phase 4 category routes)
@@ -67,12 +67,12 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 8 — Interactive Model (signature feature)
 
-- [ ] Stage 1: hotspots work (silhouette-based hit regions, not rectangles)
-- [ ] Stage 2: product info panel works (name, category, price, colors, sizes, View/Quick Add)
-- [ ] Stage 3: responsive/mobile tap behavior works
-- [ ] Stage 4: motion added (masked luminance highlight, not glow)
-- [ ] Stage 5: visual refinement
-- [ ] Shop the Look panel + multi-item add flow
+- [x] Stage 1: hotspots work (silhouette-based hit regions, not rectangles) — two real `<button>` elements, percentage-based `clip-path: polygon()` (silhouette-shaped, not rectangular; hit-region and visible shape are identical at every viewport width), each bound to one real Shopify product via the existing product-type query mechanism (D-023); built against a hand-authored placeholder illustration — see DECISIONS.md D-034/D-035
+- [x] Stage 2: product info panel works (name, category, price, colors, sizes, View/Quick Add) — real, live product data (`getProduct`), real variant selection (shared `VariantPicker`, D-036) with live availability gating, `VIEW PRODUCT` (real navigation) and `QUICK ADD` (real, disabled-until-complete, no-op `onClick` — no cart exists yet, D-016/D-029)
+- [x] Stage 3: responsive/mobile tap behavior works — one unified activation model (hover, focus, and click/tap all set the active region) rather than a separate mobile gesture layer; native `<button>` semantics give this to touch for free
+- [~] Stage 4: motion added (masked luminance highlight, not glow) — deferred: this is a photographic treatment with nothing real to mask against an abstract placeholder illustration; Stage 1-3 use a plain, functional CSS color/opacity transition instead (automatically reduced-motion-safe via the existing sitewide rule) — see DECISIONS.md D-034
+- [ ] Stage 5: visual refinement — deferred alongside Stage 4; presupposes both motion and real photography to refine against, neither of which exists yet
+- [x] Shop the Look panel + multi-item add flow — native `<dialog>` (D-027's `SizeGuidePanel` pattern), lists exactly the same real, per-region resolved garments hotspots already show (no separate curation data needed — see DECISIONS.md D-034), per-item include/exclude checkbox + real variant selection, `ADD LOOK` disabled until every included item's selection is complete (PROJECT.md §29)
 
 ## Phase 9 — Advanced Motion
 

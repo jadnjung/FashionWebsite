@@ -58,13 +58,14 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── catalog/                # Category listing: product card, grid, filter bar
 │   ├── product/                 # PDP: gallery, purchase panel, size guide, recently viewed
 │   ├── home/                    # Homepage editorial scenes (Scene 01-06; Scene 07 omitted, see DECISIONS.md D-032)
-│   ├── interactive-model/      # Signature hotspot component
+│   ├── interactive-model/      # Signature hotspot feature — hotspots, product info panel, Shop the Look (ROADMAP Phase 8; Stage 4-5 motion/refinement deferred, see DECISIONS.md D-034)
 │   └── navigation/              # Header, full-screen menu, cursor
 ├── lib/
 │   ├── shopify/                # Storefront API client, GraphQL queries/mutations, types
 │   ├── catalog/                 # Pure logic for category listing: taxonomy, filters, grid layout
 │   ├── product/                  # Pure logic for the PDP: variant matching, scarcity, recently viewed
 │   ├── home/                    # Homepage's one Shopify dependency (Selected Pieces), isolated — see DECISIONS.md D-033
+│   ├── interactive-model/      # The Interactive Model's Shopify dependency (getInteractiveModelLook) plus pure Shop the Look validity logic, isolated the same way — see DECISIONS.md D-034
 │   ├── klaviyo/                # Email list + password delivery
 │   ├── access/                 # Access gate cookie/session logic
 │   └── analytics/              # GA4 + Shopify Analytics event helpers
@@ -79,7 +80,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 └── CLAUDE.md
 ```
 
-This was a target sketch for when scaffolding began (see [ROADMAP.md](./ROADMAP.md) Phase 0); most of it is now built. One deliberate divergence: `components/commerce/` as originally sketched here was never adopted. Phase 4 (Catalog), Phase 5 (PDP), and Phase 7 (Homepage) instead grouped commerce/page UI by page-type — `components/catalog/` (category listing: product card, grid, filter bar), `components/product/` (PDP: gallery, purchase panel, size guide, recently viewed), and `components/home/` (homepage editorial scenes) — with a parallel `lib/catalog/`/`lib/product/`/`lib/home/` split for the pure logic underneath each. `lib/home/` is intentionally small: the homepage's five other scenes are static markup with no data dependency at all (see DECISIONS.md D-032/D-033). `search/`, `bag/`, `account/`, `about/`, `contact/`, `legal/[slug]/`, `archive/`, `collections/[handle]/`, `interactive-model/`, and `analytics/` remain unbuilt, tracked by their respective later ROADMAP.md phases.
+This was a target sketch for when scaffolding began (see [ROADMAP.md](./ROADMAP.md) Phase 0); most of it is now built. One deliberate divergence: `components/commerce/` as originally sketched here was never adopted. Phase 4 (Catalog), Phase 5 (PDP), and Phase 7 (Homepage) instead grouped commerce/page UI by page-type — `components/catalog/` (category listing: product card, grid, filter bar), `components/product/` (PDP: gallery, purchase panel, size guide, recently viewed), and `components/home/` (homepage editorial scenes) — with a parallel `lib/catalog/`/`lib/product/`/`lib/home/` split for the pure logic underneath each. `lib/home/` is intentionally small: the homepage's five other scenes are static markup with no data dependency at all (see DECISIONS.md D-032/D-033). `components/interactive-model/`/`lib/interactive-model/` (ROADMAP.md Phase 8) followed the same pattern one level later — a top-level domain rather than nested under `home/`, since PROJECT.md §26 places this feature on both the homepage and future collection pages. `search/`, `bag/`, `account/`, `about/`, `contact/`, `legal/[slug]/`, `archive/`, `collections/[handle]/`, and `analytics/` remain unbuilt, tracked by their respective later ROADMAP.md phases — Phase 8 deliberately does not add analytics instrumentation for the Interactive Model despite PROJECT.md §82 naming it, since that's ROADMAP.md Phase 12's ("Analytics wired") and no `lib/analytics/` exists yet to hook into.
 
 ## 4. Rendering Strategy
 
