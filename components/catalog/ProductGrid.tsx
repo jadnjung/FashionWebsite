@@ -30,7 +30,12 @@ export function ProductGrid({ products }: { products: ProductListItem[] }) {
         const layout = getGridItemLayout(index);
         return (
           <div key={product.id} className={LAYOUT_CLASSES[layout]}>
-            <ProductCard product={product} layout={layout} />
+            {/* DECISIONS.md D-038 — both of ProductGrid's consumers
+                (category pages, PDP's own Related Products) are single-
+                query results with no duplicate handles and are never
+                co-rendered with the Interactive Model, so it's safe to
+                always enable the shared-element transition here. */}
+            <ProductCard product={product} layout={layout} enableSharedTransition />
           </div>
         );
       })}

@@ -285,3 +285,57 @@ button:focus-visible {
     transform: none;
   }
 }
+
+/* Shared-element product image morph (grid -> PDP, interactive model -> PDP)
+   — DESIGN_SYSTEM.md §69 "Shared Product Transitions", INTERACTIONS.md
+   §10/§13, PROJECT.md §28/§69. React's <ViewTransition name=... share="morph"
+   default="none"> (ProductCard, ProductGallery, SilhouetteIllustration —
+   DECISIONS.md D-038/D-039) assigns the "morph" class to the browser's
+   generated ::view-transition-* pseudo-elements; this styles that pair.
+   Timing/easing use Esque's own Editorial tier (DESIGN_SYSTEM §21:
+   500-800ms) and --ease-esque rather than inventing new values. The blur
+   keyframe (adapted from the vercel-react-view-transitions skill's own
+   documented recipe) hides pixel-interpolation artifacts during the
+   size/position interpolation — it is load-bearing, not decorative. */
+::view-transition-group(.morph) {
+  animation-duration: 500ms;
+  animation-timing-function: var(--ease-esque);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: esque-morph-blur;
+  animation-duration: 500ms;
+  animation-timing-function: var(--ease-esque);
+}
+@keyframes esque-morph-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+/* Lets clicks reach the live page while a transition's overlay is
+   animating — every evergreen browser's ::view-transition root otherwise
+   captures pointer events by default (confirmed against Next.js's own
+   bundled View Transitions guide). Named/anchored participants still
+   won't be hit-testable for the transition's short duration, acceptable
+   given Esque's transitions stay within the Editorial tier's 500-800ms
+   budget. */
+::view-transition {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Unlike ordinary CSS transitions/animations on real DOM elements
+     (already covered by the sitewide `*` rule above), the browser's
+     ::view-transition-* pseudo-elements live in a separate, UA-generated
+     tree that a plain universal selector does not reach — confirmed
+     directly against Next.js's own bundled View Transitions guide, which
+     documents this exact gap and recommends targeting these selectors
+     explicitly. Content still swaps instantly rather than animating,
+     which is the platform's own documented reduced-motion fallback. */
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -18,7 +18,11 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
     <div className="flex flex-col gap-16 px-4 py-8 md:px-8 md:py-12">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="lg:col-span-7">
-          <ProductGallery images={product.images} productTitle={product.title} />
+          <ProductGallery
+            images={product.images}
+            productTitle={product.title}
+            handle={product.handle}
+          />
         </div>
         <div className="lg:col-span-5">
           <ProductPurchasePanel
