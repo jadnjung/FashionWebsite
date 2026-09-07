@@ -6,9 +6,11 @@ test.beforeEach(async ({ context }) => {
 
 // SHOPIFY_STORE_DOMAIN/SHOPIFY_STOREFRONT_API_TOKEN are intentionally unset
 // in this E2E environment (playwright.config.ts's webServer.env) — Selected
-// Pieces' fetch always fails here. This is deliberately the load-bearing
-// case for this phase's core new architecture (DECISIONS.md D-033): the
-// other five rendered scenes must still render correctly regardless.
+// Pieces' and the Interactive Model's fetches always fail here. This is
+// deliberately the load-bearing case for this project's graceful-
+// degradation architecture (DECISIONS.md D-033/D-034): the other scenes
+// must still render correctly regardless, and a Shopify-dependent scene
+// must degrade to its own honest fallback rather than render broken.
 test.describe('homepage — renders real scene content even with Shopify unconfigured', () => {
   test('the hero renders its real structure, placeholder labels, and CTA', async ({ page }) => {
     await page.goto('/');
@@ -30,6 +32,17 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
     await expect(scene.getByText('LOOK 01')).toBeVisible();
     await expect(scene.getByText('ESQUE PLACEHOLDER — MODEL, FULL BODY')).toBeVisible();
     await expect(scene.getByRole('heading', { name: 'ARRIVING SOON.' })).toBeVisible();
+  });
+
+  test('the interactive model does not mount its real, interactive tree when Shopify is unconfigured', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    // Proves InteractiveModel.tsx's both-or-placeholder gate (DECISIONS.md
+    // D-034) genuinely renders the placeholder branch — not just visually,
+    // but that the real client component (and its SHOP THE LOOK entry
+    // point) isn't mounted at all.
+    await expect(page.getByRole('button', { name: 'SHOP THE LOOK' })).toHaveCount(0);
   });
 
   test('the collection statement renders its real copy', async ({ page }) => {
