@@ -1,6 +1,13 @@
 'use client';
 
-import { useReducedMotion, useMotionValue, useTransform, motion } from 'motion/react';
+import {
+  useReducedMotion,
+  useMotionValue,
+  useTransform,
+  LazyMotion,
+  domAnimation,
+} from 'motion/react';
+import * as m from 'motion/react-m';
 import type { PointerEvent } from 'react';
 
 // Esque's own easing curve (app/globals.css --ease-esque), expressed as the
@@ -49,14 +56,14 @@ function SilhouetteLayer({
   const y = useTransform(pointerY, [-1, 1], [-14 * layer.depth, 14 * layer.depth]);
 
   return (
-    <motion.svg
+    <m.svg
       viewBox={layer.viewBox}
       fill="currentColor"
       style={prefersReducedMotion ? undefined : { x, y }}
       className={`absolute ${layer.className}`}
     >
       <path d={layer.path} />
-    </motion.svg>
+    </m.svg>
   );
 }
 
@@ -74,33 +81,45 @@ export function EntranceMotion() {
   }
 
   return (
-    <div
-      onPointerMove={handlePointerMove}
-      aria-hidden="true"
-      className="absolute inset-0 overflow-hidden"
-    >
-      {SILHOUETTE_LAYERS.map((layer) => (
-        <SilhouetteLayer
-          key={layer.depth}
-          layer={layer}
-          pointerX={pointerX}
-          pointerY={pointerY}
-          prefersReducedMotion={prefersReducedMotion}
-        />
-      ))}
-      {/* Giant background typography (DESIGN_SYSTEM.md §53 layer 4) — large
-          and low-opacity so it reads as atmosphere, distinct from
-          AccessForm's smaller, sharp "ENTER ESQUE" functional heading on
-          top of it. Quick per PROJECT.md §14: "Motion must remain quick...
-          never become an obstacle for returning users." */}
-      <motion.h2
-        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: ESQUE_EASE }}
-        className="absolute inset-0 flex items-center justify-center font-display text-display-xl tracking-display text-esque-text/15"
+    // LazyMotion + the `m` component (ROADMAP.md Phase 12 performance pass,
+    // DECISIONS.md D-044): this component uses no layout animation, drag, or
+    // gestures, so `domAnimation` (Motion's default, non-drag/non-layout
+    // feature bundle) covers everything below — plain `initial`/`animate`
+    // property animation on `m.h2`, and direct MotionValue-driven `style`
+    // application on `m.svg` (core to every motion component regardless of
+    // which feature set is loaded, not gated behind a "feature" itself).
+    // `strict` throws if a `motion.*` component (the ~34kb un-tree-shakeable
+    // form) is ever reintroduced inside this tree, so a future regression
+    // back to the larger bundle fails loudly instead of silently.
+    <LazyMotion features={domAnimation} strict>
+      <div
+        onPointerMove={handlePointerMove}
+        aria-hidden="true"
+        className="absolute inset-0 overflow-hidden"
       >
-        ESQUE
-      </motion.h2>
-    </div>
+        {SILHOUETTE_LAYERS.map((layer) => (
+          <SilhouetteLayer
+            key={layer.depth}
+            layer={layer}
+            pointerX={pointerX}
+            pointerY={pointerY}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+        ))}
+        {/* Giant background typography (DESIGN_SYSTEM.md §53 layer 4) — large
+            and low-opacity so it reads as atmosphere, distinct from
+            AccessForm's smaller, sharp "ENTER ESQUE" functional heading on
+            top of it. Quick per PROJECT.md §14: "Motion must remain quick...
+            never become an obstacle for returning users." */}
+        <m.h2
+          initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: ESQUE_EASE }}
+          className="absolute inset-0 flex items-center justify-center font-display text-display-xl tracking-display text-esque-text/15"
+        >
+          ESQUE
+        </m.h2>
+      </div>
+    </LazyMotion>
   );
 }
