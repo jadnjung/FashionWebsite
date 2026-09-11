@@ -36,7 +36,7 @@ interface SilhouetteIllustrationProps {
   garments: InteractiveModelGarment[];
   activeRegion: HotspotRegion | null;
   onHover: (region: HotspotRegion) => void;
-  onToggle: (region: HotspotRegion) => void;
+  onActivate: (region: HotspotRegion) => void;
 }
 
 // DESIGN_SYSTEM.md §29-30 — the model illustration and its silhouette-
@@ -48,21 +48,25 @@ interface SilhouetteIllustrationProps {
 // rectangular area at every viewport width — clip-path constrains
 // pointer-event hit-testing, not just paint, in every evergreen browser.
 // See DECISIONS.md D-035 for the full reasoning (why not SVG-path-as-
-// button, why not an ARIA tablist, why click toggles rather than
-// navigates) and D-037 for why focus alone does NOT trigger onHover
-// (mouse-only preview; keyboard activates explicitly via Enter/Space,
-// which fires onClick regardless of this) — merely tabbing past a hotspot
-// must never silently replace what the info panel is currently showing.
-// D-039 (ROADMAP.md Phase 9) resolves D-034/D-035's deferred click-vs-
-// navigate question: this interaction model is unchanged, but each
-// hotspot now carries a shared-element transition name so that the
-// panel's own VIEW PRODUCT link (the real navigation trigger, unchanged)
-// morphs into the PDP rather than hard-cutting to it.
+// button, why not an ARIA tablist) and D-037 for why focus alone does NOT
+// trigger onHover (mouse-only preview; keyboard activates explicitly via
+// Enter/Space, which fires onClick regardless of this) — merely tabbing
+// past a hotspot must never silently replace what the info panel is
+// currently showing. D-039 (ROADMAP.md Phase 9) resolves D-034/D-035's
+// deferred click-vs-navigate question: each hotspot now carries a
+// shared-element transition name so that the panel's own VIEW PRODUCT
+// link (the real navigation trigger, unchanged) morphs into the PDP
+// rather than hard-cutting to it. D-043 corrects D-035's original
+// click-*toggles*-the-panel description: `onClick` now unconditionally
+// activates the region rather than toggling it closed if already active —
+// see InteractiveModelExperience.tsx's `handleActivate` for the full
+// reasoning (a live-reproduced defect: `mouseenter` always precedes
+// `click`, so a toggle could never actually be reached via mouse).
 export function SilhouetteIllustration({
   garments,
   activeRegion,
   onHover,
-  onToggle,
+  onActivate,
 }: SilhouetteIllustrationProps) {
   return (
     <div className="relative aspect-[4/5] w-full bg-esque-elevated">
@@ -86,10 +90,9 @@ export function SilhouetteIllustration({
           // (unconditionally, like ProductCard — the two regions are
           // always different products from different categories, so both
           // can safely carry a name at all times with no collision
-          // between them). This does NOT change the click/hover/toggle
-          // interaction model at all (D-035 stands unchanged): the panel's
-          // own VIEW PRODUCT link is what actually navigates and is what
-          // now carries the shared-element morph into the PDP.
+          // between them). The panel's own VIEW PRODUCT link is what
+          // actually navigates and is what carries the shared-element
+          // morph into the PDP.
           <ViewTransition
             key={garment.region}
             name={getProductViewTransitionName(garment.product.handle)}
@@ -102,7 +105,7 @@ export function SilhouetteIllustration({
               aria-label={`${garment.regionLabel} — ${garment.product.title}`}
               aria-pressed={isActive}
               onMouseEnter={() => onHover(garment.region)}
-              onClick={() => onToggle(garment.region)}
+              onClick={() => onActivate(garment.region)}
               className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
                 isActive
                   ? 'bg-esque-forest-highlight'

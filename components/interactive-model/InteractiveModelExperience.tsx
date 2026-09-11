@@ -42,28 +42,46 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
   const activeGarment = garments.find((garment) => garment.region === activeRegion) ?? null;
 
   // Mouse hover previews a region (DESIGN_SYSTEM.md §29's "hovering a
-  // garment"). Click/Enter/Space/tap TOGGLE the region instead of
-  // navigating — DECISIONS.md D-035. Deliberately NOT wired to focus too
-  // (DECISIONS.md D-037): both hotspot buttons sit before the shared info
-  // panel in DOM order, so if merely focusing a button also previewed it,
-  // tabbing from the first hotspot to the second would silently replace
-  // the panel before a keyboard user could ever tab forward into the
-  // first garment's own VIEW PRODUCT/QUICK ADD/size controls — a real,
-  // confirmed keyboard-accessibility failure caught by independent review.
-  // Requiring an explicit press (Enter/Space, which fires onClick exactly
-  // like a click) means the panel a keyboard user reaches via subsequent
-  // Tab presses is always the one they deliberately activated, never
-  // whichever hotspot they last happened to tab past. Deliberately no
-  // onMouseLeave/onBlur handler either: the panel never auto-closes when
-  // the pointer leaves a hotspot, so moving the mouse from the hotspot
-  // toward the panel's own controls never races the panel closing before
-  // you get there.
+  // garment"). Click/Enter/Space/tap ACTIVATE the region instead of
+  // navigating — DECISIONS.md D-035, corrected by D-043. Deliberately NOT
+  // wired to focus too (DECISIONS.md D-037): both hotspot buttons sit
+  // before the shared info panel in DOM order, so if merely focusing a
+  // button also previewed it, tabbing from the first hotspot to the second
+  // would silently replace the panel before a keyboard user could ever tab
+  // forward into the first garment's own VIEW PRODUCT/QUICK ADD/size
+  // controls — a real, confirmed keyboard-accessibility failure caught by
+  // independent review. Requiring an explicit press (Enter/Space, which
+  // fires onClick exactly like a click) means the panel a keyboard user
+  // reaches via subsequent Tab presses is always the one they deliberately
+  // activated, never whichever hotspot they last happened to tab past.
+  // Deliberately no onMouseLeave/onBlur handler either: the panel never
+  // auto-closes when the pointer leaves a hotspot, so moving the mouse
+  // from the hotspot toward the panel's own controls never races the
+  // panel closing before you get there.
+  //
+  // DECISIONS.md D-043: this was originally a *toggle*
+  // (`prev === region ? null : region`), matching D-035's stated "clicking
+  // toggles the info panel open/closed." An independent review live-
+  // reproduced that this was unreachable as designed for mouse users: a
+  // browser always fires `mouseenter` before `click` for any click on an
+  // element the pointer wasn't already resting on, so `onHover` has
+  // already set `activeRegion` to the clicked region by the time `onClick`
+  // runs — `prev === region` is therefore always true at click time, and
+  // the toggle could only ever collapse to `null`. A mouse user could
+  // never use a click to *open* a panel; every click on every hotspot
+  // closed whatever hover had just shown. Unconditionally setting the
+  // region (an "activate", not a toggle) fixes this for mouse users
+  // (hover already shows the panel; a click on the same, already-hovered
+  // region is now a harmless no-op instead of an unwanted close) without
+  // regressing keyboard users (Enter/Space on a focused hotspot still
+  // opens it, exactly as before — D-037's own keyboard verification did
+  // not depend on the toggle-to-null branch at all).
   function handleHover(region: HotspotRegion) {
     setActiveRegion(region);
   }
 
-  function handleToggle(region: HotspotRegion) {
-    setActiveRegion((prev) => (prev === region ? null : region));
+  function handleActivate(region: HotspotRegion) {
+    setActiveRegion(region);
   }
 
   function handleOptionChange(region: HotspotRegion, optionName: string, value: string) {
@@ -89,7 +107,7 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
           garments={garments}
           activeRegion={activeRegion}
           onHover={handleHover}
-          onToggle={handleToggle}
+          onActivate={handleActivate}
         />
       </div>
 
