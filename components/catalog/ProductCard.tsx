@@ -53,6 +53,13 @@ interface ProductCardProps {
   // and the PDP's own Related Products — single-query, no-duplicate-handle,
   // never co-rendered with the Interactive Model) passes this through.
   enableSharedTransition?: boolean;
+  // Opt-in, default false — DECISIONS.md D-045. next/image lazy-loads by
+  // default, which is correct for most cards but wrong for whichever one
+  // renders as this page's LCP element. Only a caller that knows its grid
+  // is the page's primary above-the-fold content (category pages) passes
+  // this, and only for its first card — PDP's Related Products (always
+  // below the fold) leaves it unset so that section stays correctly lazy.
+  priority?: boolean;
 }
 
 // DESIGN_SYSTEM.md §39 — default: image + name, no price. Hover: crossfade
@@ -71,6 +78,7 @@ export function ProductCard({
   layout,
   sizes,
   enableSharedTransition = false,
+  priority = false,
 }: ProductCardProps) {
   const [primary, secondary] = product.images;
   const sizesAttr = sizes ?? IMAGE_SIZES[layout];
@@ -89,6 +97,7 @@ export function ProductCard({
           alt={primary.altText ?? product.title}
           fill
           sizes={sizesAttr}
+          priority={priority}
           className="object-cover"
         />
       )}

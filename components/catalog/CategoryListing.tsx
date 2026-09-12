@@ -111,7 +111,10 @@ export async function CategoryListing({
           )}
         </div>
       ) : (
-        <ProductGrid products={products} />
+        // priorityFirstImage — DECISIONS.md D-045: this grid is the page's
+        // primary above-the-fold content, so its first (featured) image is
+        // very likely the LCP element.
+        <ProductGrid products={products} priorityFirstImage />
       )}
     </div>
   );

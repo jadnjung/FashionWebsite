@@ -23,7 +23,18 @@ const LAYOUT_CLASSES: Record<GridItemLayout, string> = {
 // accessibility isn't traded for visual polish. See the design spec's
 // Non-Goals for why the grid also doesn't include the editorial-image
 // insert from DESIGN_SYSTEM's illustrative example sequence.
-export function ProductGrid({ products }: { products: ProductListItem[] }) {
+interface ProductGridProps {
+  products: ProductListItem[];
+  // Opt-in, default false — DECISIONS.md D-045. Only true when this grid is
+  // the page's primary above-the-fold content (category pages): the first
+  // item is very likely the LCP element, so it alone gets next/image's
+  // `priority` (eager load, no lazy-loading delay). PDP's Related Products
+  // usage leaves this unset — that grid always renders below the fold, so
+  // every image there should stay correctly lazy.
+  priorityFirstImage?: boolean;
+}
+
+export function ProductGrid({ products, priorityFirstImage = false }: ProductGridProps) {
   return (
     <div className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8">
       {products.map((product, index) => {
@@ -35,7 +46,12 @@ export function ProductGrid({ products }: { products: ProductListItem[] }) {
                 query results with no duplicate handles and are never
                 co-rendered with the Interactive Model, so it's safe to
                 always enable the shared-element transition here. */}
-            <ProductCard product={product} layout={layout} enableSharedTransition />
+            <ProductCard
+              product={product}
+              layout={layout}
+              enableSharedTransition
+              priority={priorityFirstImage && index === 0}
+            />
           </div>
         );
       })}
