@@ -89,9 +89,19 @@ export async function validatePassword(
   return { success: false };
 }
 
+// `field` names the one input `error` actually concerns — DECISIONS.md
+// D-050. Every branch below returns at most one error, always about a
+// specific, known field (the checks short-circuit in order), so this is
+// never ambiguous. RequestAccessForm.tsx uses it to set aria-invalid/
+// aria-describedby on that field alone, rather than either marking every
+// field invalid (misleading — only one is actually wrong) or associating
+// the error with no field at all.
+export type RequestAccessField = 'firstName' | 'email' | 'consent';
+
 export interface RequestAccessState {
   success: boolean;
   error?: string;
+  field?: RequestAccessField;
 }
 
 // Deliberately minimal — a sanity check, not an RFC-5322 validator: a
@@ -130,16 +140,16 @@ export async function submitRequestAccess(
   const consent = formData.get('consent') === 'on';
 
   if (!firstName) {
-    return { success: false, error: 'First name is required.' };
+    return { success: false, error: 'First name is required.', field: 'firstName' };
   }
   if (!email) {
-    return { success: false, error: 'Email is required.' };
+    return { success: false, error: 'Email is required.', field: 'email' };
   }
   if (!EMAIL_FORMAT_PATTERN.test(email)) {
-    return { success: false, error: 'Email is invalid.' };
+    return { success: false, error: 'Email is invalid.', field: 'email' };
   }
   if (!consent) {
-    return { success: false, error: 'Consent is required to request access.' };
+    return { success: false, error: 'Consent is required to request access.', field: 'consent' };
   }
 
   await subscribeToAccessList(email);

@@ -124,6 +124,27 @@ test.describe('access gate — password entry', () => {
     await expect(passwordField).toBeFocused();
   });
 
+  // DECISIONS.md D-050 — the role="alert" announcement above is already a
+  // WCAG-recognized sufficient technique (ARIA19) on its own; this pins the
+  // additional, explicit field<->error association for a screen-reader user
+  // who tabs back into the field after the initial announcement has passed.
+  test('marks the password field aria-invalid and describes it by the error message after a failed attempt', async ({
+    page,
+  }) => {
+    await page.goto('/access');
+    const passwordField = page.getByLabel('PASSWORD');
+    await expect(passwordField).not.toHaveAttribute('aria-invalid');
+
+    await passwordField.fill('definitely-wrong');
+    await page.getByRole('button', { name: 'ENTER' }).click();
+
+    const alert = accessErrorAlert(page);
+    await expect(alert).toBeVisible();
+    await expect(passwordField).toHaveAttribute('aria-invalid', 'true');
+    await expect(passwordField).toHaveAttribute('aria-describedby', 'access-password-error');
+    await expect(alert).toHaveAttribute('id', 'access-password-error');
+  });
+
   test('two consecutive failures show two different branded lines', async ({ page }) => {
     await page.goto('/access');
     const passwordField = page.getByLabel('PASSWORD');
@@ -199,6 +220,35 @@ test.describe('access gate — request access', () => {
 
     await expect(accessErrorAlert(page)).toHaveText('Consent is required to request access.');
     await expect(page).toHaveURL(/\/access$/);
+  });
+
+  // DECISIONS.md D-050 — three fields can each independently error here, so
+  // (unlike AccessForm's single-field case) the fix must mark exactly the
+  // one field the returned state actually names, not all three. A
+  // whitespace-only first name (rather than an empty one) reaches the
+  // server without needing to bypass the native `required` attribute, the
+  // same way lib/.../actions.test.ts's own "whitespace-only" case does —
+  // the browser's required check only rejects a truly empty value.
+  test('marks only the actually-invalid field aria-invalid, describing it by the error message', async ({
+    page,
+  }) => {
+    await page.goto('/access');
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+    const firstName = page.getByLabel('FIRST NAME');
+    const email = page.getByLabel('EMAIL', { exact: true });
+    await firstName.fill('   ');
+    await email.fill('sam@example.com');
+    await page.getByText('I agree to receive Esque emails').click();
+    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
+
+    const alert = accessErrorAlert(page);
+    await expect(alert).toHaveText('First name is required.');
+    await expect(firstName).toHaveAttribute('aria-invalid', 'true');
+    await expect(firstName).toHaveAttribute('aria-describedby', 'request-access-error');
+    await expect(alert).toHaveAttribute('id', 'request-access-error');
+    // The other, actually-valid field must not be marked invalid too —
+    // misinformation would be worse than no association at all.
+    await expect(email).not.toHaveAttribute('aria-invalid');
   });
 
   test('submitting with valid input but Klaviyo not configured surfaces the error boundary honestly', async ({

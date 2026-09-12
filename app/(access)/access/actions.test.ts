@@ -179,7 +179,11 @@ describe('submitRequestAccess', () => {
       { success: false },
       formData({ email: 'a@example.com', consent: 'on' }),
     );
-    expect(result).toEqual({ success: false, error: 'First name is required.' });
+    expect(result).toEqual({
+      success: false,
+      error: 'First name is required.',
+      field: 'firstName',
+    });
   });
 
   test('returns a validation error when email is missing', async () => {
@@ -187,7 +191,7 @@ describe('submitRequestAccess', () => {
       { success: false },
       formData({ firstName: 'Sam', consent: 'on' }),
     );
-    expect(result).toEqual({ success: false, error: 'Email is required.' });
+    expect(result).toEqual({ success: false, error: 'Email is required.', field: 'email' });
   });
 
   test('returns a validation error when firstName is whitespace-only', async () => {
@@ -200,7 +204,11 @@ describe('submitRequestAccess', () => {
       { success: false },
       formData({ firstName: '   ', email: 'a@example.com', consent: 'on' }),
     );
-    expect(result).toEqual({ success: false, error: 'First name is required.' });
+    expect(result).toEqual({
+      success: false,
+      error: 'First name is required.',
+      field: 'firstName',
+    });
   });
 
   test('returns a validation error when email is whitespace-only', async () => {
@@ -210,7 +218,7 @@ describe('submitRequestAccess', () => {
       { success: false },
       formData({ firstName: 'Sam', email: '   ', consent: 'on' }),
     );
-    expect(result).toEqual({ success: false, error: 'Email is required.' });
+    expect(result).toEqual({ success: false, error: 'Email is required.', field: 'email' });
   });
 
   test('returns a validation error when email is malformed', async () => {
@@ -218,7 +226,7 @@ describe('submitRequestAccess', () => {
       { success: false },
       formData({ firstName: 'Sam', email: 'notanemail', consent: 'on' }),
     );
-    expect(result).toEqual({ success: false, error: 'Email is invalid.' });
+    expect(result).toEqual({ success: false, error: 'Email is invalid.', field: 'email' });
   });
 
   test('accepts a well-formed email address rather than rejecting it as malformed', async () => {
@@ -243,6 +251,7 @@ describe('submitRequestAccess', () => {
     expect(result).toEqual({
       success: false,
       error: 'Consent is required to request access.',
+      field: 'consent',
     });
   });
 

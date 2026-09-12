@@ -104,10 +104,21 @@ export function AccessForm() {
                 // Enter. Only fires on a keyed remount, never on initial
                 // load (attempt starts at 0), so it needs no effect.
                 autoFocus={attempt > 0}
+                // Ties the field to its error programmatically — DECISIONS.md
+                // D-050 — in addition to the role="alert" announcement below
+                // (already a WCAG-recognized sufficient technique on its
+                // own, ARIA19): a screen-reader user who tabs back into this
+                // field after the initial announcement has passed still
+                // hears it's invalid and why. `undefined` (not `false`/an
+                // absent id) when there's no error, so no attribute is
+                // rendered at all rather than a falsy one.
+                aria-invalid={errorMessage ? true : undefined}
+                aria-describedby={errorMessage ? 'access-password-error' : undefined}
               />
             </div>
             {errorMessage && (
               <p
+                id="access-password-error"
                 key={`${errorMessage}-${attempt}`}
                 role="alert"
                 // text-esque-text, not text-esque-error: --color-esque-error
