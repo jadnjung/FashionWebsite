@@ -2,14 +2,27 @@
 
 import { useRef, useState } from 'react';
 import { Header } from '@/components/navigation/Header';
-import { Footer } from '@/components/navigation/Footer';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
 import { CustomCursor } from '@/components/navigation/CustomCursor';
 
 // Owns the shell-wide client state (currently just menu-open) so that
 // app/layout.tsx can stay a Server Component and keep its `metadata`
 // export — Next.js forbids `metadata` exports in Client Components.
-export function ShellClient({ children }: { children: React.ReactNode }) {
+//
+// `footer` is accepted as a prop (a Server Component subtree passed through,
+// per React's children/props-as-slots composition model) rather than this
+// file importing and rendering `Footer` directly — DECISIONS.md D-046.
+// `Footer` has no interactivity of its own; importing it directly here would
+// pull its code into this client module's bundle on every storefront page
+// for no behavioral benefit, purely because of where it happened to be
+// rendered from.
+export function ShellClient({
+  children,
+  footer,
+}: {
+  children: React.ReactNode;
+  footer: React.ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   // Owned here (not inside Header or FullScreenMenu) because both need it:
   // Header attaches it to the MENU button; FullScreenMenu focuses it back
@@ -58,7 +71,7 @@ export function ShellClient({ children }: { children: React.ReactNode }) {
         <main id="main-content" className="flex-1">
           {children}
         </main>
-        <Footer />
+        {footer}
       </div>
       <FullScreenMenu
         open={menuOpen}
