@@ -1,14 +1,41 @@
 'use client';
 
-import {
-  useReducedMotion,
-  useMotionValue,
-  useTransform,
-  LazyMotion,
-  domAnimation,
-} from 'motion/react';
+import { useMotionValue, useTransform, LazyMotion, domAnimation } from 'motion/react';
 import * as m from 'motion/react-m';
-import type { PointerEvent } from 'react';
+import { useSyncExternalStore, type PointerEvent } from 'react';
+import { prefersReducedMotion } from '@/lib/motion/media';
+
+// SSR-safe replacement for motion/react's own useReducedMotion() — see
+// DECISIONS.md D-047. That hook's initial value comes from a module-level
+// ref that's computed synchronously, during render, the first time it's
+// read on the client (framer-motion's use-reduced-motion.mjs), not from an
+// effect — so on a client whose OS already has reduced-motion enabled, the
+// very first (hydration) render already reads `true`, while the server
+// (no `window`) always rendered as if it were `false`. That mismatch is
+// real and reproducible (confirmed live, not just reasoned about — see
+// D-047), not a false-positive dev warning. useSyncExternalStore is this
+// codebase's own established fix for exactly this shape of problem
+// (components/product/RecentlyViewed.tsx / DECISIONS.md D-031): its
+// getServerSnapshot deliberately matches what the server actually rendered
+// (`false`, the same value these ternaries already treat as the default),
+// so hydration itself can never mismatch; React then re-reads the real
+// value immediately after mount and re-renders if it differs — no
+// separate effect, no visible flash. getSnapshot reuses lib/motion/media's
+// already-tested prefersReducedMotion() rather than duplicating the media
+// query string a third time.
+function subscribeToReducedMotionChange(onChange: () => void) {
+  const mediaQueryList = window.matchMedia('(prefers-reduced-motion: reduce)');
+  mediaQueryList.addEventListener('change', onChange);
+  return () => mediaQueryList.removeEventListener('change', onChange);
+}
+
+function getReducedMotionSnapshot(): boolean {
+  return prefersReducedMotion(window.matchMedia);
+}
+
+function getReducedMotionServerSnapshot(): boolean {
+  return false;
+}
 
 // Esque's own easing curve (app/globals.css --ease-esque), expressed as the
 // numeric cubic-bezier motion/react's `transition.ease` accepts, so the
@@ -43,12 +70,12 @@ function SilhouetteLayer({
   layer,
   pointerX,
   pointerY,
-  prefersReducedMotion,
+  shouldReduceMotion,
 }: {
   layer: (typeof SILHOUETTE_LAYERS)[number];
   pointerX: ReturnType<typeof useMotionValue<number>>;
   pointerY: ReturnType<typeof useMotionValue<number>>;
-  prefersReducedMotion: boolean | null;
+  shouldReduceMotion: boolean;
 }) {
   // Rules of Hooks: called unconditionally regardless of reduced-motion —
   // whether the result is applied to `style` is what's conditional below.
@@ -59,7 +86,7 @@ function SilhouetteLayer({
     <m.svg
       viewBox={layer.viewBox}
       fill="currentColor"
-      style={prefersReducedMotion ? undefined : { x, y }}
+      style={shouldReduceMotion ? undefined : { x, y }}
       className={`absolute ${layer.className}`}
     >
       <path d={layer.path} />
@@ -68,12 +95,16 @@ function SilhouetteLayer({
 }
 
 export function EntranceMotion() {
-  const prefersReducedMotion = useReducedMotion();
+  const shouldReduceMotion = useSyncExternalStore(
+    subscribeToReducedMotionChange,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot,
+  );
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (prefersReducedMotion) return;
+    if (shouldReduceMotion) return;
     const { innerWidth, innerHeight } = window;
     // Normalize to roughly [-1, 1] from viewport center.
     pointerX.set((event.clientX / innerWidth) * 2 - 1);
@@ -103,7 +134,7 @@ export function EntranceMotion() {
             layer={layer}
             pointerX={pointerX}
             pointerY={pointerY}
-            prefersReducedMotion={prefersReducedMotion}
+            shouldReduceMotion={shouldReduceMotion}
           />
         ))}
         {/* Giant background typography (DESIGN_SYSTEM.md §53 layer 4) — large
@@ -112,9 +143,9 @@ export function EntranceMotion() {
             top of it. Quick per PROJECT.md §14: "Motion must remain quick...
             never become an obstacle for returning users." */}
         <m.h2
-          initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: ESQUE_EASE }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.6, ease: ESQUE_EASE }}
           className="absolute inset-0 flex items-center justify-center font-display text-display-xl tracking-display text-esque-text/15"
         >
           ESQUE

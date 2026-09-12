@@ -253,6 +253,40 @@ test.describe('access gate — entrance motion', () => {
     expect(transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)').toBe(true);
   });
 
+  // Regression for DECISIONS.md D-047: motion/react's own useReducedMotion()
+  // resolves its real value synchronously on the client's very first
+  // (hydration) render — not deferred to an effect — while the server can
+  // only ever render as if reduced motion were off (no `window`). For a
+  // visitor whose OS already has reduced motion enabled, that mismatch was
+  // real and reproducible: confirmed via `git stash` against this exact
+  // test before the fix (fails — a "Prop `style`/`initial` did not match"
+  // hydration warning is logged for each silhouette <svg> and the <h2>)
+  // and after it (passes). This is the one console-error assertion in this
+  // describe block that specifically exercises reduced motion + hydration
+  // together — the "respects prefers-reduced-motion" test above only
+  // asserts the settled post-hydration CSS state, which passes either way.
+  test('mounts under prefers-reduced-motion with no hydration-mismatch console warning', async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/access');
+    await expect(await backgroundWordmark(page)).toHaveCSS('opacity', '1');
+
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
+
   test('cursor parallax moves silhouette layers, and different depths move by different amounts', async ({
     page,
   }) => {
