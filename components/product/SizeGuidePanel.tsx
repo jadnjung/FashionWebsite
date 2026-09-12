@@ -54,7 +54,13 @@ export function SizeGuidePanel({ open, onClose }: SizeGuidePanelProps) {
           Close
         </Button>
       </div>
-      <p className="pb-4 text-utility uppercase tracking-metadata text-esque-text-muted">
+      {/* text-esque-text-secondary, not text-esque-text-muted: muted
+          (#666662) measures only ~3.3:1 against this panel's surface
+          background — below WCAG AA's 4.5:1 minimum for this normal-size
+          (13px) text. Secondary (#A5A5A0, ~8:1) is DESIGN_SYSTEM.md's own
+          documented tier for "descriptions, metadata" — exactly this kind
+          of real, readable explanatory copy. See DECISIONS.md D-048. */}
+      <p className="pb-4 text-utility uppercase tracking-metadata text-esque-text-secondary">
         ESQUE PLACEHOLDER — MEASUREMENTS
       </p>
       <table className="w-full text-left text-body">

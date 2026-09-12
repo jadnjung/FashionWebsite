@@ -17,8 +17,16 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
     const hero = page.getByRole('region', { name: 'Collection Hero' });
     await expect(page.getByRole('heading', { name: 'ESQUE', level: 1 })).toBeVisible();
     await expect(hero.getByText('COLLECTION 001')).toBeVisible();
-    await expect(hero.getByText('ESQUE PLACEHOLDER — CAMPAIGN, HERO')).toBeVisible();
-    await expect(hero.getByText('ESQUE PLACEHOLDER — CAMPAIGN STATEMENT')).toBeVisible();
+    const campaignHeroLabel = hero.getByText('ESQUE PLACEHOLDER — CAMPAIGN, HERO');
+    const campaignStatementLabel = hero.getByText('ESQUE PLACEHOLDER — CAMPAIGN STATEMENT');
+    await expect(campaignHeroLabel).toBeVisible();
+    await expect(campaignStatementLabel).toBeVisible();
+    // Regression for DECISIONS.md D-048: both labels previously rendered in
+    // text-esque-text-muted (#666662, ~3.3:1 against this scene's black
+    // background — fails WCAG AA's 4.5:1 text-contrast minimum). Now
+    // text-esque-text-secondary (#A5A5A0, ~8:1).
+    await expect(campaignHeroLabel).toHaveCSS('color', 'rgb(165, 165, 160)');
+    await expect(campaignStatementLabel).toHaveCSS('color', 'rgb(165, 165, 160)');
     const cta = hero.getByRole('link', { name: 'ENTER COLLECTION' });
     await expect(cta).toBeVisible();
     await cta.click();
@@ -30,7 +38,11 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
     const scene = page.getByRole('region', { name: 'Interactive Model' });
     await expect(scene).toBeVisible();
     await expect(scene.getByText('LOOK 01')).toBeVisible();
-    await expect(scene.getByText('ESQUE PLACEHOLDER — MODEL, FULL BODY')).toBeVisible();
+    const modelPlaceholderLabel = scene.getByText('ESQUE PLACEHOLDER — MODEL, FULL BODY');
+    await expect(modelPlaceholderLabel).toBeVisible();
+    // Regression for DECISIONS.md D-048 — see the equivalent hero assertion
+    // above for the full contrast reasoning.
+    await expect(modelPlaceholderLabel).toHaveCSS('color', 'rgb(165, 165, 160)');
     await expect(scene.getByRole('heading', { name: 'ARRIVING SOON.' })).toBeVisible();
   });
 

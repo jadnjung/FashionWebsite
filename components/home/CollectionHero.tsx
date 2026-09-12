@@ -48,7 +48,11 @@ export function CollectionHero() {
           style={{ '--depth': 0.3 } as ParallaxLayerStyle}
           className="esque-parallax-layer absolute inset-0 bg-linear-to-b from-esque-surface to-esque-black"
         >
-          <p className="absolute bottom-4 right-4 text-utility uppercase tracking-metadata text-esque-text-muted">
+          {/* text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
+              D-048: muted fails WCAG AA's 4.5:1 text-contrast minimum at
+              this 13px size; secondary is DESIGN_SYSTEM.md's documented
+              tier for real descriptive/metadata copy like this. */}
+          <p className="absolute bottom-4 right-4 text-utility uppercase tracking-metadata text-esque-text-secondary">
             ESQUE PLACEHOLDER — CAMPAIGN, HERO
           </p>
         </div>
@@ -78,8 +82,11 @@ export function CollectionHero() {
           <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
             COLLECTION 001
           </p>
-          {/* Campaign statement placeholder — see file header comment. */}
-          <p className="text-utility uppercase tracking-metadata text-esque-text-muted">
+          {/* Campaign statement placeholder — see file header comment.
+              text-esque-text-secondary, not text-esque-text-muted — see the
+              contrast note on the placeholder label above (DECISIONS.md
+              D-048). */}
+          <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
             ESQUE PLACEHOLDER — CAMPAIGN STATEMENT
           </p>
           {/* DESIGN_SYSTEM.md §27's own literal Scene-01 content list names

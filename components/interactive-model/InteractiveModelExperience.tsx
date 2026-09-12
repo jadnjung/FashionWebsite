@@ -112,8 +112,21 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
       </div>
 
       {/* Fixed min-height so the panel's appearance/disappearance never
-          reflows the rest of the page. */}
-      <div className="min-h-[22rem] w-full max-w-2xl border-t border-esque-elevated pt-8">
+          reflows the rest of the page. aria-live/aria-atomic — DECISIONS.md
+          D-049: activating a hotspot (Enter/Space/click) swaps this panel's
+          entire content elsewhere in the DOM from the hotspot buttons
+          themselves; nothing previously announced that change to a
+          keyboard/screen-reader user, who would otherwise need to guess a
+          panel appeared and tab forward to discover it. "polite" (not
+          "assertive") because this is the result of the user's own
+          deliberate action, not an urgent/error condition — matches the
+          non-disruptive tenor of every other state-change announcement in
+          this codebase. */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="min-h-[22rem] w-full max-w-2xl border-t border-esque-elevated pt-8"
+      >
         {activeGarment ? (
           <ActiveGarmentPanel
             garment={activeGarment}
@@ -123,7 +136,11 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
             }
           />
         ) : (
-          <p className="text-utility uppercase tracking-metadata text-esque-text-muted">
+          // text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
+          // D-048: this is real, functional prompt copy (not a placeholder
+          // label), and muted fails WCAG AA's 4.5:1 contrast minimum at this
+          // normal (13px) size against the surface background.
+          <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
             Select a garment to view details.
           </p>
         )}

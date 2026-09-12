@@ -70,7 +70,10 @@ export function SilhouetteIllustration({
 }: SilhouetteIllustrationProps) {
   return (
     <div className="relative aspect-[4/5] w-full bg-esque-elevated">
-      <p className="pointer-events-none absolute bottom-2 right-2 text-utility uppercase tracking-metadata text-esque-text-muted">
+      {/* text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
+          D-048: muted fails WCAG AA's 4.5:1 contrast minimum for this
+          normal-size text against the elevated background. */}
+      <p className="pointer-events-none absolute bottom-2 right-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
         ESQUE PLACEHOLDER — MODEL, FULL BODY
       </p>
       {garments.map((garment) => {

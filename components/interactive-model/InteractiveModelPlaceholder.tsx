@@ -22,8 +22,13 @@ export function InteractiveModelPlaceholder() {
         className="flex aspect-[4/5] w-full max-w-sm items-center justify-center bg-esque-elevated"
       >
         {/* DESIGN_SYSTEM.md §65's own literal placeholder example for this
-            asset type. */}
-        <p className="text-utility uppercase tracking-metadata text-esque-text-muted">
+            asset type. text-esque-text-secondary, not text-esque-text-muted:
+            this text is aria-hidden (screen readers don't need "this would
+            be a photo" context) but still visually rendered to sighted
+            users, and aria-hidden does not exempt visible text from WCAG
+            1.4.3's contrast requirement — muted fails it at this size,
+            secondary passes. See DECISIONS.md D-048. */}
+        <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
           ESQUE PLACEHOLDER — MODEL, FULL BODY
         </p>
       </div>
