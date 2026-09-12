@@ -12,7 +12,12 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
 
   if (state.success) {
     return (
-      <div className="flex flex-col items-center gap-2 text-center">
+      // role="status" — DECISIONS.md D-051: this success screen replaces the
+      // whole form (the same "new content appears in place of the old" shape
+      // role="alert" already handles elsewhere in this file/AccessForm.tsx),
+      // so a screen-reader user submitting the form hears the outcome
+      // without needing to notice the visual change themselves.
+      <div role="status" className="flex flex-col items-center gap-2 text-center">
         <p className="font-display text-heading-2 tracking-display text-esque-text">ACCESS SENT.</p>
         <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
           CHECK YOUR EMAIL.
@@ -39,6 +44,15 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
         name="firstName"
         required
         autoComplete="given-name"
+        // DECISIONS.md D-051 — this component only ever mounts when the
+        // visitor has just clicked REQUEST ACCESS on the entry screen (an
+        // independent review live-confirmed that transition previously
+        // dropped keyboard focus to <body> with nothing claiming it), so
+        // autofocusing its first field on every mount is always a wanted
+        // response to that deliberate action, unlike AccessForm's own
+        // PASSWORD field (which must NOT autofocus on an arriving visitor's
+        // very first, unprompted page load).
+        autoFocus
         {...errorFieldProps('firstName')}
       />
       <Input
@@ -49,12 +63,32 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
         autoComplete="email"
         {...errorFieldProps('email')}
       />
-      <label className="flex items-start gap-2 text-left text-utility text-esque-text-secondary">
+      {/* WCAG 2.2 AA (2.5.8): an independent review measured this checkbox's
+          own rendered box at 13x13px — under the 24x24 minimum, and, unlike
+          FilterBar's/ShopTheLookPanel's checkboxes, visibly non-square
+          despite an explicit h-4 w-4. Root-caused live (not assumed): as an
+          `items-start` flex child sitting beside a long, wrapping sentence
+          with no `shrink-0`, the checkbox's default flex-shrink:1 was
+          compressing its WIDTH (the row's main axis) to help fit the text,
+          while its height (the cross axis, unaffected by shrinking) stayed
+          at the specified 16px — confirmed by computed style: width 13px,
+          height 16px, before this fix; `shrink-0` alone (independent of
+          accent-esque-forest, added below purely for the DESIGN_SYSTEM.md
+          color-consistency reason, not this bug) restores it to a true
+          16x16 square. `py-1` on the label grows the overall clickable box
+          to clear 24px vertically, matching FilterBar's identical fix,
+          without changing the checkbox's own visual size. */}
+      <label className="flex items-start gap-2 py-1 text-left text-utility text-esque-text-secondary">
         <input
           type="checkbox"
           name="consent"
           required
-          className="mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          // accent-esque-forest: DESIGN_SYSTEM.md's color rule reserves the
+          // forest accent for real selection states — this consent checkbox
+          // is no different in kind from FilterBar's/ShopTheLookPanel's,
+          // both of which already use it; this was the one inconsistent
+          // holdout.
+          className="mt-1 h-4 w-4 shrink-0 accent-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
           {...errorFieldProps('consent')}
         />
         I agree to receive Esque emails, including access and collection updates.

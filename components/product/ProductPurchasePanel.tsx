@@ -73,7 +73,19 @@ export function ProductPurchasePanel({
         <h1 className="font-display text-heading-1 uppercase tracking-display text-esque-text">
           {title}
         </h1>
-        <div className="flex items-center gap-3">
+        {/* aria-live/aria-atomic — DECISIONS.md D-051, mirroring D-049's
+            Interactive Model panel: picking a size/color changes the
+            displayed price and scarcity/sold-out badge in place, with
+            nothing previously announcing it to a screen-reader user who
+            isn't visually watching this text while operating VariantPicker's
+            radio groups elsewhere on the page. "polite" (a direct result of
+            the user's own action, not urgent) and "atomic" (the price and
+            badge should read together as one updated unit, not a partial
+            diff). Scoped to just this price/badge text, not the whole
+            panel or the Add to Bag button below — a disabled <button> is
+            already correctly announced as unavailable by its own native
+            semantics when a user reaches it. */}
+        <div aria-live="polite" aria-atomic="true" className="flex items-center gap-3">
           <p className="text-body text-esque-text">{formatPrice(displayPrice)}</p>
           {soldOut && (
             <span className="text-utility uppercase tracking-metadata text-esque-text-secondary">

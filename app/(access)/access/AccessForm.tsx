@@ -74,6 +74,16 @@ export function AccessForm() {
     setErrorMessage((previous) => pickNextMessage(previous));
     setAttempt((count) => count + 1);
   }
+  // DECISIONS.md D-051 — an independent review live-confirmed that toggling
+  // between this screen and Request Access dropped keyboard focus to <body>
+  // with no announcement: showRequestAccess swaps between two different
+  // element types (RequestAccessForm vs this fragment's own <form>) at the
+  // same position, which React always fully unmounts/remounts (never
+  // reconciles) — the just-activated REQUEST ACCESS/Back button unmounts
+  // with nothing claiming focus in its place. Once true, stays true — every
+  // subsequent return from Request Access should autofocus PASSWORD again,
+  // not just the first.
+  const [hasReturnedFromRequestAccess, setHasReturnedFromRequestAccess] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -84,7 +94,12 @@ export function AccessForm() {
           heading. */}
       <h1 className="font-display text-display-l tracking-display text-esque-text">ENTER ESQUE</h1>
       {showRequestAccess ? (
-        <RequestAccessForm onBack={() => setShowRequestAccess(false)} />
+        <RequestAccessForm
+          onBack={() => {
+            setShowRequestAccess(false);
+            setHasReturnedFromRequestAccess(true);
+          }}
+        />
       ) : (
         <>
           <form action={formAction} className="flex w-full max-w-xs flex-col gap-4">
@@ -98,12 +113,19 @@ export function AccessForm() {
                 autoComplete="off"
                 required
                 // Restores focus to the password field after each failed
-                // attempt. The remount above (needed to restart the CSS
-                // shift animation) would otherwise silently drop focus to
-                // <body> — a real regression for anyone submitting via
-                // Enter. Only fires on a keyed remount, never on initial
-                // load (attempt starts at 0), so it needs no effect.
-                autoFocus={attempt > 0}
+                // attempt (via the key={attempt} remount above — needed to
+                // restart the CSS shift animation, which would otherwise
+                // silently drop focus to <body>), and after returning from
+                // Request Access (DECISIONS.md D-051) — switching branches
+                // back to this one is itself always a genuine fresh mount
+                // (React never reconciles across different element types at
+                // the same position), so autoFocus fires correctly there
+                // with no key trick needed. Excludes the very first,
+                // initial-load mount (attempt starts at 0 and
+                // hasReturnedFromRequestAccess starts false), which
+                // deliberately does not steal focus from an arriving
+                // visitor. Needs no effect either way.
+                autoFocus={attempt > 0 || hasReturnedFromRequestAccess}
                 // Ties the field to its error programmatically — DECISIONS.md
                 // D-050 — in addition to the role="alert" announcement below
                 // (already a WCAG-recognized sufficient technique on its

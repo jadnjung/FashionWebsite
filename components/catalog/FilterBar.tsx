@@ -55,7 +55,17 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
       <form method="get" action={pathname} className="flex flex-wrap items-end gap-4">
         {/* Preserves the active sort so applying availability/price doesn't reset it. */}
         <input type="hidden" name="sort" value={filters.sort} />
-        <label className="flex items-center gap-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
+        {/* WCAG 2.2 AA (2.5.8): an independent review measured this label's
+            rendered box at 141x19.5px — under the 24x24 minimum on the
+            vertical axis even though clicking anywhere in it (checkbox or
+            text) toggles the checkbox via native label association. `py-1`
+            grows the clickable box without changing the checkbox's own
+            visual size (matching Footer.tsx's established technique for the
+            same criterion) — no compensating negative margin needed here,
+            unlike Footer's single tight row: this label sits in a `flex
+            items-end` row alongside Input/Button, both already taller than
+            24px, so the row's own footprint is already governed by them. */}
+        <label className="flex items-center gap-2 py-1 text-utility uppercase tracking-metadata text-esque-text-secondary">
           <input
             type="checkbox"
             name="available"

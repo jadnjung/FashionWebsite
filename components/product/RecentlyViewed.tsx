@@ -57,8 +57,16 @@ function getSnapshot(): RecentlyViewedItem[] {
   return cachedSnapshot;
 }
 
+// A module-level singleton, not a fresh `[]` literal per call — DECISIONS.md
+// D-051. useSyncExternalStore requires getServerSnapshot's result to be
+// referentially stable across calls, exactly like getSnapshot above (a new
+// array reference every render looks like a perpetually-changing snapshot to
+// React, which logs "The result of getServerSnapshot should be cached to
+// avoid an infinite loop" — confirmed live, not just reasoned about).
+const EMPTY_RECENTLY_VIEWED: RecentlyViewedItem[] = [];
+
 function getServerSnapshot(): RecentlyViewedItem[] {
-  return [];
+  return EMPTY_RECENTLY_VIEWED;
 }
 
 // Only fires for changes made in *other* tabs (the native 'storage' event
