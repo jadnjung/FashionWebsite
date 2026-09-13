@@ -10,6 +10,7 @@ import { AccessForm } from './AccessForm';
 // staying crawlable, not about this specific utility page being indexed.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
+  alternates: { canonical: '/access' },
 };
 
 export default function AccessPage() {

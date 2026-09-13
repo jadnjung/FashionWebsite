@@ -56,3 +56,40 @@ export function getSubcategoryLabel(category: CategorySlug, subcategory: string)
   const href = `/${category}/${subcategory}`;
   return entry?.subcategories?.find((s) => s.href === href)?.label ?? null;
 }
+
+export interface ProductTypeCategory {
+  category: CategorySlug;
+  categoryLabel: string;
+  subcategoryLabel: string;
+  subcategoryHref: string;
+}
+
+/**
+ * Reverse lookup: which category/subcategory a Shopify productType belongs
+ * to (e.g. 'Hoodies' -> { category: 'tops', ... }). Used to build the PDP's
+ * breadcrumb trail (SEO pass, ROADMAP.md Phase 12) from real taxonomy
+ * rather than a fourth parallel mapping. Null when productType doesn't
+ * match any known subcategory label — the same D-023 caveat applies (a
+ * real store's productType strings might not exactly match NAVIGATION's
+ * labels); callers degrade gracefully rather than erroring.
+ */
+export function getCategoryForProductType(productType: string): ProductTypeCategory | null {
+  for (const entry of NAVIGATION) {
+    const match = entry.subcategories?.find((s) => s.label === productType);
+    if (match) {
+      // Only NAVIGATION entries with subcategories ever reach here, and
+      // those are exactly the built category routes (tops/bottoms/etc) —
+      // narrow-cast at this single point, matching lib/shopify/products.ts's
+      // established precedent (D-023) for crossing a string into a
+      // narrower type once its provenance is known safe.
+      const category = entry.href.slice(1) as CategorySlug;
+      return {
+        category,
+        categoryLabel: entry.label,
+        subcategoryLabel: match.label,
+        subcategoryHref: match.href,
+      };
+    }
+  }
+  return null;
+}

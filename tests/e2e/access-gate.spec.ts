@@ -520,14 +520,21 @@ test.describe('access gate — proxy enforcement', () => {
   });
 
   test('an ungated request to /robots.txt is not redirected to /access', async ({ page }) => {
-    // No app/robots.ts exists yet (that's ROADMAP.md Phase 12), so the
-    // correct current response is a plain 404 — the point of this test is
-    // only that the proxy's matcher doesn't intercept the path and
-    // 307-redirect it to /access, not that the file itself resolves.
-    // Asserting on response status/URL rather than page content keeps this
-    // test valid once Phase 12 adds a real robots.ts.
+    // ROADMAP.md Phase 12's SEO pass added a real app/robots.ts — the point
+    // of this test is that the proxy's matcher doesn't intercept the path
+    // and 307-redirect it to /access; it now also confirms the real file
+    // resolves and allows crawling (DECISIONS.md D-005/D-052).
     const response = await page.goto('/robots.txt');
-    expect(response?.status()).toBe(404);
+    expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/robots\.txt$/);
+    await expect(page.locator('body')).toContainText('Allow: /');
+  });
+
+  test('an ungated request to /sitemap.xml is not redirected to /access', async ({ page }) => {
+    // Same proxy-matcher guarantee as /robots.txt above, now backed by a
+    // real app/sitemap.ts (DECISIONS.md D-052).
+    const response = await page.goto('/sitemap.xml');
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/sitemap\.xml$/);
   });
 });

@@ -3,11 +3,15 @@ import { notFound } from 'next/navigation';
 import { CategoryListing } from '@/components/catalog/CategoryListing';
 import type { CatalogSearchParams } from '@/lib/catalog/filters';
 import { getSubcategoryLabel, getSubcategoryProductType } from '@/lib/catalog/taxonomy';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
 // generateMetadata's own notFound() call shapes the not-found state's
 // <title>/<meta> (Next.js resolves it via a separate metadata-error path)
 // but does NOT by itself guarantee the page's HTTP status — that's
-// governed entirely by the page component below.
+// governed entirely by the page component below (see DECISIONS.md D-026).
+// Canonical is the bare subcategory path regardless of any Sort/
+// Availability/Price filter params this route accepts (DECISIONS.md
+// D-052) — searchParams is intentionally not read here.
 export async function generateMetadata({
   params,
 }: {
@@ -16,10 +20,11 @@ export async function generateMetadata({
   const { subcategory } = await params;
   const label = getSubcategoryLabel('bottoms', subcategory);
   if (!label) notFound();
-  return {
+  return buildPageMetadata({
     title: `${label} — Esque`,
     description: `Shop ${label} from the current Esque collection.`,
-  };
+    path: `/bottoms/${subcategory}`,
+  });
 }
 
 export default async function BottomsSubcategoryPage({

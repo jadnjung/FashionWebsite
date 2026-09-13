@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { FilterBar } from '@/components/catalog/FilterBar';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
+import { JsonLd } from '@/components/seo/JsonLd';
 import {
   buildProductSearchQuery,
   getSortVariables,
@@ -18,6 +19,7 @@ import {
   type CategorySlug,
 } from '@/lib/catalog/taxonomy';
 import { getProducts } from '@/lib/shopify/products';
+import { buildBreadcrumbJsonLd, type BreadcrumbItem } from '@/lib/seo/structured-data';
 
 interface CategoryListingProps {
   category: CategorySlug;
@@ -87,8 +89,22 @@ export async function CategoryListing({
   const pathname = subcategory ? `/${category}/${subcategory}` : `/${category}`;
   const filtersActive = hasActiveFilters(filters, defaultSort);
 
+  // Breadcrumb JSON-LD mirrors the real navigable hierarchy (Home -> this
+  // category -> this subcategory, if any) — not a visible on-page
+  // breadcrumb UI, which this project doesn't have (DESIGN_SYSTEM.md never
+  // specifies one); structured breadcrumbs don't require a visible match,
+  // only navigational accuracy. See DECISIONS.md D-052.
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { name: 'Home', path: '/' },
+    { name: getCategoryLabel(category), path: `/${category}` },
+  ];
+  if (subcategory && label) {
+    breadcrumbItems.push({ name: label, path: pathname });
+  }
+
   return (
     <div className="flex flex-col gap-8 px-4 py-12 md:px-8">
+      <JsonLd data={buildBreadcrumbJsonLd(breadcrumbItems)} />
       <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
         {label}
       </h1>

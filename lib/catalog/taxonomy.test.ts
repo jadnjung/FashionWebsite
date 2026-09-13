@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  getCategoryForProductType,
   getCategoryLabel,
   getCategoryProductTypes,
   getSubcategoryLabel,
@@ -67,5 +68,38 @@ describe('getSubcategoryLabel', () => {
 
   test('returns null for an unknown subcategory slug', () => {
     expect(getSubcategoryLabel('tops', 'not-a-real-subcategory')).toBeNull();
+  });
+});
+
+describe('getCategoryForProductType', () => {
+  test('maps a real Tops product type back to its category/subcategory', () => {
+    expect(getCategoryForProductType('Hoodies')).toEqual({
+      category: 'tops',
+      categoryLabel: 'TOPS',
+      subcategoryLabel: 'Hoodies',
+      subcategoryHref: '/tops/hoodies',
+    });
+  });
+
+  test('maps a real Bottoms product type back to its category/subcategory', () => {
+    expect(getCategoryForProductType('Jeans')).toEqual({
+      category: 'bottoms',
+      categoryLabel: 'BOTTOMS',
+      subcategoryLabel: 'Jeans',
+      subcategoryHref: '/bottoms/jeans',
+    });
+  });
+
+  test('maps a real Etc. product type back to its category/subcategory', () => {
+    expect(getCategoryForProductType('Jewelry')).toEqual({
+      category: 'etc',
+      categoryLabel: 'ETC.',
+      subcategoryLabel: 'Jewelry',
+      subcategoryHref: '/etc/jewelry',
+    });
+  });
+
+  test('returns null for a productType with no matching subcategory', () => {
+    expect(getCategoryForProductType('Not A Real Product Type')).toBeNull();
   });
 });

@@ -1,0 +1,34 @@
+import type { MetadataRoute } from 'next';
+import { NAVIGATION } from '@/lib/navigation-data';
+import { SITE_URL } from '@/lib/seo/site';
+
+// Only NAVIGATION entries that correspond to a route actually built this
+// far into the roadmap — NAVIGATION also lists /collections and /about
+// (ROADMAP.md Phase 10/11+, not built yet), which would 404 if included
+// here. This allowlist needs a new entry the day either of those (or any
+// future top-level category) ships as a real route — a deliberate,
+// documented tradeoff rather than teaching NAVIGATION itself which of its
+// entries are "live", which would be a bigger change than this pass needs
+// (see DECISIONS.md D-052).
+const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc']);
+
+// Static routes only. Product PDPs (/products/[handle]) need enumerable
+// Shopify product handles, which needs a real store — the same D-016/
+// D-023-class limitation every prior phase has hit and documented rather
+// than guessed around. /access is deliberately excluded: it's a UI gate,
+// not indexable content (its own metadata already sets robots: {index:
+// false}, matching DECISIONS.md D-005's "gate is a UI experience, not an
+// SEO wall" — the *catalog* stays crawlable, the gate itself needn't be).
+export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date();
+
+  const categoryPaths = NAVIGATION.filter((entry) => BUILT_CATEGORY_HREFS.has(entry.href)).flatMap(
+    (entry) => [entry.href, ...(entry.subcategories?.map((s) => s.href) ?? [])],
+  );
+  const paths = ['/', ...categoryPaths];
+
+  return paths.map((path) => ({
+    url: `${SITE_URL}${path}`,
+    lastModified,
+  }));
+}
