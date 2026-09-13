@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SizeGuidePanel } from '@/components/product/SizeGuidePanel';
 import { VariantPicker } from '@/components/product/VariantPicker';
+import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
 import {
@@ -22,6 +23,11 @@ interface ProductPurchasePanelProps {
   // DECISIONS.md D-036. Not rendered.
   handle: string;
   minPrice: { amount: string; currencyCode: string };
+  // Not rendered — only used as the view_item/add_to_bag_click events'
+  // item_category (DECISIONS.md D-055). ProductDetail.tsx already has this
+  // from the same getProduct() fetch (used for its own "More {productType}"
+  // heading); threaded through rather than re-derived.
+  productType: string;
   options: ProductOption[];
   variants: ProductVariant[];
   // Server-rendered, static description — passed as children (composition,
@@ -42,6 +48,7 @@ export function ProductPurchasePanel({
   title,
   handle,
   minPrice,
+  productType,
   options,
   variants,
   children,
@@ -63,7 +70,31 @@ export function ProductPurchasePanel({
     : null;
   const canAddToBag = !soldOut && matchedVariant !== null && matchedVariant.availableForSale;
 
+  // Product Behavior: "Product views... sold-out views" (PROJECT.md §82) —
+  // DECISIONS.md D-055. Fires once per real PDP mount (dependency array is
+  // exhaustive per the effect's own primitive reads, mirroring
+  // RecentlyViewed.tsx's D-031 precedent — no eslint-disable needed),
+  // deliberately not re-firing on every variant selection (that's
+  // variant_selected's job, below). Uses GA4's own standard `view_item`
+  // event/shape: a real product page genuinely was viewed, an honest match
+  // for GA4's documented semantics (unlike add_to_bag_click below).
+  useEffect(() => {
+    trackEvent('view_item', {
+      currency: minPrice.currencyCode,
+      value: Number(minPrice.amount),
+      items: [{ item_id: handle, item_name: title, item_category: productType }],
+      sold_out: soldOut,
+    });
+  }, [handle, title, productType, minPrice.amount, minPrice.currencyCode, soldOut]);
+
   function handleOptionChange(optionName: string, value: string) {
+    // Product Behavior: "variant selection" (PROJECT.md §82).
+    trackEvent('variant_selected', {
+      item_id: handle,
+      option_name: optionName,
+      option_value: value,
+      context: 'pdp',
+    });
     setSelections((prev) => ({ ...prev, [optionName]: value }));
   }
 
@@ -139,10 +170,36 @@ export function ProductPurchasePanel({
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {/* No cart exists yet (DECISIONS.md D-016/D-029). disabled is
-              fully real; onClick is a deliberate no-op, matching
-              Header.tsx's existing SEARCH/ACCOUNT/BAG precedent. */}
-          <Button type="button" variant="primary" disabled={!canAddToBag} onClick={() => {}}>
+          {/* No cart exists yet (DECISIONS.md D-016/D-029) — adding to a
+              bag is still a real, disabled-gated click; onClick's actual
+              bag mutation remains a deliberate no-op, matching Header.tsx's
+              existing SEARCH/ACCOUNT/BAG precedent. Tracked as
+              add_to_bag_click, NOT GA4's standard add_to_cart — see
+              DECISIONS.md D-055 for why: firing GA4's own "item was added
+              to a cart" semantic event before a cart mechanism exists would
+              misrepresent what happened, and would be indistinguishable
+              from a genuine future add_to_cart once one does. */}
+          <Button
+            type="button"
+            variant="primary"
+            disabled={!canAddToBag}
+            onClick={() => {
+              if (!matchedVariant) return;
+              trackEvent('add_to_bag_click', {
+                currency: matchedVariant.price.currencyCode,
+                value: Number(matchedVariant.price.amount),
+                items: [
+                  {
+                    item_id: handle,
+                    item_name: title,
+                    item_category: productType,
+                    item_variant: matchedVariant.id,
+                    price: Number(matchedVariant.price.amount),
+                  },
+                ],
+              });
+            }}
+          >
             ADD TO BAG
           </Button>
           {!selectionComplete && (

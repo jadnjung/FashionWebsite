@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Header } from '@/components/navigation/Header';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
 import { CustomCursor } from '@/components/navigation/CustomCursor';
+import { ACCESS_EVENT_COOKIE_NAME, parseAccessEventCookie } from '@/lib/access/cookies';
+import { trackEvent } from '@/lib/analytics/gtag';
 
 // Owns the shell-wide client state (currently just menu-open) so that
 // app/layout.tsx can stay a Server Component and keep its `metadata`
@@ -28,6 +30,21 @@ export function ShellClient({
   // Header attaches it to the MENU button; FullScreenMenu focuses it back
   // on close.
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+
+  // Access Funnel: "successful access" (PROJECT.md §82) — DECISIONS.md
+  // D-055. ShellClient mounts on every storefront page, including the one
+  // a successful password redirects to, so this is the natural place to
+  // observe "did the visitor just pass the gate." The real access cookies
+  // are httpOnly (unreadable here by design); actions.ts additionally sets
+  // a short-lived, non-httpOnly signal cookie on success specifically for
+  // this. Read and immediately cleared so it can only ever fire once per
+  // grant, not on every subsequent storefront page view.
+  useEffect(() => {
+    const tier = parseAccessEventCookie(document.cookie);
+    if (!tier) return;
+    trackEvent('access_granted', { tier });
+    document.cookie = `${ACCESS_EVENT_COOKIE_NAME}=; Max-Age=0; path=/`;
+  }, []);
 
   return (
     <>

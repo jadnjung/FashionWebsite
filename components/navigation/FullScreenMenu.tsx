@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useEffectEvent, useRef, type RefObject } from 'react';
 import { NAVIGATION } from '@/lib/navigation-data';
+import { trackEvent } from '@/lib/analytics/gtag';
 
 interface FullScreenMenuProps {
   open: boolean;
@@ -128,7 +129,19 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
             key={category.href}
             href={category.href}
             ref={index === 0 ? firstLinkRef : undefined}
-            onClick={onClose}
+            onClick={() => {
+              // Discovery: "category nav clicks" (PROJECT.md §82). Wired
+              // here specifically (rather than, e.g., the homepage's
+              // CategoryShowcase, a Server Component) since this is
+              // already a client boundary — no new client-JS cost — and
+              // is PROJECT.md §73's primary mobile/full-screen category
+              // navigation surface. See DECISIONS.md D-055.
+              trackEvent('category_nav_click', {
+                category: category.label,
+                href: category.href,
+              });
+              onClose();
+            }}
             data-cursor="OPEN"
             // Explicit tabIndex, not left to the anchor's default: WebKit
             // (desktop and iOS Safari) only includes links in the Tab

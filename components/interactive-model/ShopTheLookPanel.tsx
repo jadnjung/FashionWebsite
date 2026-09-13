@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { VariantPicker } from '@/components/product/VariantPicker';
+import { trackEvent } from '@/lib/analytics/gtag';
 import type { InteractiveModelGarment } from '@/lib/interactive-model/look';
 import {
   isLookAddValid,
@@ -80,6 +81,18 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
   }
 
   function handleOptionChange(region: string, optionName: string, value: string) {
+    // Product Behavior: "variant selection" (PROJECT.md §82) — see
+    // InteractiveModelExperience.tsx's identical wiring for the PDP/hover-
+    // panel call sites; `context: 'shop_the_look'` distinguishes this one.
+    const garment = garments.find((g) => g.region === region);
+    if (garment) {
+      trackEvent('variant_selected', {
+        item_id: garment.product.handle,
+        option_name: optionName,
+        option_value: value,
+        context: 'shop_the_look',
+      });
+    }
     setSelectionMap((prev) => ({
       ...prev,
       [region]: {

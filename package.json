@@ -15,6 +15,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@next/third-parties": "16.3.1",
     "@shopify/storefront-api-client": "^2.0.0",
     "isbot": "^5.2.1",
     "motion": "^13.1.1",

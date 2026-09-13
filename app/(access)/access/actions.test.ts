@@ -39,7 +39,7 @@ describe('validatePassword', () => {
       validatePassword({ success: false }, formData({ password: 'letmein' })),
     ).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockCookieStore.set).toHaveBeenCalledTimes(1);
+    expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
     expect(mockCookieStore.set).toHaveBeenCalledWith(
       'esque_access',
       '1',
@@ -61,6 +61,15 @@ describe('validatePassword', () => {
         sameSite: 'lax',
         path: '/',
       }),
+    );
+    // The short-lived, client-readable signal cookie ShellClient.tsx uses
+    // to fire the access_granted analytics event exactly once — DECISIONS.md
+    // D-055. httpOnly: false distinguishes it from the real access cookie
+    // above; it carries no authorization weight (proxy.ts never reads it).
+    expect(mockCookieStore.set).toHaveBeenCalledWith(
+      'esque_access_event',
+      'general',
+      expect.objectContaining({ httpOnly: false, sameSite: 'lax', path: '/' }),
     );
   });
 
@@ -97,9 +106,14 @@ describe('validatePassword', () => {
       validatePassword({ success: false }, formData({ password: 'vip-letmein' })),
     ).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
+    expect(mockCookieStore.set).toHaveBeenCalledTimes(3);
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_access', '1', expect.any(Object));
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_vip_access', '1', expect.any(Object));
+    expect(mockCookieStore.set).toHaveBeenCalledWith(
+      'esque_access_event',
+      'vip',
+      expect.any(Object),
+    );
   });
 
   test('returns { success: false } without setting cookies or redirecting on no match', async () => {
@@ -167,9 +181,14 @@ describe('validatePassword', () => {
       validatePassword({ success: false }, formData({ password: 'shared-secret' })),
     ).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
+    expect(mockCookieStore.set).toHaveBeenCalledTimes(3);
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_access', '1', expect.any(Object));
     expect(mockCookieStore.set).toHaveBeenCalledWith('esque_vip_access', '1', expect.any(Object));
+    expect(mockCookieStore.set).toHaveBeenCalledWith(
+      'esque_access_event',
+      'vip',
+      expect.any(Object),
+    );
   });
 });
 

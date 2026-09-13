@@ -1,8 +1,9 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { trackEvent } from '@/lib/analytics/gtag';
 import { validatePassword, type ValidatePasswordResult } from './actions';
 import { RequestAccessForm } from './RequestAccessForm';
 
@@ -48,6 +49,15 @@ export function AccessForm() {
   // spec names AccessForm/RequestAccessForm as the two Client Components;
   // nothing in it requires a third file just to hold this one boolean.
   const [showRequestAccess, setShowRequestAccess] = useState(false);
+
+  // Access Funnel: "password page views" (PROJECT.md §82) — DECISIONS.md
+  // D-055. Fires once per mount of the gate itself, distinct from GA4's own
+  // automatic page_view (which reports every route, not specifically this
+  // funnel's entry step) — a dedicated, filterable event for this specific
+  // funnel stage.
+  useEffect(() => {
+    trackEvent('access_gate_view', {});
+  }, []);
 
   // Derives the rotating branded message and the shake-animation `attempt`
   // counter from *changes* to the action's result, instead of mutating them
@@ -159,7 +169,15 @@ export function AccessForm() {
               <Button type="submit" variant="primary" disabled={isPending}>
                 ENTER
               </Button>
-              <Button type="button" variant="editorial" onClick={() => setShowRequestAccess(true)}>
+              <Button
+                type="button"
+                variant="editorial"
+                onClick={() => {
+                  // Access Funnel: "Request Access opens" (PROJECT.md §82).
+                  trackEvent('request_access_open', {});
+                  setShowRequestAccess(true);
+                }}
+              >
                 REQUEST ACCESS
               </Button>
             </div>

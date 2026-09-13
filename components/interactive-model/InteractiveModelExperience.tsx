@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { SilhouetteIllustration } from '@/components/interactive-model/SilhouetteIllustration';
 import { ShopTheLookPanel } from '@/components/interactive-model/ShopTheLookPanel';
+import { trackEvent } from '@/lib/analytics/gtag';
 import type { HotspotRegion, InteractiveModelGarment } from '@/lib/interactive-model/look';
 import { formatPrice } from '@/lib/product/price';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
@@ -81,10 +82,35 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
   }
 
   function handleActivate(region: HotspotRegion) {
+    // Interactive Experience: "garment hotspot selection" (PROJECT.md §82)
+    // — fires on the deliberate activate action (click/Enter/Space), never
+    // on hover-preview, matching this component's own established
+    // preview-vs-activate distinction (DECISIONS.md D-037/D-043).
+    const garment = garments.find((g) => g.region === region);
+    if (garment) {
+      trackEvent('hotspot_selected', {
+        region,
+        item_id: garment.product.handle,
+        item_name: garment.product.title,
+      });
+    }
     setActiveRegion(region);
   }
 
   function handleOptionChange(region: HotspotRegion, optionName: string, value: string) {
+    // Product Behavior: "variant selection" (PROJECT.md §82) — this
+    // shared VariantPicker also renders on the PDP and in Shop the Look
+    // (DECISIONS.md D-036); `context` distinguishes which real surface a
+    // given selection happened on.
+    const garment = garments.find((g) => g.region === region);
+    if (garment) {
+      trackEvent('variant_selected', {
+        item_id: garment.product.handle,
+        option_name: optionName,
+        option_value: value,
+        context: 'interactive_model',
+      });
+    }
     setSelectionsByRegion((prev) => ({
       ...prev,
       [region]: { ...prev[region], [optionName]: value },
@@ -149,7 +175,14 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
       {/* Always visible, not gated behind hotspot interaction — the
           deliberate, real screen-reader/non-visual alternative to the
           silhouette map (DECISIONS.md D-035). */}
-      <Button variant="secondary" onClick={() => setShopTheLookOpen(true)}>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          // Interactive Experience: "Shop the Look opens" (PROJECT.md §82).
+          trackEvent('shop_the_look_open', {});
+          setShopTheLookOpen(true);
+        }}
+      >
         SHOP THE LOOK
       </Button>
 
@@ -236,7 +269,36 @@ function ActiveGarmentPanel({ garment, selections, onOptionChange }: ActiveGarme
             >
               VIEW PRODUCT
             </Link>
-            <Button type="button" variant="primary" disabled={!canQuickAdd} onClick={() => {}}>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!canQuickAdd}
+              onClick={() => {
+                // Product Behavior: "Quick Add usage" (PROJECT.md §82) —
+                // this real QUICK ADD button (CONTENT.md §10's canonical
+                // CTA) is the Interactive Model panel's terminal add
+                // action; no cart exists yet (D-016/D-029), so the actual
+                // bag mutation remains a deliberate no-op, exactly like
+                // add_to_bag_click's PDP equivalent. See DECISIONS.md D-055
+                // for why this is a custom event name, not GA4's standard
+                // add_to_cart.
+                if (!matchedVariant) return;
+                trackEvent('quick_add_click', {
+                  currency: matchedVariant.price.currencyCode,
+                  value: Number(matchedVariant.price.amount),
+                  items: [
+                    {
+                      item_id: product.handle,
+                      item_name: product.title,
+                      item_category: product.productType,
+                      item_variant: matchedVariant.id,
+                      price: Number(matchedVariant.price.amount),
+                    },
+                  ],
+                  region: garment.region,
+                });
+              }}
+            >
               QUICK ADD
             </Button>
           </div>

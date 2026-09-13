@@ -29,6 +29,7 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
             title={product.title}
             handle={product.handle}
             minPrice={product.minPrice}
+            productType={product.productType}
             options={product.options}
             variants={product.variants}
           >

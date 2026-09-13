@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { trackEvent } from '@/lib/analytics/gtag';
 import { submitRequestAccess, type RequestAccessState } from './actions';
 
 const initialState: RequestAccessState = { success: false };
@@ -38,7 +39,21 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
       : {};
 
   return (
-    <form action={formAction} className="flex w-full max-w-xs flex-col gap-4 text-center">
+    <form
+      action={formAction}
+      // Access Funnel: "Request Access conversion attempt" (PROJECT.md
+      // §82) — fires on every real submission attempt, regardless of
+      // eventual server-side validation outcome, which is exactly what
+      // "attempt" means. Deliberately carries no properties: the submitted
+      // firstName/email/consent values must never reach an analytics
+      // payload (CLAUDE.md's Analytics section) — dispatchAnalyticsEvent's
+      // PII denylist would strip them anyway, but not reading them here at
+      // all is the more honest, defense-in-depth choice. Does not call
+      // preventDefault, so the actual form action submission proceeds
+      // exactly as before.
+      onSubmit={() => trackEvent('request_access_attempt', {})}
+      className="flex w-full max-w-xs flex-col gap-4 text-center"
+    >
       <Input
         label="FIRST NAME"
         name="firstName"

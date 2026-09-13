@@ -6,6 +6,8 @@ import {
   ACCESS_COOKIE_NAME,
   VIP_ACCESS_COOKIE_NAME,
   ACCESS_COOKIE_MAX_AGE_SECONDS,
+  ACCESS_EVENT_COOKIE_NAME,
+  ACCESS_EVENT_COOKIE_MAX_AGE_SECONDS,
 } from '@/lib/access/cookies';
 import { subscribeToAccessList } from '@/lib/klaviyo/subscribe';
 
@@ -28,6 +30,19 @@ const cookieOptions = {
   sameSite: 'lax' as const,
   path: '/',
   maxAge: ACCESS_COOKIE_MAX_AGE_SECONDS,
+};
+
+// Deliberately NOT httpOnly (unlike cookieOptions above) — ShellClient.tsx
+// reads this client-side via document.cookie to fire the access_granted
+// analytics event exactly once, then clears it. Not a security boundary:
+// see lib/access/cookies.ts's ACCESS_EVENT_COOKIE_NAME comment. Short
+// maxAge is a safety net in case the client-side clear never runs.
+const accessEventCookieOptions = {
+  httpOnly: false,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: ACCESS_EVENT_COOKIE_MAX_AGE_SECONDS,
 };
 
 /**
@@ -78,11 +93,13 @@ export async function validatePassword(
   if (earlyAccessPassword && password === earlyAccessPassword) {
     cookieStore.set(ACCESS_COOKIE_NAME, '1', cookieOptions);
     cookieStore.set(VIP_ACCESS_COOKIE_NAME, '1', cookieOptions);
+    cookieStore.set(ACCESS_EVENT_COOKIE_NAME, 'vip', accessEventCookieOptions);
     redirect('/');
   }
 
   if (generalPassword && password === generalPassword) {
     cookieStore.set(ACCESS_COOKIE_NAME, '1', cookieOptions);
+    cookieStore.set(ACCESS_EVENT_COOKIE_NAME, 'general', accessEventCookieOptions);
     redirect('/');
   }
 
