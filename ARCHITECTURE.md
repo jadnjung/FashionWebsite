@@ -51,7 +51,13 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   │   ├── account/
 │   │   ├── about/
 │   │   ├── contact/
-│   │   └── legal/[slug]/
+│   │   └── legal/
+│   │       ├── privacy/
+│   │       ├── terms/
+│   │       ├── shipping/
+│   │       ├── returns/
+│   │       ├── refunds/
+│   │       └── accessibility/
 │   └── api/                   # Route handlers (Klaviyo webhook proxy, etc.)
 ├── components/
 │   ├── ui/                    # Buttons, inputs, primitives from DESIGN_SYSTEM.md
@@ -59,6 +65,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── product/                 # PDP: gallery, purchase panel, size guide, recently viewed
 │   ├── home/                    # Homepage editorial scenes (Scene 01-06; Scene 07 omitted, see DECISIONS.md D-032)
 │   ├── interactive-model/      # Signature hotspot feature — hotspots, product info panel, Shop the Look (ROADMAP Phase 8; Stage 4-5 motion/refinement deferred, see DECISIONS.md D-034)
+│   ├── legal/                    # Shared draft-notice/section markup for the six /legal/* pages and /contact — see DECISIONS.md D-054
 │   └── navigation/              # Header, full-screen menu, cursor
 ├── lib/
 │   ├── shopify/                # Storefront API client, GraphQL queries/mutations, types
@@ -67,6 +74,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── home/                    # Homepage's one Shopify dependency (Selected Pieces), isolated — see DECISIONS.md D-033
 │   ├── interactive-model/      # The Interactive Model's Shopify dependency (getInteractiveModelLook) plus pure Shop the Look validity logic, isolated the same way — see DECISIONS.md D-034
 │   ├── motion/                 # Shared, DOM-injectable capability checks (reduced motion, fine-pointer-and-hover, low-performance heuristic) for the custom cursor and homepage parallax — see DECISIONS.md D-040/D-041
+│   ├── legal/                     # LEGAL_PAGES — single source of truth for the six /legal/* routes, read by Footer.tsx and app/sitemap.ts — see DECISIONS.md D-054
 │   ├── klaviyo/                # Email list + password delivery
 │   ├── access/                 # Access gate cookie/session logic
 │   └── analytics/              # GA4 + Shopify Analytics event helpers
@@ -81,7 +89,9 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 └── CLAUDE.md
 ```
 
-This was a target sketch for when scaffolding began (see [ROADMAP.md](./ROADMAP.md) Phase 0); most of it is now built. One deliberate divergence: `components/commerce/` as originally sketched here was never adopted. Phase 4 (Catalog), Phase 5 (PDP), and Phase 7 (Homepage) instead grouped commerce/page UI by page-type — `components/catalog/` (category listing: product card, grid, filter bar), `components/product/` (PDP: gallery, purchase panel, size guide, recently viewed), and `components/home/` (homepage editorial scenes) — with a parallel `lib/catalog/`/`lib/product/`/`lib/home/` split for the pure logic underneath each. `lib/home/` is intentionally small: the homepage's five other scenes are static markup with no data dependency at all (see DECISIONS.md D-032/D-033). `components/interactive-model/`/`lib/interactive-model/` (ROADMAP.md Phase 8) followed the same pattern one level later — a top-level domain rather than nested under `home/`, since PROJECT.md §26 places this feature on both the homepage and future collection pages. `search/`, `bag/`, `account/`, `about/`, `contact/`, `legal/[slug]/`, `archive/`, `collections/[handle]/`, and `analytics/` remain unbuilt, tracked by their respective later ROADMAP.md phases — Phase 8 deliberately does not add analytics instrumentation for the Interactive Model despite PROJECT.md §82 naming it, since that's ROADMAP.md Phase 12's ("Analytics wired") and no `lib/analytics/` exists yet to hook into. `lib/motion/` (ROADMAP.md Phase 9) was not part of the original sketch — it holds small, DOM-API-injectable capability checks (mirroring `lib/product/recently-viewed.ts`'s injected-interface pattern for testability in this project's jsdom-less vitest environment) shared by two concurrent Phase 9 consumers (the custom cursor, homepage Hero parallax), extracted as its own domain rather than duplicated or nested under either consumer.
+This was a target sketch for when scaffolding began (see [ROADMAP.md](./ROADMAP.md) Phase 0); most of it is now built. One deliberate divergence: `components/commerce/` as originally sketched here was never adopted. Phase 4 (Catalog), Phase 5 (PDP), and Phase 7 (Homepage) instead grouped commerce/page UI by page-type — `components/catalog/` (category listing: product card, grid, filter bar), `components/product/` (PDP: gallery, purchase panel, size guide, recently viewed), and `components/home/` (homepage editorial scenes) — with a parallel `lib/catalog/`/`lib/product/`/`lib/home/` split for the pure logic underneath each. `lib/home/` is intentionally small: the homepage's five other scenes are static markup with no data dependency at all (see DECISIONS.md D-032/D-033). `components/interactive-model/`/`lib/interactive-model/` (ROADMAP.md Phase 8) followed the same pattern one level later — a top-level domain rather than nested under `home/`, since PROJECT.md §26 places this feature on both the homepage and future collection pages. `search/`, `bag/`, `account/`, `about/`, `archive/`, `collections/[handle]/`, and `analytics/` remain unbuilt, tracked by their respective later ROADMAP.md phases — Phase 8 deliberately does not add analytics instrumentation for the Interactive Model despite PROJECT.md §82 naming it, since that's ROADMAP.md Phase 12's ("Analytics wired") and no `lib/analytics/` exists yet to hook into. `lib/motion/` (ROADMAP.md Phase 9) was not part of the original sketch — it holds small, DOM-API-injectable capability checks (mirroring `lib/product/recently-viewed.ts`'s injected-interface pattern for testability in this project's jsdom-less vitest environment) shared by two concurrent Phase 9 consumers (the custom cursor, homepage Hero parallax), extracted as its own domain rather than duplicated or nested under either consumer.
+
+`contact/` and `legal/` (ROADMAP.md Phase 12) are now built, with one deliberate divergence from this sketch: `legal/[slug]/` (a single dynamic route) was not adopted, in favor of six separate static routes (`legal/privacy/`, `legal/terms/`, `legal/shipping/`, `legal/returns/`, `legal/refunds/`, `legal/accessibility/`), each a plain, fully static page with no per-request data dependency. A dynamic segment earns its cost when the set of values is data-driven or open-ended (product handles); six hand-authored, permanently-fixed policy documents are the opposite case, and match this codebase's own existing precedent of one route folder per real page for a small fixed set (`/new`, `/tops`, `/bottoms`, `/etc`, sharing logic through `CategoryListing` rather than a dynamic catch-all). It also sidesteps DECISIONS.md D-026/D-052's documented `notFound()`-on-a-dynamic-route limitation (an invalid `[slug]` would return HTTP 200 + `noindex` instead of a hard 404) for no reason — an unmatched static path already returns a genuine 404. See DECISIONS.md D-054.
 
 ## 4. Rendering Strategy
 
@@ -122,6 +132,7 @@ ESQUE_ACCESS_PASSWORD=          # or fetched from a Shopify metafield so it's ed
 ESQUE_EARLY_ACCESS_PASSWORD=
 NEXT_PUBLIC_GA4_MEASUREMENT_ID=
 NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_SUPPORT_EMAIL=       # shown on /contact; not a secret. See DECISIONS.md D-054.
 ```
 
 No secrets are committed. `.env.local` is gitignored; production secrets live in Vercel's environment variable settings.

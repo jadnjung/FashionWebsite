@@ -344,14 +344,42 @@ test.describe('full-screen menu', () => {
 });
 
 test.describe('footer', () => {
-  test('renders as a landmark with utility links', async ({ page }) => {
+  test('renders as a landmark with links to every legal page and contact', async ({ page }) => {
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
     await expect(footer).toBeVisible();
-    await expect(footer.getByRole('link', { name: /privacy/i })).toBeVisible();
-    await expect(footer.getByRole('link', { name: /terms/i })).toBeVisible();
-    await expect(footer.getByRole('link', { name: /contact/i })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Privacy Policy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Terms of Service' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Shipping Policy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Return Policy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Refund Policy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Accessibility Statement' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Contact' })).toBeVisible();
   });
+
+  // Regression: /legal/privacy, /legal/terms, and /contact were dead links
+  // (404) from Footer since Task 10 of the original foundation-shell plan —
+  // the pages didn't exist yet. This proves every footer link now resolves
+  // to a real, non-404 page, mirroring the full-screen menu's own
+  // "navigates to a real page, not a 404" loop above. Each destination
+  // page's own content/heading/metadata is covered in depth by
+  // tests/e2e/legal.spec.ts.
+  for (const [name, path] of [
+    ['Privacy Policy', '/legal/privacy'],
+    ['Terms of Service', '/legal/terms'],
+    ['Shipping Policy', '/legal/shipping'],
+    ['Return Policy', '/legal/returns'],
+    ['Refund Policy', '/legal/refunds'],
+    ['Accessibility Statement', '/legal/accessibility'],
+    ['Contact', '/contact'],
+  ] as const) {
+    test(`${name} footer link navigates to a real page, not a 404`, async ({ page }) => {
+      await page.goto('/');
+      await page.getByRole('contentinfo').getByRole('link', { name }).click();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toHaveCount(0);
+    });
+  }
 });
 
 test.describe('not-found', () => {

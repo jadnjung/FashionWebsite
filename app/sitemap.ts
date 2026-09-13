@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { LEGAL_PAGES } from '@/lib/legal/pages';
 import { NAVIGATION } from '@/lib/navigation-data';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -19,13 +20,23 @@ const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc']);
 // not indexable content (its own metadata already sets robots: {index:
 // false}, matching DECISIONS.md D-005's "gate is a UI experience, not an
 // SEO wall" — the *catalog* stays crawlable, the gate itself needn't be).
+//
+// The six /legal/* pages and /contact (ROADMAP.md Phase 12, DECISIONS.md
+// D-054) are included and indexable like the category pages above, even
+// though their content is a labeled draft pending legal review — D-005's
+// "gate is a UI experience, not an SEO wall" already accepts the whole
+// catalog being crawlable pre-launch, and a customer searching "Esque
+// return policy" is exactly the kind of query PROJECT.md §79's SEO
+// requirements exist to serve. LEGAL_PAGES is the same list Footer.tsx
+// renders its links from, so the two can't silently drift.
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
   const categoryPaths = NAVIGATION.filter((entry) => BUILT_CATEGORY_HREFS.has(entry.href)).flatMap(
     (entry) => [entry.href, ...(entry.subcategories?.map((s) => s.href) ?? [])],
   );
-  const paths = ['/', ...categoryPaths];
+  const legalPaths = LEGAL_PAGES.map((page) => page.href);
+  const paths = ['/', ...categoryPaths, ...legalPaths, '/contact'];
 
   return paths.map((path) => ({
     url: `${SITE_URL}${path}`,
