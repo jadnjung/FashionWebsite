@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type RefObject, type SVGProps } from 'react';
+import { useEffect, useState, type RefObject, type SVGProps } from 'react';
 import { Button } from '@/components/ui/Button';
+import { ComingSoonNotice, type ComingSoonFeature } from '@/components/navigation/ComingSoonNotice';
 
 interface HeaderProps {
   menuOpen: boolean;
@@ -65,10 +66,20 @@ export function Header({ menuOpen, onMenuOpen, menuTriggerRef }: HeaderProps) {
   // section: no cart exists until ROADMAP.md Phase 2 wires up Shopify.
   const [bagCount] = useState(0);
 
+  // SEARCH/ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx).
+  // Auto-dismissed after a few seconds rather than requiring a manual close
+  // — this is an acknowledgment, not a decision the visitor needs to act on.
+  const [comingSoonFeature, setComingSoonFeature] = useState<ComingSoonFeature | null>(null);
+  useEffect(() => {
+    if (!comingSoonFeature) return;
+    const timer = setTimeout(() => setComingSoonFeature(null), 3000);
+    return () => clearTimeout(timer);
+  }, [comingSoonFeature]);
+
   return (
     <header
       role="banner"
-      className="flex h-[72px] items-center justify-between border-b border-esque-surface bg-esque-black px-4 md:px-8"
+      className="relative flex h-[72px] items-center justify-between border-b border-esque-surface bg-esque-black px-4 md:px-8"
     >
       <Link href="/" className="font-display text-lg tracking-nav text-esque-text">
         ESQUE
@@ -85,10 +96,11 @@ export function Header({ menuOpen, onMenuOpen, menuTriggerRef }: HeaderProps) {
         >
           MENU
         </Button>
-        {/* SEARCH/ACCOUNT: real behavior lands in ROADMAP.md Phase 4/10. */}
+        {/* SEARCH/ACCOUNT: real behavior lands in ROADMAP.md Phase 4/10;
+            clicking shows ComingSoonNotice instead of doing nothing. */}
         <Button
           variant="secondary"
-          onClick={() => {}}
+          onClick={() => setComingSoonFeature('SEARCH')}
           className={`inline-flex items-center justify-center ${compactUtilityButton}`}
         >
           <SearchIcon className="h-5 w-5 md:hidden" />
@@ -96,16 +108,21 @@ export function Header({ menuOpen, onMenuOpen, menuTriggerRef }: HeaderProps) {
         </Button>
         <Button
           variant="secondary"
-          onClick={() => {}}
+          onClick={() => setComingSoonFeature('ACCOUNT')}
           className={`inline-flex items-center justify-center ${compactUtilityButton}`}
         >
           <AccountIcon className="h-5 w-5 md:hidden" />
           <span className="sr-only md:not-sr-only">ACCOUNT</span>
         </Button>
-        <Button variant="secondary" onClick={() => {}} className={tightUtilityButton}>
+        <Button
+          variant="secondary"
+          onClick={() => setComingSoonFeature('BAG')}
+          className={tightUtilityButton}
+        >
           {`BAG (${bagCount})`}
         </Button>
       </nav>
+      <ComingSoonNotice feature={comingSoonFeature} />
     </header>
   );
 }

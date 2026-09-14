@@ -149,6 +149,27 @@ test.describe('header', () => {
     expect(searchLabelBox?.width).toBeLessThanOrEqual(1);
     expect(accountLabelBox?.width).toBeLessThanOrEqual(1);
   });
+
+  // SEARCH/ACCOUNT/BAG have no real behavior yet (Phase 4/10/2) — clicking
+  // shows a brief acknowledgment instead of doing nothing silently. See
+  // components/navigation/ComingSoonNotice.tsx.
+  test('SEARCH, ACCOUNT, and BAG show an on-brand "arriving soon" notice when clicked', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+    await expect(notice).not.toBeVisible();
+
+    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await expect(notice).toHaveText('SEARCH — ARRIVING SOON.');
+
+    await page.getByRole('button', { name: 'ACCOUNT' }).click();
+    await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
+
+    await page.getByRole('button', { name: 'BAG (0)' }).click();
+    await expect(notice).toHaveText('BAG — ARRIVING SOON.');
+  });
 });
 
 test.describe('full-screen menu', () => {
