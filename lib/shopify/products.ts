@@ -232,11 +232,32 @@ export async function getProducts(
   // column item. Caught by reproducing it live, not just reading the diff
   // — see this file's own products.test.ts, "getProducts — Demo Mode",
   // for regression coverage.
+  //
+  // Also respects `sortKey`/`reverse` — the same real bug class as `first`
+  // above (reproduced live: PRICE: LOW TO HIGH/HIGH TO LOW on /tops and
+  // /bottoms silently did nothing). lib/catalog/filters.ts's
+  // getSortVariables only ever produces sortKey: 'PRICE' (price-asc:
+  // reverse false, price-desc: reverse true) or sortKey: 'CREATED_AT'
+  // (newest: reverse true) or no sortKey at all (featured: reverse
+  // false) — PRICE is sorted for real against each fixture's minPrice;
+  // CREATED_AT/featured have no real creation-date equivalent in static
+  // fixture data, so `reverse` there only flips the fixed array order,
+  // an honest approximation rather than fabricating dates.
   if (process.env.PREVIEW_DEMO_MODE === '1') {
     const filtered = options.query
       ? PREVIEW_PRODUCTS.filter((p) => options.query!.includes(`"${p.productType}"`))
       : PREVIEW_PRODUCTS;
-    const page = (filtered.length ? filtered : PREVIEW_PRODUCTS).slice(0, options.first ?? 24);
+    const base = filtered.length ? filtered : PREVIEW_PRODUCTS;
+    const sorted =
+      options.sortKey === 'PRICE'
+        ? [...base].sort((a, b) => {
+            const diff = Number(a.minPrice.amount) - Number(b.minPrice.amount);
+            return options.reverse ? -diff : diff;
+          })
+        : options.reverse
+          ? [...base].reverse()
+          : base;
+    const page = sorted.slice(0, options.first ?? 24);
     return {
       products: page,
       hasNextPage: false,

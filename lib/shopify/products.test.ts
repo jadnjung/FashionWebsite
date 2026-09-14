@@ -491,4 +491,19 @@ describe('getProducts — Demo Mode', () => {
     await getProducts();
     expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
+
+  // Regression test for a real, reproduced bug: PRICE: LOW TO HIGH/HIGH TO
+  // LOW on /tops and /bottoms silently did nothing, because this
+  // short-circuit ignored `sortKey`/`reverse` entirely and always returned
+  // PREVIEW_PRODUCTS in its fixed array order.
+  test('sorts by price ascending/descending when sortKey is PRICE', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const asc = await getProducts({ sortKey: 'PRICE', reverse: false });
+    const ascPrices = asc.products.map((p) => Number(p.minPrice.amount));
+    expect(ascPrices).toEqual([...ascPrices].sort((a, b) => a - b));
+
+    const desc = await getProducts({ sortKey: 'PRICE', reverse: true });
+    const descPrices = desc.products.map((p) => Number(p.minPrice.amount));
+    expect(descPrices).toEqual([...descPrices].sort((a, b) => b - a));
+  });
 });
