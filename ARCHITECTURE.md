@@ -134,9 +134,12 @@ NEXT_PUBLIC_GA4_MEASUREMENT_ID=
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=   # Search Console verification meta tag content — not a secret
 NEXT_PUBLIC_SITE_URL=
 NEXT_PUBLIC_SUPPORT_EMAIL=       # shown on /contact; not a secret. See DECISIONS.md D-054.
+PREVIEW_DEMO_MODE=               # opt-in Demo Mode, off by default everywhere. See DECISIONS.md D-057.
 ```
 
 No secrets are committed. `.env.local` is gitignored; production secrets live in Vercel's environment variable settings.
+
+`PREVIEW_DEMO_MODE` is not a commerce/integration credential like the rest of this list — it's a local build-time toggle (`lib/shopify/products.ts`, `next.config.ts`) that substitutes real Shopify data with typed, licensed stock-photo fixtures (`lib/shopify/preview-demo-fixtures.ts`) for stakeholder-preview convenience. See [DECISIONS.md D-057](./DECISIONS.md) for the full architectural boundary — it's a narrow, additive, opt-in exception, not a change to §6's access-gate architecture or to how the real Shopify data path in §5 behaves when the flag is unset (always true in CI and any deployment unless someone deliberately sets it).
 
 ## 8. Third-Party Integrations
 

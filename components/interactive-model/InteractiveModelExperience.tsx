@@ -20,6 +20,9 @@ import {
 
 interface InteractiveModelExperienceProps {
   garments: InteractiveModelGarment[];
+  // Demo Mode (DECISIONS.md D-057) — see SilhouetteIllustration.tsx's own
+  // prop doc for why this is threaded down rather than read here directly.
+  previewDemoMode?: boolean;
 }
 
 function initialSelections(garments: InteractiveModelGarment[]): Record<string, OptionSelections> {
@@ -35,7 +38,10 @@ function initialSelections(garments: InteractiveModelGarment[]): Record<string, 
 // spec's Non-Goals and DECISIONS.md D-034. Rendered only once
 // InteractiveModel.tsx has confirmed every hotspot region resolved a real
 // product; `garments` is never empty here.
-export function InteractiveModelExperience({ garments }: InteractiveModelExperienceProps) {
+export function InteractiveModelExperience({
+  garments,
+  previewDemoMode = false,
+}: InteractiveModelExperienceProps) {
   const [activeRegion, setActiveRegion] = useState<HotspotRegion | null>(null);
   const [selectionsByRegion, setSelectionsByRegion] = useState(() => initialSelections(garments));
   const [shopTheLookOpen, setShopTheLookOpen] = useState(false);
@@ -134,6 +140,7 @@ export function InteractiveModelExperience({ garments }: InteractiveModelExperie
           activeRegion={activeRegion}
           onHover={handleHover}
           onActivate={handleActivate}
+          previewDemoMode={previewDemoMode}
         />
       </div>
 

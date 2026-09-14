@@ -1,6 +1,12 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { HeroParallax } from '@/components/home/HeroParallax';
+
+// Demo Mode — see lib/shopify/preview-demo-fixtures.ts's file header and
+// DECISIONS.md D-057. Opt-in, off by default; renders hero.jpg (real
+// stand-in photography) in place of the placeholder markers below when set.
+const PREVIEW_DEMO_MODE = process.env.PREVIEW_DEMO_MODE === '1';
 
 // Typed helper for the per-layer --depth custom property — CSSProperties
 // doesn't declare arbitrary custom properties, so each `style` prop below
@@ -26,6 +32,11 @@ type ParallaxLayerStyle = CSSProperties & { '--depth': number };
 // INTERACTIONS.md §12) was deferred here to ROADMAP.md Phase 9's own
 // "Parallax / depth on homepage scenes" line item (DECISIONS.md D-032) and
 // is now implemented via HeroParallax below — see DECISIONS.md D-041.
+//
+// Under Demo Mode (PREVIEW_DEMO_MODE, DECISIONS.md D-057) both placeholder
+// slots render real, stand-in (Unsplash-licensed) photography/copy instead
+// — an opt-in, off-by-default stakeholder-preview convenience, not a
+// change to what ships by default.
 export function CollectionHero() {
   return (
     <section
@@ -48,13 +59,27 @@ export function CollectionHero() {
           style={{ '--depth': 0.3 } as ParallaxLayerStyle}
           className="esque-parallax-layer absolute inset-0 bg-linear-to-b from-esque-surface to-esque-black"
         >
-          {/* text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
-              D-048: muted fails WCAG AA's 4.5:1 text-contrast minimum at
-              this 13px size; secondary is DESIGN_SYSTEM.md's documented
-              tier for real descriptive/metadata copy like this. */}
-          <p className="absolute bottom-4 right-4 text-utility uppercase tracking-metadata text-esque-text-secondary">
-            ESQUE PLACEHOLDER — CAMPAIGN, HERO
-          </p>
+          {PREVIEW_DEMO_MODE ? (
+            <>
+              <Image
+                src="/preview-demo/hero.jpg"
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover opacity-70"
+              />
+              <div className="absolute inset-0 bg-linear-to-b from-transparent to-esque-black" />
+            </>
+          ) : (
+            // text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
+            // D-048: muted fails WCAG AA's 4.5:1 text-contrast minimum at
+            // this 13px size; secondary is DESIGN_SYSTEM.md's documented
+            // tier for real descriptive/metadata copy like this.
+            <p className="absolute bottom-4 right-4 text-utility uppercase tracking-metadata text-esque-text-secondary">
+              ESQUE PLACEHOLDER — CAMPAIGN, HERO
+            </p>
+          )}
         </div>
 
         {/* Giant atmospheric wordmark — DESIGN_SYSTEM.md §27's "Large ESQUE
@@ -85,9 +110,13 @@ export function CollectionHero() {
           {/* Campaign statement placeholder — see file header comment.
               text-esque-text-secondary, not text-esque-text-muted — see the
               contrast note on the placeholder label above (DECISIONS.md
-              D-048). */}
+              D-048). Demo Mode copy (CONTENT.md §1 voice: concise,
+              confident, restrained) swaps in under PREVIEW_DEMO_MODE — see
+              DECISIONS.md D-057. */}
           <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-            ESQUE PLACEHOLDER — CAMPAIGN STATEMENT
+            {PREVIEW_DEMO_MODE
+              ? 'AN EXERCISE IN RESTRAINT.'
+              : 'ESQUE PLACEHOLDER — CAMPAIGN STATEMENT'}
           </p>
           {/* DESIGN_SYSTEM.md §27's own literal Scene-01 content list names
               this CTA "ENTER COLLECTION" (no arrow) — distinct from the

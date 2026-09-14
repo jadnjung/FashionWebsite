@@ -16,5 +16,11 @@ export function InteractiveModel({ garments }: InteractiveModelProps) {
   if (garments.length < HOTSPOT_REGIONS.length) {
     return <InteractiveModelPlaceholder />;
   }
-  return <InteractiveModelExperience garments={garments} />;
+  // Demo Mode (DECISIONS.md D-057) — read here (a Server Component) and
+  // threaded down as a prop, not read inside the client-bundled
+  // InteractiveModelExperience/SilhouetteIllustration — see the latter's
+  // prop doc for why a bare (non-NEXT_PUBLIC_) env var can only be read
+  // server-side.
+  const previewDemoMode = process.env.PREVIEW_DEMO_MODE === '1';
+  return <InteractiveModelExperience garments={garments} previewDemoMode={previewDemoMode} />;
 }

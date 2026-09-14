@@ -425,3 +425,70 @@ describe('getProducts', () => {
     await expect(getProducts()).rejects.toThrow('Shopify Storefront API is not configured');
   });
 });
+
+// Demo Mode (DECISIONS.md D-057) — the PREVIEW_DEMO_MODE-gated
+// short-circuits in getProduct/getProducts. `vi.stubEnv` is auto-restored
+// after each test (vitest.config.ts's `unstubEnvs: true`), so it's safe to
+// set per-test without a shared beforeEach/afterEach. The "never touches
+// the Storefront client" tests below compare the spy's call count before
+// and after, rather than asserting `not.toHaveBeenCalled()` outright: this
+// file has no restoreMocks/clearMocks config, so vi.spyOn(clientModule,
+// 'getStorefrontClient') returns the same accumulating spy every earlier
+// test in this file already called — an absolute-zero assertion would
+// depend on run order, not on what this test itself did.
+describe('getProduct — Demo Mode', () => {
+  test('short-circuits to fixture data and never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+
+    const result = await getProduct('preview-featherweight-crewneck');
+
+    expect(result?.title).toBe('Featherweight Crewneck Sweater');
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+
+  test('returns null for a handle with no matching fixture, same as the real not-found contract', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProduct('does-not-exist');
+    expect(result).toBeNull();
+  });
+});
+
+describe('getProducts — Demo Mode', () => {
+  test('respects `first` — regression test for a real, reproduced layout bug (SelectedPieces requests 3 and got fed all 6 fixtures when `first` was ignored)', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ first: 3 });
+    expect(result.products).toHaveLength(3);
+    expect(result.hasNextPage).toBe(false);
+    expect(result.endCursor).toBeNull();
+  });
+
+  test('filters by the same product_type:"X" query string category pages and the Interactive Model build', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'product_type:"Trousers"' });
+    expect(result.products.length).toBeGreaterThan(0);
+    expect(result.products.every((product) => product.productType === 'Trousers')).toBe(true);
+  });
+
+  test('does not conflate similarly-named product types via substring matching (e.g. "Shirts" vs "T-Shirts")', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'product_type:"Shirts"' });
+    expect(result.products.length).toBeGreaterThan(0);
+    expect(result.products.every((product) => product.productType === 'Shirts')).toBe(true);
+  });
+
+  test('falls back to the full fixture list, rather than an empty page, when no fixture matches the query', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'product_type:"Hats"' });
+    expect(result.products.length).toBeGreaterThan(0);
+  });
+
+  test('never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    await getProducts();
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+});

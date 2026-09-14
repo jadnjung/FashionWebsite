@@ -5,6 +5,11 @@ import {
   GET_PRODUCTS_QUERY,
 } from '@/lib/shopify/queries/products';
 import type { ProductSortKeys } from '@/lib/shopify/storefront.types';
+// Demo Mode (PREVIEW_DEMO_MODE) — see preview-demo-fixtures.ts's file
+// header and DECISIONS.md D-057 for what this is, why it exists, and how
+// it's scoped (opt-in, off by default everywhere). This import and the two
+// short-circuits below are the only places this file branches on it.
+import { PREVIEW_PRODUCTS, getPreviewProductDetail } from '@/lib/shopify/preview-demo-fixtures';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -68,6 +73,10 @@ export interface ProductSummary {
  * case, and is never swallowed or misreported as one.
  */
 export async function getProduct(handle: string): Promise<ProductDetail | null> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  // Never reaches getStorefrontClient() below, so it never requires (or
+  // risks touching) real Shopify credentials.
+  if (process.env.PREVIEW_DEMO_MODE === '1') return getPreviewProductDetail(handle);
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_PRODUCT_QUERY, {
     variables: { handle },
@@ -209,6 +218,31 @@ export interface GetProductsOptions {
 export async function getProducts(
   options: GetProductsOptions = {},
 ): Promise<{ products: ProductListItem[]; hasNextPage: boolean; endCursor: string | null }> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  // Filters by the same product_type:"X" query string category pages and
+  // the Interactive Model already build (DECISIONS.md D-023/D-034), so
+  // top/bottom hotspot regions resolve to different fixture products
+  // instead of colliding on the same one. Also respects `first` —
+  // omitting this caused a real, reproducible layout bug in
+  // SelectedPieces.tsx: it expects at most 3 products (one large + two
+  // small, DESIGN_SYSTEM.md §33), and the real getSelectedPieces() already
+  // requests exactly that (SELECTED_PIECES_COUNT = 3); ignoring `first`
+  // here fed it all 6 fixture products instead, stacking 5 of them in its
+  // narrow right-hand column and leaving a huge gap under the single left
+  // column item. Caught by reproducing it live, not just reading the diff
+  // — see this file's own products.test.ts, "getProducts — Demo Mode",
+  // for regression coverage.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const filtered = options.query
+      ? PREVIEW_PRODUCTS.filter((p) => options.query!.includes(`"${p.productType}"`))
+      : PREVIEW_PRODUCTS;
+    const page = (filtered.length ? filtered : PREVIEW_PRODUCTS).slice(0, options.first ?? 24);
+    return {
+      products: page,
+      hasNextPage: false,
+      endCursor: null,
+    };
+  }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_PRODUCTS_QUERY, {
     variables: {

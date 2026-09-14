@@ -2,6 +2,7 @@
 // Activates react/experimental's ambient ViewTransition types — see
 // ProductCard.tsx for the full explanation of why this is a triple-slash
 // directive, not `import {} from 'react/experimental'`. DECISIONS.md D-038.
+import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import { ViewTransition } from 'react';
 import type { HotspotRegion, InteractiveModelGarment } from '@/lib/interactive-model/look';
@@ -37,6 +38,14 @@ interface SilhouetteIllustrationProps {
   activeRegion: HotspotRegion | null;
   onHover: (region: HotspotRegion) => void;
   onActivate: (region: HotspotRegion) => void;
+  // Demo Mode (PREVIEW_DEMO_MODE) — an opt-in, off-by-default stand-in for
+  // real photography; see lib/shopify/preview-demo-fixtures.ts's file
+  // header and DECISIONS.md D-057. Threaded down from InteractiveModel.tsx
+  // (a Server Component, where reading process.env.PREVIEW_DEMO_MODE
+  // actually works) rather than read here directly — this file is part of
+  // InteractiveModelExperience's client bundle, where a non-NEXT_PUBLIC_
+  // env var is never inlined and would silently always read as unset.
+  previewDemoMode?: boolean;
 }
 
 // DESIGN_SYSTEM.md §29-30 — the model illustration and its silhouette-
@@ -67,15 +76,26 @@ export function SilhouetteIllustration({
   activeRegion,
   onHover,
   onActivate,
+  previewDemoMode = false,
 }: SilhouetteIllustrationProps) {
   return (
     <div className="relative aspect-[4/5] w-full bg-esque-elevated">
-      {/* text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
-          D-048: muted fails WCAG AA's 4.5:1 contrast minimum for this
-          normal-size text against the elevated background. */}
-      <p className="pointer-events-none absolute bottom-2 right-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
-        ESQUE PLACEHOLDER — MODEL, FULL BODY
-      </p>
+      {previewDemoMode ? (
+        <Image
+          src="/preview-demo/model-full.jpg"
+          alt=""
+          fill
+          sizes="(min-width: 768px) 384px, 100vw"
+          className="object-cover"
+        />
+      ) : (
+        // text-esque-text-secondary, not text-esque-text-muted — DECISIONS.md
+        // D-048: muted fails WCAG AA's 4.5:1 contrast minimum for this
+        // normal-size text against the elevated background.
+        <p className="pointer-events-none absolute bottom-2 right-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
+          ESQUE PLACEHOLDER — MODEL, FULL BODY
+        </p>
+      )}
       {garments.map((garment) => {
         const shape = REGION_SHAPES[garment.region];
         const isActive = activeRegion === garment.region;
