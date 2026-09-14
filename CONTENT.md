@@ -47,7 +47,7 @@ Source: [DESIGN_SYSTEM.md §12](./DESIGN_SYSTEM.md#12-case)
 Entry:
 
 ```
-ENTER ESQUE
+ESQUE
 [password field]
 ENTER          REQUEST ACCESS
 ```

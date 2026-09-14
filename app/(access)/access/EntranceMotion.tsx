@@ -139,7 +139,7 @@ export function EntranceMotion() {
         ))}
         {/* Giant background typography (DESIGN_SYSTEM.md §53 layer 4) — large
             and low-opacity so it reads as atmosphere, distinct from
-            AccessForm's smaller, sharp "ENTER ESQUE" functional heading on
+            AccessForm's smaller, sharp "ESQUE" functional heading on
             top of it. Quick per PROJECT.md §14: "Motion must remain quick...
             never become an obstacle for returning users." */}
         <m.h2

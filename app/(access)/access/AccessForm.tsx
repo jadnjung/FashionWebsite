@@ -98,11 +98,11 @@ export function AccessForm() {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       {/* Rendered above the showRequestAccess conditional (not inside an
-          early return) so it stays on screen in both states — ENTER ESQUE
+          early return) so it stays on screen in both states — ESQUE
           is the page's own title (CONTENT.md §3), not the entry form's
           label, so the Request Access screen must not lose its only
           heading. */}
-      <h1 className="font-display text-display-l tracking-display text-esque-text">ENTER ESQUE</h1>
+      <h1 className="font-display text-display-l tracking-display text-esque-text">ESQUE</h1>
       {showRequestAccess ? (
         <RequestAccessForm
           onBack={() => {

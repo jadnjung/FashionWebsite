@@ -11,22 +11,25 @@ function accessErrorAlert(page: Page) {
 }
 
 // EntranceMotion's giant background "ESQUE" typography (DESIGN_SYSTEM.md §53
-// layer 4) is targeted by an exact-text match. AccessForm's own
-// <h1>ENTER ESQUE</h1> lives on the same page, but its full text is
-// "ENTER ESQUE", not "ESQUE", so it doesn't match today — asserted here
-// (rather than just assumed) so a future change that splits "ENTER" and
-// "ESQUE" into separate styled text nodes fails this loudly instead of
-// silently resolving to the wrong element.
+// layer 4) is an <h2> inside a deliberately `aria-hidden="true"` decorative
+// container — it's atmosphere, not content, so it's correctly excluded from
+// the accessibility tree and `getByRole` can never find it (verified
+// directly: `getByRole('heading', {name: 'ESQUE'})` matches only 1 element,
+// AccessForm's real <h1>, even though the DOM has two ESQUE headings).
+// AccessForm's own <h1>ESQUE</h1> sits on top of it and now shares the exact
+// same text, so a plain `getByText` match is ambiguous between the two — the
+// tag selector (which, unlike getByRole, doesn't filter by accessibility
+// tree) is what disambiguates them, not the text or an a11y role.
 async function backgroundWordmark(page: Page) {
-  const locator = page.getByText('ESQUE', { exact: true });
+  const locator = page.locator('h2').filter({ hasText: /^ESQUE$/ });
   await expect(locator).toHaveCount(1);
   return locator;
 }
 
 test.describe('access gate — password entry', () => {
-  test('renders ENTER ESQUE with a password field and both buttons', async ({ page }) => {
+  test('renders ESQUE with a password field and both buttons', async ({ page }) => {
     await page.goto('/access');
-    await expect(page.getByRole('heading', { name: 'ENTER ESQUE' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'ESQUE' })).toBeVisible();
     await expect(page.getByLabel('PASSWORD')).toBeVisible();
     await expect(page.getByRole('button', { name: 'ENTER' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'REQUEST ACCESS' })).toBeVisible();
@@ -186,9 +189,9 @@ test.describe('access gate — request access', () => {
     await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
 
     // Guards the structural decision (made in the previous task) to hoist
-    // ENTER ESQUE above the showRequestAccess conditional in AccessForm —
-    // without that, this screen would render heading-less.
-    await expect(page.getByRole('heading', { name: 'ENTER ESQUE' })).toBeVisible();
+    // the ESQUE heading above the showRequestAccess conditional in
+    // AccessForm — without that, this screen would render heading-less.
+    await expect(page.getByRole('heading', { level: 1, name: 'ESQUE' })).toBeVisible();
     await expect(page.getByLabel('FIRST NAME')).toBeVisible();
     await expect(page.getByLabel('EMAIL', { exact: true })).toBeVisible();
     await expect(

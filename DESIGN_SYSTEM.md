@@ -749,7 +749,7 @@ Garment imagery may move laterally across the viewport at different speeds.
 
 ## 54. Access UI Copy
 
-Suggested: `ENTER ESQUE`, password field, buttons `ENTER` / `REQUEST ACCESS`.
+Suggested: `ESQUE`, password field, buttons `ENTER` / `REQUEST ACCESS`.
 
 Supporting text: `ACCESS TO CURRENT COLLECTIONS.` Avoid paragraphs explaining the system.
 
