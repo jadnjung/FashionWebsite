@@ -1,17 +1,18 @@
 import type { MetadataRoute } from 'next';
+import { BUILT_CATEGORY_HREFS } from '@/lib/catalog/taxonomy';
 import { LEGAL_PAGES } from '@/lib/legal/pages';
 import { NAVIGATION } from '@/lib/navigation-data';
 import { SITE_URL } from '@/lib/seo/site';
 
-// Only NAVIGATION entries that correspond to a route actually built this
-// far into the roadmap — NAVIGATION also lists /collections and /about
-// (ROADMAP.md Phase 10/11+, not built yet), which would 404 if included
-// here. This allowlist needs a new entry the day either of those (or any
-// future top-level category) ships as a real route — a deliberate,
-// documented tradeoff rather than teaching NAVIGATION itself which of its
-// entries are "live", which would be a bigger change than this pass needs
-// (see DECISIONS.md D-052).
-const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc']);
+// BUILT_CATEGORY_HREFS: only NAVIGATION entries that correspond to a route
+// actually built this far into the roadmap — NAVIGATION also lists
+// /collections and /about (ROADMAP.md Phase 10/11+, not built yet), which
+// would 404 if included here. Relocated to lib/catalog/taxonomy.ts
+// (DECISIONS.md D-058) so search's category matching reads the same single
+// source of truth rather than a second, independently-drifting copy — a
+// deliberate, documented tradeoff rather than teaching NAVIGATION itself
+// which of its entries are "live", which would be a bigger change than
+// this pass needs (see DECISIONS.md D-052).
 
 // Static routes only. Product PDPs (/products/[handle]) need enumerable
 // Shopify product handles, which needs a real store — the same D-016/

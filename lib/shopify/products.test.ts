@@ -1,5 +1,10 @@
 import { describe, expect, test, vi } from 'vitest';
-import { getProduct, getProducts, getProductsByCollection } from '@/lib/shopify/products';
+import {
+  getProduct,
+  getProducts,
+  getProductsByCollection,
+  searchProducts,
+} from '@/lib/shopify/products';
 import * as clientModule from '@/lib/shopify/client';
 
 function mockClient(response: unknown) {
@@ -505,5 +510,153 @@ describe('getProducts — Demo Mode', () => {
     const desc = await getProducts({ sortKey: 'PRICE', reverse: true });
     const descPrices = desc.products.map((p) => Number(p.minPrice.amount));
     expect(descPrices).toEqual([...descPrices].sort((a, b) => b - a));
+  });
+});
+
+// Predictive search (DECISIONS.md D-058) — a distinct query path from
+// getProducts. See lib/shopify/queries/products.ts's GET_PREDICTIVE_SEARCH_QUERY
+// for why $query receives the raw, trimmed string (no manual wildcard) and
+// why searchableFields/unavailableProducts are never overridden.
+describe('searchProducts', () => {
+  test('calls client.request with GET_PREDICTIVE_SEARCH_QUERY and the trimmed query + default limit', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { predictiveSearch: { products: [] } },
+    });
+    vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({
+      request,
+    } as unknown as ReturnType<typeof clientModule.getStorefrontClient>);
+
+    await searchProducts('  hoodie  ');
+
+    expect(request).toHaveBeenCalledWith(expect.any(String), {
+      variables: { query: 'hoodie', limit: 6 },
+    });
+  });
+
+  test('passes a custom limit through', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { predictiveSearch: { products: [] } },
+    });
+    vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({
+      request,
+    } as unknown as ReturnType<typeof clientModule.getStorefrontClient>);
+
+    await searchProducts('hoodie', { limit: 3 });
+
+    expect(request).toHaveBeenCalledWith(expect.any(String), {
+      variables: { query: 'hoodie', limit: 3 },
+    });
+  });
+
+  test('maps a real-shaped predictiveSearch response into ProductListItem[]', async () => {
+    mockClient({
+      data: {
+        predictiveSearch: {
+          products: [
+            {
+              id: 'gid://shopify/Product/1',
+              handle: 'hoodie-01',
+              title: 'Hoodie 01',
+              productType: 'Hoodies',
+              tags: ['new'],
+              availableForSale: true,
+              priceRange: { minVariantPrice: { amount: '180.00', currencyCode: 'USD' } },
+              images: {
+                edges: [
+                  {
+                    node: {
+                      url: 'https://cdn.example/hoodie-01-a.jpg',
+                      altText: null,
+                      width: 800,
+                      height: 1000,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const result = await searchProducts('hoo');
+
+    expect(result).toEqual([
+      {
+        id: 'gid://shopify/Product/1',
+        handle: 'hoodie-01',
+        title: 'Hoodie 01',
+        productType: 'Hoodies',
+        tags: ['new'],
+        minPrice: { amount: '180.00', currencyCode: 'USD' },
+        availableForSale: true,
+        images: [
+          { url: 'https://cdn.example/hoodie-01-a.jpg', altText: null, width: 800, height: 1000 },
+        ],
+      },
+    ]);
+  });
+
+  test('returns [] when predictiveSearch is unexpectedly absent from data', async () => {
+    mockClient({ data: {} });
+    const result = await searchProducts('hoodie');
+    expect(result).toEqual([]);
+  });
+
+  test('throws when the response includes errors, rather than returning an empty list', async () => {
+    mockClient({
+      data: undefined,
+      errors: { message: 'Throttled by Shopify', networkStatusCode: 429 },
+    });
+    await expect(searchProducts('hoodie')).rejects.toThrow('Throttled by Shopify');
+  });
+
+  // Mirrors this file's own established technique (see the Demo Mode
+  // describe blocks above) for asserting a short-circuit never touches the
+  // client: compares the shared spy's call count before/after, since this
+  // file has no restoreMocks/clearMocks and every earlier test's calls
+  // otherwise accumulate on the same spy.
+  test('returns [] for a blank/whitespace-only query without ever calling getStorefrontClient', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+
+    expect(await searchProducts('')).toEqual([]);
+    expect(await searchProducts('   ')).toEqual([]);
+
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+});
+
+describe('searchProducts — Demo Mode', () => {
+  test('a query matching a real fixture title returns that fixture', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await searchProducts('trouser');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((p) => p.title.toLowerCase().includes('trouser'))).toBe(true);
+  });
+
+  test('a query matching a fixture productType returns that fixture', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await searchProducts('jackets');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((p) => p.productType.toLowerCase().includes('jackets'))).toBe(true);
+  });
+
+  // Deliberately the opposite fallback from getProducts' Demo Mode branch
+  // (which returns the full fixture list on a non-matching query): a real
+  // "no results" state is exactly what this feature must be able to
+  // demonstrate — see the design spec's Demo Mode section.
+  test('a query matching nothing real returns [], not the full fixture list', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await searchProducts('zzz-not-a-real-product');
+    expect(result).toEqual([]);
+  });
+
+  test('never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    await searchProducts('trouser');
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
 });

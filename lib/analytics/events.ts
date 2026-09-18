@@ -46,6 +46,7 @@ const ANALYTICS_EVENT_NAMES = [
   'variant_selected',
   // Discovery
   'category_nav_click',
+  'search',
   // Interactive Experience
   'hotspot_selected',
   'shop_the_look_open',
@@ -100,6 +101,18 @@ interface EventPropertiesMap {
   category_nav_click: {
     category: string;
     href: string;
+  };
+  // Uses GA4's own standard recommended event exactly where it's an honest
+  // match (DECISIONS.md D-055's own test, applied here): a real search
+  // genuinely was performed, so the standard name/required search_term
+  // param are used rather than invented. result_count folds PROJECT.md
+  // §82's "no-result searches" into this event's own payload rather than a
+  // second event — the same minimal-modeling choice D-055 made for
+  // view_item's sold_out boolean. Fired once per settled (debounced,
+  // resolved) query, not per keystroke — see SearchOverlay.tsx.
+  search: {
+    search_term: string;
+    result_count: number;
   };
   hotspot_selected: {
     region: string;

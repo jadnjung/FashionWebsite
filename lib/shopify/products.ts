@@ -1,5 +1,6 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
+  GET_PREDICTIVE_SEARCH_QUERY,
   GET_PRODUCT_QUERY,
   GET_PRODUCTS_BY_COLLECTION_QUERY,
   GET_PRODUCTS_QUERY,
@@ -300,4 +301,63 @@ export async function getProducts(
     hasNextPage: connection?.pageInfo?.hasNextPage ?? false,
     endCursor: connection?.pageInfo?.endCursor ?? null,
   };
+}
+
+export interface SearchProductsOptions {
+  limit?: number;
+}
+
+/**
+ * Predictive product search for the full-screen search overlay — a
+ * distinct query path from getProducts (see DECISIONS.md D-058 and the
+ * design spec). Returns [] for a blank/whitespace-only query without ever
+ * calling getStorefrontClient() — an empty search is not a "Shopify not
+ * configured" error. Throws via toRequestError on a real Storefront API
+ * error, exactly like every other fetch function in this file — never
+ * swallowed here; the caller (app/api/search/route.ts) decides how to
+ * surface that to its own client, since this function has no page-level
+ * error boundary to rely on the way a Server Component caller would.
+ */
+export async function searchProducts(
+  query: string,
+  options: SearchProductsOptions = {},
+): Promise<ProductListItem[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const limit = options.limit ?? 6;
+
+  // Demo Mode short-circuit — DECISIONS.md D-057, extended by D-058. Same
+  // never-calls-getStorefrontClient() contract as getProduct/getProducts.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const q = trimmed.toLowerCase();
+    return PREVIEW_PRODUCTS.filter(
+      (p) => p.title.toLowerCase().includes(q) || p.productType.toLowerCase().includes(q),
+    ).slice(0, limit);
+  }
+
+  const client = getStorefrontClient();
+  const { data, errors } = await client.request(GET_PREDICTIVE_SEARCH_QUERY, {
+    variables: { query: trimmed, limit },
+  });
+
+  if (errors) {
+    throw toRequestError(errors);
+  }
+
+  const products = data?.predictiveSearch?.products ?? [];
+  return products.map((node) => ({
+    id: node.id,
+    handle: node.handle,
+    title: node.title,
+    productType: node.productType,
+    tags: node.tags,
+    minPrice: node.priceRange.minVariantPrice,
+    availableForSale: node.availableForSale,
+    images: node.images.edges.map(({ node: image }) => ({
+      url: image.url,
+      altText: image.altText ?? null,
+      width: image.width ?? null,
+      height: image.height ?? null,
+    })),
+  }));
 }

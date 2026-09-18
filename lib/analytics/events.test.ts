@@ -14,6 +14,7 @@ describe('isKnownAnalyticsEvent', () => {
       'quick_add_click',
       'variant_selected',
       'category_nav_click',
+      'search',
       'hotspot_selected',
       'shop_the_look_open',
       'access_gate_view',
@@ -73,6 +74,12 @@ describe('dispatchAnalyticsEvent', () => {
     const sink = vi.fn();
     dispatchAnalyticsEvent('access_granted', { tier: 'general' }, sink);
     expect(sink).toHaveBeenCalledWith('access_granted', { tier: 'general' });
+  });
+
+  it('dispatches a real search event with search_term and result_count', () => {
+    const sink = vi.fn();
+    dispatchAnalyticsEvent('search', { search_term: 'hoodie', result_count: 3 }, sink);
+    expect(sink).toHaveBeenCalledWith('search', { search_term: 'hoodie', result_count: 3 });
   });
 
   it('strips PII-shaped properties before they ever reach the sink', () => {

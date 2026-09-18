@@ -143,3 +143,46 @@ export const GET_PRODUCTS_QUERY = `#graphql
     }
   }
 `;
+
+// predictiveSearch — a distinct root query from the plain `products`
+// connection above, purpose-built for type-ahead: its own field
+// description states it matches results "based on partial search terms"
+// as inherent behavior, so $query below receives the raw, trimmed,
+// user-typed string, never a field:"value" clause. types: [PRODUCT] is
+// hardcoded (not a variable) since this call site never varies it —
+// Collections/Pages/Articles are deliberately never requested (see
+// DECISIONS.md D-058). searchableFields/unavailableProducts are
+// deliberately omitted to use Shopify's own documented defaults — see the
+// design spec's Architecture section for why. Field selection mirrors
+// GET_PRODUCTS_QUERY's node shape exactly so both map to the same
+// ProductListItem interface.
+export const GET_PREDICTIVE_SEARCH_QUERY = `#graphql
+  query PredictiveSearch($query: String!, $limit: Int) {
+    predictiveSearch(query: $query, limit: $limit, types: [PRODUCT]) {
+      products {
+        id
+        handle
+        title
+        productType
+        tags
+        availableForSale
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        images(first: 2) {
+          edges {
+            node {
+              url
+              altText
+              width
+              height
+            }
+          }
+        }
+      }
+    }
+  }
+`;

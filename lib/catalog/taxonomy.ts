@@ -15,6 +15,17 @@ import { NAVIGATION } from '@/lib/navigation-data';
 
 export type CategorySlug = 'new' | 'tops' | 'bottoms' | 'etc';
 
+// Which top-level NAVIGATION entries correspond to a route that actually
+// exists this far into the roadmap — NAVIGATION also lists /collections
+// and /about (ROADMAP.md Phase 10/11+, not built yet). Read by
+// app/sitemap.ts (which routes to list) and searchCategories below (which
+// routes a search result may link to) — a single source of truth rather
+// than two lists that could drift. Needs a new entry the day either of
+// those ships as a real route. Relocated here from app/sitemap.ts
+// (DECISIONS.md D-053: lib/ must not depend on app/, and this taxonomy
+// module already owns every other piece of NAVIGATION-derived logic).
+export const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc']);
+
 function findCategoryEntry(category: CategorySlug) {
   return NAVIGATION.find((c) => c.href === `/${category}`);
 }
@@ -92,4 +103,40 @@ export function getCategoryForProductType(productType: string): ProductTypeCateg
     }
   }
   return null;
+}
+
+export interface CategorySearchResult {
+  label: string;
+  href: string;
+}
+
+/**
+ * Local, zero-I/O category/subcategory search — matches the user's typed
+ * query against real, already-built NAVIGATION routes only (see
+ * BUILT_CATEGORY_HREFS above). Case-insensitive substring match, checked
+ * independently against a category's own label and each of its
+ * subcategory labels, so both can match the same query (e.g. "s" could
+ * match many things; callers are expected to gate on a minimum query
+ * length before calling this — see SearchOverlay.tsx). Deliberately no
+ * Shopify dependency: this never needs Demo Mode or a real store to work
+ * correctly. See DECISIONS.md D-058 and the design spec's Architecture
+ * section for why this exists instead of a Shopify-side category concept.
+ */
+export function searchCategories(query: string, limit = 6): CategorySearchResult[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const results: CategorySearchResult[] = [];
+  for (const entry of NAVIGATION) {
+    if (!BUILT_CATEGORY_HREFS.has(entry.href)) continue;
+    if (entry.label.toLowerCase().includes(q)) {
+      results.push({ label: entry.label, href: entry.href });
+    }
+    for (const sub of entry.subcategories ?? []) {
+      if (sub.label.toLowerCase().includes(q)) {
+        results.push({ label: `${entry.label} / ${sub.label}`, href: sub.href });
+      }
+    }
+  }
+  return results.slice(0, limit);
 }

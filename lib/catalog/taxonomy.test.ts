@@ -5,6 +5,7 @@ import {
   getCategoryProductTypes,
   getSubcategoryLabel,
   getSubcategoryProductType,
+  searchCategories,
 } from '@/lib/catalog/taxonomy';
 
 describe('getCategoryProductTypes', () => {
@@ -101,5 +102,49 @@ describe('getCategoryForProductType', () => {
 
   test('returns null for a productType with no matching subcategory', () => {
     expect(getCategoryForProductType('Not A Real Product Type')).toBeNull();
+  });
+});
+
+describe('searchCategories', () => {
+  test('DESIGN_SYSTEM.md §50\'s worked example: "hoo" matches exactly TOPS / Hoodies', () => {
+    expect(searchCategories('hoo')).toEqual([{ label: 'TOPS / Hoodies', href: '/tops/hoodies' }]);
+  });
+
+  test('a top-level-only match (e.g. "new") returns just the category, no spurious subcategory matches', () => {
+    expect(searchCategories('new')).toEqual([{ label: 'NEW', href: '/new' }]);
+  });
+
+  test('"top" matches the TOPS category itself without spuriously matching unrelated subcategories', () => {
+    const results = searchCategories('top');
+    expect(results).toEqual([{ label: 'TOPS', href: '/tops' }]);
+  });
+
+  test('a query matching nothing real returns an empty array', () => {
+    expect(searchCategories('zzz')).toEqual([]);
+  });
+
+  test('is case-insensitive', () => {
+    expect(searchCategories('HOO')).toEqual([{ label: 'TOPS / Hoodies', href: '/tops/hoodies' }]);
+  });
+
+  test('an empty or whitespace-only query returns an empty array', () => {
+    expect(searchCategories('')).toEqual([]);
+    expect(searchCategories('   ')).toEqual([]);
+  });
+
+  test('never matches /collections or /about, even though NAVIGATION lists them and the query textually matches', () => {
+    // Proves the BUILT_CATEGORY_HREFS gate actually excludes these entries,
+    // not just that no test happens to try them.
+    expect(searchCategories('collect')).toEqual([]);
+    expect(searchCategories('abo')).toEqual([]);
+  });
+
+  test('respects the limit parameter', () => {
+    // "s" matches many real category/subcategory labels (TOPS, T-Shirts,
+    // Shirts, Hoodies, Sweaters, Jackets, BOTTOMS, Trousers, Shorts,
+    // Sweatpants, Hats — 11 real matches), loose enough to prove `limit`
+    // actually truncates rather than happening to return a short list.
+    const results = searchCategories('s', 3);
+    expect(results).toHaveLength(3);
   });
 });
