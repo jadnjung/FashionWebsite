@@ -84,9 +84,13 @@ test.describe('header', () => {
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('link', { name: 'ESQUE' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
-    await expect(page.getByText('SEARCH')).toBeVisible();
-    await expect(page.getByText('ACCOUNT')).toBeVisible();
-    await expect(page.getByText('BAG (0)')).toBeVisible();
+    // getByRole (accessible-name-based), not getByText: SearchOverlay
+    // (always mounted, sibling to the header) now carries its own sr-only
+    // "Search" label for its input, which getByText('SEARCH')'s
+    // case-insensitive substring match would ambiguously also match.
+    await expect(page.getByRole('button', { name: 'SEARCH' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ACCOUNT' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'BAG (0)' })).toBeVisible();
 
     const skipLink = page.getByRole('link', { name: /skip to content/i });
     await expect(skipLink).toBeAttached();
@@ -150,19 +154,16 @@ test.describe('header', () => {
     expect(accountLabelBox?.width).toBeLessThanOrEqual(1);
   });
 
-  // SEARCH/ACCOUNT/BAG have no real behavior yet (Phase 4/10/2) — clicking
-  // shows a brief acknowledgment instead of doing nothing silently. See
-  // components/navigation/ComingSoonNotice.tsx.
-  test('SEARCH, ACCOUNT, and BAG show an on-brand "arriving soon" notice when clicked', async ({
-    page,
-  }) => {
+  // ACCOUNT/BAG have no real behavior yet (Phase 10/2) — clicking shows a
+  // brief acknowledgment instead of doing nothing silently. See
+  // components/navigation/ComingSoonNotice.tsx. SEARCH used to be part of
+  // this trio (see git history) — it now opens a real SearchOverlay
+  // (tests/e2e/search.spec.ts covers that behavior).
+  test('ACCOUNT and BAG show an on-brand "arriving soon" notice when clicked', async ({ page }) => {
     await page.goto('/');
     const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
 
     await expect(notice).not.toBeVisible();
-
-    await page.getByRole('button', { name: 'SEARCH' }).click();
-    await expect(notice).toHaveText('SEARCH — ARRIVING SOON.');
 
     await page.getByRole('button', { name: 'ACCOUNT' }).click();
     await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');

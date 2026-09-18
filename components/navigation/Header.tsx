@@ -12,17 +12,27 @@ interface HeaderProps {
   // to it on close (see FullScreenMenu.tsx for why this must be explicit
   // rather than inferred from document.activeElement).
   menuTriggerRef: RefObject<HTMLButtonElement | null>;
+  // Mirrors menuOpen/onMenuOpen/menuTriggerRef exactly, for SearchOverlay
+  // (ROADMAP.md Phase 4, DECISIONS.md D-058) — see ShellClient.tsx for why
+  // both this and menuOpen live there rather than in Header/the overlay
+  // itself (both need it: Header attaches it to a trigger button, the
+  // overlay focuses it back on close), and for how inert={menuOpen ||
+  // searchOpen} keeps the two overlays mutually exclusive.
+  searchOpen: boolean;
+  onSearchOpen: () => void;
+  searchTriggerRef: RefObject<HTMLButtonElement | null>;
 }
 
 // Below `md` there isn't room for four full-text utility buttons (each
 // carries Button's fixed px-6/py-3 secondary padding — see DECISIONS.md).
-// SEARCH/ACCOUNT are the lower-priority, not-yet-wired controls (real
-// behavior lands in ROADMAP.md Phase 4/10), so they compress to icon-only
-// below `md`; MENU and BAG stay as text since PROJECT.md §73 requires both
-// to remain immediately visible/reachable on mobile. `!` (Tailwind v4's
-// important modifier) is required here, not stylistic preference: Button's
-// own px-6/py-3 is unscoped, so a plain conflicting className has no
-// guaranteed win against it (confirmed empirically — see task-11.5-report.md).
+// SEARCH/ACCOUNT are the lower-priority controls (SEARCH is now real,
+// ACCOUNT's real behavior lands in ROADMAP.md Phase 10), so they compress
+// to icon-only below `md`; MENU and BAG stay as text since PROJECT.md §73
+// requires both to remain immediately visible/reachable on mobile. `!`
+// (Tailwind v4's important modifier) is required here, not stylistic
+// preference: Button's own px-6/py-3 is unscoped, so a plain conflicting
+// className has no guaranteed win against it (confirmed empirically — see
+// task-11.5-report.md).
 const compactUtilityButton = 'px-2.5! md:px-6!';
 const tightUtilityButton = 'px-3! md:px-6!';
 
@@ -61,12 +71,19 @@ function AccountIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function Header({ menuOpen, onMenuOpen, menuTriggerRef }: HeaderProps) {
+export function Header({
+  menuOpen,
+  onMenuOpen,
+  menuTriggerRef,
+  searchOpen,
+  onSearchOpen,
+  searchTriggerRef,
+}: HeaderProps) {
   // Bag count is local state for now — DESIGN_SYSTEM.md's data-flow
   // section: no cart exists until ROADMAP.md Phase 2 wires up Shopify.
   const [bagCount] = useState(0);
 
-  // SEARCH/ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx).
+  // ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx).
   // Auto-dismissed after a few seconds rather than requiring a manual close
   // — this is an acknowledgment, not a decision the visitor needs to act on.
   const [comingSoonFeature, setComingSoonFeature] = useState<ComingSoonFeature | null>(null);
@@ -96,16 +113,19 @@ export function Header({ menuOpen, onMenuOpen, menuTriggerRef }: HeaderProps) {
         >
           MENU
         </Button>
-        {/* SEARCH/ACCOUNT: real behavior lands in ROADMAP.md Phase 4/10;
-            clicking shows ComingSoonNotice instead of doing nothing. */}
         <Button
+          ref={searchTriggerRef}
           variant="secondary"
-          onClick={() => setComingSoonFeature('SEARCH')}
+          aria-expanded={searchOpen}
+          aria-controls="esque-search-overlay"
+          onClick={onSearchOpen}
           className={`inline-flex items-center justify-center ${compactUtilityButton}`}
         >
           <SearchIcon className="h-5 w-5 md:hidden" />
           <span className="sr-only md:not-sr-only">SEARCH</span>
         </Button>
+        {/* ACCOUNT: real behavior lands in ROADMAP.md Phase 10; clicking
+            shows ComingSoonNotice instead of doing nothing. */}
         <Button
           variant="secondary"
           onClick={() => setComingSoonFeature('ACCOUNT')}

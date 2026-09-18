@@ -115,6 +115,31 @@ button:focus-visible {
     visibility 0s linear 0s;
 }
 
+/* SearchOverlay open/close — identical mechanics to .esque-menu above
+   (DESIGN_SYSTEM.md §26's timing, reused for this second full-screen
+   dialog). Deliberately a separate class rather than sharing .esque-menu:
+   FullScreenMenu.tsx is already-shipped, independently reviewed code: a
+   new, unrelated dialog reusing (and implicitly coupling to) its class
+   name is a worse trade than ~15 duplicated lines. See DECISIONS.md D-058
+   and the design spec's Architecture section. The sitewide
+   prefers-reduced-motion rule above already zeroes both classes'
+   transitions with no extra work needed here. */
+.esque-search-overlay {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 280ms var(--ease-esque),
+    visibility 0s linear 280ms;
+}
+
+.esque-search-overlay[data-open='true'] {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 400ms var(--ease-esque),
+    visibility 0s linear 0s;
+}
+
 /* Incorrect-password animation — DESIGN_SYSTEM.md §56: text briefly splits
    horizontally, the field shifts ~3-5px, then the message appears. A single
    gentle nudge-and-return (not an oscillating shake) per the spec's explicit

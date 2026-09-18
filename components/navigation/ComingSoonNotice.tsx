@@ -1,13 +1,14 @@
-// SEARCH/ACCOUNT/BAG in Header.tsx have no real behavior yet — SEARCH lands
-// in ROADMAP.md Phase 4, ACCOUNT in Phase 10, BAG needs a real cart (Phase 2)
-// — all three gated on a real Shopify store. Rather than a silent no-op
-// (reported as feeling broken during a project-owner walkthrough), clicking
-// any of them shows this brief, on-brand acknowledgment instead. Reuses the
-// terse, period-terminated "ARRIVING SOON." voice already established for
-// the Interactive Model's own not-yet-built placeholder (see
+// ACCOUNT/BAG in Header.tsx have no real behavior yet — ACCOUNT lands in
+// ROADMAP.md Phase 10, BAG needs a real cart (Phase 2) — both gated on a
+// real Shopify store. Rather than a silent no-op (reported as feeling
+// broken during a project-owner walkthrough), clicking either shows this
+// brief, on-brand acknowledgment instead. Reuses the terse,
+// period-terminated "ARRIVING SOON." voice already established for the
+// Interactive Model's own not-yet-built placeholder (see
 // components/interactive-model/InteractiveModelPlaceholder.tsx) rather than
-// inventing new copy.
-export type ComingSoonFeature = 'SEARCH' | 'ACCOUNT' | 'BAG';
+// inventing new copy. SEARCH used to be part of this trio — it now opens a
+// real SearchOverlay (ROADMAP.md Phase 4, DECISIONS.md D-058) instead.
+export type ComingSoonFeature = 'ACCOUNT' | 'BAG';
 
 interface ComingSoonNoticeProps {
   feature: ComingSoonFeature | null;
