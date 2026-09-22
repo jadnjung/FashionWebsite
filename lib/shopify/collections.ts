@@ -1,5 +1,13 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import { GET_COLLECTION_QUERY, GET_COLLECTIONS_QUERY } from '@/lib/shopify/queries/collections';
+// Demo Mode (PREVIEW_DEMO_MODE) — see preview-demo-fixtures.ts's file
+// header and DECISIONS.md D-057 for what this is, why it exists, and how
+// it's scoped (opt-in, off by default everywhere). This import and the
+// two short-circuits below are the only places this file branches on it.
+import {
+  PREVIEW_COLLECTIONS,
+  getPreviewCollectionDetail,
+} from '@/lib/shopify/preview-demo-fixtures';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -14,12 +22,12 @@ export interface CollectionSummary {
   handle: string;
   title: string;
   dropStatus: string | null;
+  archivedAt: string | null;
 }
 
 export interface CollectionDetail extends CollectionSummary {
   description: string;
   dropDate: string | null;
-  archivedAt: string | null;
   products: { id: string; handle: string; title: string }[];
   hasNextPage: boolean;
   endCursor: string | null;
@@ -39,6 +47,10 @@ export async function getCollection(
   first = 20,
   after?: string,
 ): Promise<CollectionDetail | null> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  // Never reaches getStorefrontClient() below, so it never requires (or
+  // risks touching) real Shopify credentials.
+  if (process.env.PREVIEW_DEMO_MODE === '1') return getPreviewCollectionDetail(handle);
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_COLLECTION_QUERY, {
     variables: { handle, first, after: after ?? null },
@@ -80,6 +92,14 @@ export async function getCollections(
   first = 20,
   after?: string,
 ): Promise<{ collections: CollectionSummary[]; hasNextPage: boolean; endCursor: string | null }> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    return {
+      collections: PREVIEW_COLLECTIONS.slice(0, first),
+      hasNextPage: false,
+      endCursor: null,
+    };
+  }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_COLLECTIONS_QUERY, {
     variables: { first, after: after ?? null },
@@ -97,6 +117,7 @@ export async function getCollections(
       handle: node.handle,
       title: node.title,
       dropStatus: node.dropStatus?.value ?? null,
+      archivedAt: node.archivedAt?.value ?? null,
     })),
     hasNextPage: data?.collections?.pageInfo?.hasNextPage ?? false,
     endCursor: data?.collections?.pageInfo?.endCursor ?? null,

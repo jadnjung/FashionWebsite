@@ -45,6 +45,9 @@ export function Footer() {
         <Link href="/wishlist" className="inline-block py-2 hover:text-esque-text">
           Wishlist
         </Link>
+        <Link href="/archive" className="inline-block py-2 hover:text-esque-text">
+          Archive
+        </Link>
       </nav>
     </footer>
   );

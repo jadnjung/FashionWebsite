@@ -105,6 +105,7 @@ describe('getCollections', () => {
                 handle: 'collection-001',
                 title: 'Collection 001',
                 dropStatus: { value: 'active' },
+                archivedAt: null,
               },
             },
           ],
@@ -122,11 +123,37 @@ describe('getCollections', () => {
           handle: 'collection-001',
           title: 'Collection 001',
           dropStatus: 'active',
+          archivedAt: null,
         },
       ],
       hasNextPage: true,
       endCursor: 'c1',
     });
+  });
+
+  test('maps a real, non-null archivedAt metafield through — the signal isCollectionArchived relies on for the archive index', async () => {
+    mockClient({
+      data: {
+        collections: {
+          edges: [
+            {
+              cursor: 'c1',
+              node: {
+                id: 'gid://shopify/Collection/2',
+                handle: 'collection-000',
+                title: 'Collection 000',
+                dropStatus: { value: 'archived' },
+                archivedAt: { value: '2026-06-01T00:00:00Z' },
+              },
+            },
+          ],
+          pageInfo: { hasNextPage: false, endCursor: 'c1' },
+        },
+      },
+    });
+
+    const result = await getCollections();
+    expect(result.collections[0].archivedAt).toBe('2026-06-01T00:00:00Z');
   });
 
   test('throws when the response includes errors, rather than returning an empty page', async () => {
@@ -146,5 +173,58 @@ describe('getCollections', () => {
     });
 
     await expect(getCollections()).rejects.toThrow('Shopify Storefront API is not configured');
+  });
+});
+
+// Demo Mode (DECISIONS.md D-057) — the PREVIEW_DEMO_MODE-gated
+// short-circuits in getCollection/getCollections. `vi.stubEnv` is
+// auto-restored after each test (vitest.config.ts's `unstubEnvs: true`),
+// so it's safe to set per-test without a shared beforeEach/afterEach. The
+// "never touches the Storefront client" tests below compare the spy's
+// call count before and after, mirroring products.test.ts's own Demo Mode
+// test style exactly (see that file's comment for why).
+describe('getCollection — Demo Mode', () => {
+  test('short-circuits to fixture data and never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+
+    const result = await getCollection('collection-000');
+
+    expect(result?.dropStatus).toBe('archived');
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+
+  test('a real, current (non-archived) collection handle still resolves — proves the fixtures are not archived-only', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getCollection('collection-001');
+    expect(result?.dropStatus).toBe('active');
+  });
+
+  test('returns null for a handle with no matching fixture, same as the real not-found contract', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getCollection('does-not-exist');
+    expect(result).toBeNull();
+  });
+});
+
+describe('getCollections — Demo Mode', () => {
+  test('short-circuits to fixture data and never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+
+    const result = await getCollections();
+
+    expect(result.collections.length).toBeGreaterThan(0);
+    expect(result.hasNextPage).toBe(false);
+    expect(result.endCursor).toBeNull();
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+
+  test('respects `first`', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getCollections(1);
+    expect(result.collections).toHaveLength(1);
   });
 });

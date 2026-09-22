@@ -68,6 +68,7 @@ export const GET_PRODUCTS_BY_COLLECTION_QUERY = `#graphql
             id
             handle
             title
+            description
             productType
             tags
             priceRange {

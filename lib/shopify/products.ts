@@ -10,7 +10,11 @@ import type { ProductSortKeys } from '@/lib/shopify/storefront.types';
 // header and DECISIONS.md D-057 for what this is, why it exists, and how
 // it's scoped (opt-in, off by default everywhere). This import and the two
 // short-circuits below are the only places this file branches on it.
-import { PREVIEW_PRODUCTS, getPreviewProductDetail } from '@/lib/shopify/preview-demo-fixtures';
+import {
+  PREVIEW_PRODUCTS,
+  getPreviewProductDetail,
+  getPreviewProductsByCollection,
+} from '@/lib/shopify/preview-demo-fixtures';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -59,6 +63,7 @@ export interface ProductSummary {
   id: string;
   handle: string;
   title: string;
+  description: string;
   productType: string;
   tags: string[];
   minPrice: { amount: string; currencyCode: string };
@@ -137,6 +142,14 @@ export async function getProductsByCollection(
   first = 24,
   after?: string,
 ): Promise<{ products: ProductSummary[]; hasNextPage: boolean; endCursor: string | null } | null> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  // Never reaches getStorefrontClient() below, so it never requires (or
+  // risks touching) real Shopify credentials.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const products = getPreviewProductsByCollection(handle);
+    if (!products) return null;
+    return { products, hasNextPage: false, endCursor: null };
+  }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_PRODUCTS_BY_COLLECTION_QUERY, {
     variables: { handle, first, after: after ?? null },
@@ -156,6 +169,7 @@ export async function getProductsByCollection(
         id: node.id,
         handle: node.handle,
         title: node.title,
+        description: node.description,
         productType: node.productType,
         tags: node.tags,
         minPrice: node.priceRange.minVariantPrice,

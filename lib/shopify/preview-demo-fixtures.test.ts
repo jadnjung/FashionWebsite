@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { PREVIEW_PRODUCTS, getPreviewProductDetail } from '@/lib/shopify/preview-demo-fixtures';
+import {
+  PREVIEW_COLLECTIONS,
+  PREVIEW_PRODUCTS,
+  getPreviewCollectionDetail,
+  getPreviewProductDetail,
+  getPreviewProductsByCollection,
+} from '@/lib/shopify/preview-demo-fixtures';
 
 describe('PREVIEW_PRODUCTS', () => {
   test('every handle is unique', () => {
@@ -77,5 +83,60 @@ describe('getPreviewProductDetail', () => {
     for (const product of PREVIEW_PRODUCTS) {
       expect(getPreviewProductDetail(product.handle)).not.toBeNull();
     }
+  });
+});
+
+describe('PREVIEW_COLLECTIONS', () => {
+  test('every handle is unique', () => {
+    const handles = PREVIEW_COLLECTIONS.map((collection) => collection.handle);
+    expect(new Set(handles).size).toBe(handles.length);
+  });
+
+  test('exactly one entry is archived', () => {
+    const archived = PREVIEW_COLLECTIONS.filter(
+      (collection) => collection.dropStatus?.toLowerCase() === 'archived',
+    );
+    expect(archived).toHaveLength(1);
+  });
+});
+
+describe('getPreviewCollectionDetail', () => {
+  test("returns the archived detail for 'collection-000'", () => {
+    const result = getPreviewCollectionDetail('collection-000');
+    expect(result?.dropStatus).toBe('archived');
+    expect(result?.archivedAt).not.toBeNull();
+  });
+
+  test("returns the current (non-archived) detail for 'collection-001'", () => {
+    const result = getPreviewCollectionDetail('collection-001');
+    expect(result?.dropStatus).toBe('active');
+    expect(result?.archivedAt).toBeNull();
+  });
+
+  test('returns null for an unrecognized handle', () => {
+    expect(getPreviewCollectionDetail('does-not-exist')).toBeNull();
+  });
+});
+
+describe('getPreviewProductsByCollection', () => {
+  test("returns the two archive fixtures for 'collection-000'", () => {
+    const result = getPreviewProductsByCollection('collection-000');
+    expect(result).toHaveLength(2);
+    expect(result?.map((p) => p.handle)).toEqual([
+      'preview-structured-wool-coat',
+      'preview-ribbed-turtleneck',
+    ]);
+  });
+
+  test("returns the mapped launch products for 'collection-001'", () => {
+    const result = getPreviewProductsByCollection('collection-001');
+    expect(result).toHaveLength(PREVIEW_PRODUCTS.length);
+    expect(
+      result?.every((p) => typeof p.description === 'string' && p.description.length > 0),
+    ).toBe(true);
+  });
+
+  test('returns null for an unrecognized handle', () => {
+    expect(getPreviewProductsByCollection('does-not-exist')).toBeNull();
   });
 });

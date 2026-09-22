@@ -37,7 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     (entry) => [entry.href, ...(entry.subcategories?.map((s) => s.href) ?? [])],
   );
   const legalPaths = LEGAL_PAGES.map((page) => page.href);
-  const paths = ['/', ...categoryPaths, ...legalPaths, '/contact'];
+  const paths = ['/', ...categoryPaths, ...legalPaths, '/contact', '/archive'];
 
   return paths.map((path) => ({
     url: `${SITE_URL}${path}`,

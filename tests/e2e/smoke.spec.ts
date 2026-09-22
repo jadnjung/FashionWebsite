@@ -378,6 +378,7 @@ test.describe('footer', () => {
     await expect(footer.getByRole('link', { name: 'Accessibility Statement' })).toBeVisible();
     await expect(footer.getByRole('link', { name: 'Contact' })).toBeVisible();
     await expect(footer.getByRole('link', { name: 'Wishlist' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Archive' })).toBeVisible();
   });
 
   // Regression: /legal/privacy, /legal/terms, and /contact were dead links
@@ -396,6 +397,7 @@ test.describe('footer', () => {
     ['Accessibility Statement', '/legal/accessibility'],
     ['Contact', '/contact'],
     ['Wishlist', '/wishlist'],
+    ['Archive', '/archive'],
   ] as const) {
     test(`${name} footer link navigates to a real page, not a 404`, async ({ page }) => {
       await page.goto('/');

@@ -204,6 +204,7 @@ describe('getProductsByCollection', () => {
                   id: 'gid://shopify/Product/1',
                   handle: 'item-one',
                   title: 'Item One',
+                  description: 'A description.',
                   productType: 'Tops',
                   tags: ['new'],
                   priceRange: { minVariantPrice: { amount: '120.00', currencyCode: 'USD' } },
@@ -225,6 +226,7 @@ describe('getProductsByCollection', () => {
           id: 'gid://shopify/Product/1',
           handle: 'item-one',
           title: 'Item One',
+          description: 'A description.',
           productType: 'Tops',
           tags: ['new'],
           minPrice: { amount: '120.00', currencyCode: 'USD' },
@@ -456,6 +458,26 @@ describe('getProduct — Demo Mode', () => {
   test('returns null for a handle with no matching fixture, same as the real not-found contract', async () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getProduct('does-not-exist');
+    expect(result).toBeNull();
+  });
+});
+
+describe('getProductsByCollection — Demo Mode', () => {
+  test('short-circuits to fixture data and never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+
+    const result = await getProductsByCollection('collection-000');
+
+    expect(result?.products).toHaveLength(2);
+    expect(result?.products.every((p) => p.description.length > 0)).toBe(true);
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+
+  test('returns null for a handle with no matching fixture, same as the real not-found contract', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProductsByCollection('does-not-exist');
     expect(result).toBeNull();
   });
 });
