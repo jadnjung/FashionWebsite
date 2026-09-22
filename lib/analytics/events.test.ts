@@ -11,6 +11,7 @@ describe('isKnownAnalyticsEvent', () => {
     const names: AnalyticsEventName[] = [
       'view_item',
       'add_to_bag_click',
+      'quick_add_open',
       'quick_add_click',
       'variant_selected',
       'category_nav_click',
@@ -80,6 +81,52 @@ describe('dispatchAnalyticsEvent', () => {
     const sink = vi.fn();
     dispatchAnalyticsEvent('search', { search_term: 'hoodie', result_count: 3 }, sink);
     expect(sink).toHaveBeenCalledWith('search', { search_term: 'hoodie', result_count: 3 });
+  });
+
+  it('dispatches quick_add_open with item_id and item_name', () => {
+    const sink = vi.fn();
+    dispatchAnalyticsEvent(
+      'quick_add_open',
+      { item_id: 'hoodie-01', item_name: 'Hoodie 01' },
+      sink,
+    );
+    expect(sink).toHaveBeenCalledWith('quick_add_open', {
+      item_id: 'hoodie-01',
+      item_name: 'Hoodie 01',
+    });
+  });
+
+  it('dispatches variant_selected with the new quick_add context value', () => {
+    const sink = vi.fn();
+    dispatchAnalyticsEvent(
+      'variant_selected',
+      { item_id: 'hoodie-01', option_name: 'Size', option_value: 'M', context: 'quick_add' },
+      sink,
+    );
+    expect(sink).toHaveBeenCalledWith('variant_selected', {
+      item_id: 'hoodie-01',
+      option_name: 'Size',
+      option_value: 'M',
+      context: 'quick_add',
+    });
+  });
+
+  it('dispatches quick_add_click with the on-grid region value', () => {
+    const sink = vi.fn();
+    dispatchAnalyticsEvent(
+      'quick_add_click',
+      {
+        currency: 'USD',
+        value: 128,
+        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01' }],
+        region: 'product_card',
+      },
+      sink,
+    );
+    expect(sink).toHaveBeenCalledWith(
+      'quick_add_click',
+      expect.objectContaining({ region: 'product_card' }),
+    );
   });
 
   it('strips PII-shaped properties before they ever reach the sink', () => {

@@ -42,6 +42,7 @@ const ANALYTICS_EVENT_NAMES = [
   // Product Behavior (PROJECT.md §82)
   'view_item',
   'add_to_bag_click',
+  'quick_add_open',
   'quick_add_click',
   'variant_selected',
   // Discovery
@@ -83,6 +84,19 @@ interface EventPropertiesMap {
     value: number;
     items: [AnalyticsItem];
   };
+  // Fires when the on-grid Quick Add trigger (ProductCard) is clicked and
+  // the panel begins opening — mirrors the shop_the_look_open/
+  // request_access_open "opened a flow" pattern. The Interactive Model's
+  // own QUICK ADD button has no separate open step (its panel is already
+  // visible once a hotspot is activated), so this event has exactly one
+  // real call site today. See DECISIONS.md D-060.
+  quick_add_open: {
+    item_id: string;
+    item_name: string;
+  };
+  // Fired from two real surfaces: the Interactive Model's own panel
+  // (region = hotspot region, e.g. 'top'/'bottom') and the on-grid Quick
+  // Add panel (region: 'product_card') — see DECISIONS.md D-060.
   quick_add_click: {
     currency: string;
     value: number;
@@ -93,10 +107,11 @@ interface EventPropertiesMap {
     item_id: string;
     option_name: string;
     option_value: string;
-    // Same shared VariantPicker renders on three real, distinct surfaces
-    // (DECISIONS.md D-036) — this distinguishes which one a given selection
-    // happened on, since all three are genuine, live interactions today.
-    context: 'pdp' | 'interactive_model' | 'shop_the_look';
+    // Same shared VariantPicker renders on four real, distinct surfaces
+    // (DECISIONS.md D-036/D-060) — this distinguishes which one a given
+    // selection happened on, since all four are genuine, live interactions
+    // today.
+    context: 'pdp' | 'interactive_model' | 'shop_the_look' | 'quick_add';
   };
   category_nav_click: {
     category: string;

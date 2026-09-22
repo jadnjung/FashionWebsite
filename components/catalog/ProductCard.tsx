@@ -17,6 +17,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ViewTransition } from 'react';
+import { QuickAddTrigger } from '@/components/catalog/QuickAddTrigger';
 import type { GridItemLayout } from '@/lib/catalog/grid-layout';
 import { getProductViewTransitionName } from '@/lib/product/view-transition';
 import type { ProductListItem } from '@/lib/shopify/products';
@@ -66,7 +67,10 @@ interface ProductCardProps {
 // to a 2nd photograph via pure CSS (group/group-hover opacity) — matches
 // D-013's "cheapest motion tier that satisfies the need" and keeps this a
 // Server Component; no client JS is needed for the hover effect. Quick Add
-// (§40) is out of scope this pass — see the design spec's Non-Goals.
+// (§40-41) is a real, unconditional on-grid affordance — resolves
+// DECISIONS.md D-029, see D-060. `QuickAddTrigger` (a client component) is
+// a sibling of the Link below, not nested inside it, so this component
+// itself stays a Server Component with zero new client JS of its own.
 // data-cursor="VIEW" (§39/§18) is wired to the custom cursor — DECISIONS.md
 // D-040.
 //
@@ -123,23 +127,32 @@ export function ProductCard({
   );
 
   return (
-    <Link
-      href={`/products/${product.handle}`}
-      data-cursor="VIEW"
-      className="group flex flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
-    >
-      {enableSharedTransition ? (
-        <ViewTransition
-          name={getProductViewTransitionName(product.handle)}
-          share="morph"
-          default="none"
-        >
-          {imageContainer}
-        </ViewTransition>
-      ) : (
-        imageContainer
-      )}
-      <p className="text-product-name text-esque-text">{product.title}</p>
-    </Link>
+    // `group` lives on this wrapper, not the Link, so group-hover/
+    // group-focus-within (QuickAddTrigger's reveal) react to the whole
+    // card, not just the anchor. QuickAddTrigger is a sibling of the Link,
+    // never nested inside it: a <button> can't nest inside an <a> (invalid
+    // HTML; a click would also fire the outer navigation) — see
+    // DECISIONS.md D-060.
+    <div className="group flex flex-col gap-3">
+      <Link
+        href={`/products/${product.handle}`}
+        data-cursor="VIEW"
+        className="flex flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+      >
+        {enableSharedTransition ? (
+          <ViewTransition
+            name={getProductViewTransitionName(product.handle)}
+            share="morph"
+            default="none"
+          >
+            {imageContainer}
+          </ViewTransition>
+        ) : (
+          imageContainer
+        )}
+        <p className="text-product-name text-esque-text">{product.title}</p>
+      </Link>
+      <QuickAddTrigger handle={product.handle} title={product.title} />
+    </div>
   );
 }
