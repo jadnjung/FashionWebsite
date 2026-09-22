@@ -46,7 +46,19 @@ export function SizeGuidePanel({ open, onClose }: SizeGuidePanelProps) {
       ref={dialogRef}
       onClose={onClose}
       aria-label="Size Guide"
-      className="fixed inset-x-0 bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
+      // top-auto — DECISIONS.md D-059: without it, the native <dialog>'s own
+      // UA modal-positioning rule leaves `top` non-auto alongside this
+      // panel's own `bottom-0` and (fit-content, capped by max-h) auto
+      // height — an over-constrained box that browsers resolve by pinning
+      // to `top` and leaving the unfilled space as a dead gap at the
+      // *bottom*, the opposite of the "bottom sheet" this panel has always
+      // been documented (D-027, DESIGN_SYSTEM.md §46) and intended to be.
+      // Confirmed live (not assumed) on a real mobile viewport before this
+      // fix: pinned to the top with a ~492px empty gap below it. `top-auto`
+      // removes `top` from the constraint so `bottom-0` alone determines
+      // position; unaffected at `md:` and up, where `md:inset-y-0` sets an
+      // explicit `top:0` again anyway.
+      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
     >
       <div className="flex items-center justify-between pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">Size Guide</h2>

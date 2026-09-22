@@ -109,7 +109,13 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
       ref={dialogRef}
       onClose={onClose}
       aria-label="Shop the Look"
-      className="fixed inset-x-0 bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
+      // top-auto — DECISIONS.md D-059, the same fix as SizeGuidePanel.tsx
+      // (byte-identical base classes, byte-identical bug: without it, this
+      // panel rendered pinned to the top of the viewport on mobile, with a
+      // dead gap below it, instead of the "bottom sheet" DESIGN_SYSTEM.md
+      // §46/D-027 always intended). See SizeGuidePanel.tsx's own comment
+      // for the full mechanism.
+      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
     >
       <div className="flex items-center justify-between pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">Shop the Look</h2>
