@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SizeGuidePanel } from '@/components/product/SizeGuidePanel';
 import { VariantPicker } from '@/components/product/VariantPicker';
+import { WishlistToggle } from '@/components/product/WishlistToggle';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
@@ -30,6 +31,11 @@ interface ProductPurchasePanelProps {
   productType: string;
   options: ProductOption[];
   variants: ProductVariant[];
+  // Threaded through for WishlistToggle's WishlistItem snapshot — nullable,
+  // not optional, matching RecentlyViewed's identical prop type shape for
+  // the same data (ProductDetail.tsx's own image[0] lookup).
+  imageUrl: string | null;
+  imageAlt: string | null;
   // Server-rendered, static description — passed as children (composition,
   // not a string prop) so it stays zero-JS even though it renders inside
   // this client boundary. See the design spec's Component breakdown.
@@ -51,6 +57,8 @@ export function ProductPurchasePanel({
   productType,
   options,
   variants,
+  imageUrl,
+  imageAlt,
   children,
 }: ProductPurchasePanelProps) {
   const [selections, setSelections] = useState<OptionSelections>(() =>
@@ -209,6 +217,15 @@ export function ProductPurchasePanel({
           )}
         </div>
       )}
+
+      {/* Unconditional — renders regardless of soldOut. PROJECT.md §57/§40
+          both point toward wishlisting being independent of purchasability:
+          a customer should be able to save a sold-out product to revisit
+          later, the one real product-facing behavior this pass can offer
+          that's adjacent to the deferred back-in-stock feature. Not
+          memoized — no downstream effect/memo compares this object by
+          reference, only `.handle` is read for a cheap lookup. */}
+      <WishlistToggle item={{ handle, title, imageUrl, imageAlt, minPrice }} />
 
       <SizeGuidePanel open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
     </div>

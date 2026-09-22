@@ -35,6 +35,17 @@ export function Footer() {
           Contact
         </Link>
       </nav>
+      {/* A second, separate <nav> landmark — Wishlist is neither a legal
+          page nor a support page, so folding it into the "Legal and
+          support" nav above would misrepresent that nav's accessible name.
+          Same WCAG 2.5.8 touch-target padding technique (inline-block
+          py-2, offset by the nav's own negative vertical margin) as the
+          nav above. */}
+      <nav aria-label="Shopping" className="mt-4 flex flex-wrap gap-4 -my-2">
+        <Link href="/wishlist" className="inline-block py-2 hover:text-esque-text">
+          Wishlist
+        </Link>
+      </nav>
     </footer>
   );
 }

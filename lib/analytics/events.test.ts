@@ -14,6 +14,7 @@ describe('isKnownAnalyticsEvent', () => {
       'quick_add_open',
       'quick_add_click',
       'variant_selected',
+      'add_to_wishlist',
       'category_nav_click',
       'search',
       'hotspot_selected',
@@ -108,6 +109,24 @@ describe('dispatchAnalyticsEvent', () => {
       option_name: 'Size',
       option_value: 'M',
       context: 'quick_add',
+    });
+  });
+
+  it('dispatches add_to_wishlist with the standard GA4 items shape', () => {
+    const sink = vi.fn();
+    dispatchAnalyticsEvent(
+      'add_to_wishlist',
+      {
+        currency: 'USD',
+        value: 180,
+        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01', price: 180 }],
+      },
+      sink,
+    );
+    expect(sink).toHaveBeenCalledWith('add_to_wishlist', {
+      currency: 'USD',
+      value: 180,
+      items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01', price: 180 }],
     });
   });
 

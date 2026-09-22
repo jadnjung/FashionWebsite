@@ -85,7 +85,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [ ] Guest checkout confirmed working end-to-end
 - [ ] Account: profile, orders, addresses
-- [ ] Wishlist (anonymous local + merge on login)
+- [~] Wishlist (anonymous local + merge on login) — the anonymous-local half is real: versioned `localStorage` (`lib/product/wishlist.ts`, mirroring `lib/product/recently-viewed.ts`'s D-031 pattern), a real PDP toggle (DESIGN_SYSTEM.md §42's right-panel "wishlist" action, unconditional even when sold out), a dedicated noindexed `/wishlist` route (Footer-linked, empty state `NOTHING SAVED YET.` per CONTENT.md §7), and a live sold-out-badge re-fetch reusing D-060's `GET /api/products/[handle]`. `add_to_wishlist` (GA4's own standard event) is wired, resolving PROJECT.md §82's previously-unattached "Wishlist adds." Merge-on-login stays blocked, unchanged: it needs a real Shopify store and a real customer-accounts system, neither of which exists yet (same D-016-class dependency as cart/checkout and the rest of this phase). See DECISIONS.md D-061.
 
 ## Phase 11 — Archive & Sold-Out States
 

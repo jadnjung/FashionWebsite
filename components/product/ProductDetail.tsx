@@ -32,6 +32,8 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
             productType={product.productType}
             options={product.options}
             variants={product.variants}
+            imageUrl={product.images[0]?.url ?? null}
+            imageAlt={product.images[0]?.altText ?? null}
           >
             {product.description && (
               <p className="text-body text-esque-text-secondary">{product.description}</p>

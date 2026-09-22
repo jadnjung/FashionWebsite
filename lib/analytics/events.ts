@@ -45,6 +45,7 @@ const ANALYTICS_EVENT_NAMES = [
   'quick_add_open',
   'quick_add_click',
   'variant_selected',
+  'add_to_wishlist',
   // Discovery
   'category_nav_click',
   'search',
@@ -116,6 +117,24 @@ interface EventPropertiesMap {
   category_nav_click: {
     category: string;
     href: string;
+  };
+  // Uses GA4's own standard recommended event name/shape exactly — an
+  // honest match (DECISIONS.md D-055's own test), unlike add_to_bag_click's
+  // deliberate avoidance of GA4's standard add_to_cart name: a wishlist
+  // add is a completely real, fully-functioning action in this pass (a
+  // real, persisted local save happens via lib/product/wishlist.ts), so
+  // there's no "stub" gap being misrepresented. Identical shape to
+  // add_to_bag_click. No corresponding "remove" event exists, deliberately:
+  // GA4 has no standard remove_from_wishlist recommended event, PROJECT.md
+  // §82 only names "Wishlist adds" (no removal-tracking is named there or
+  // anywhere else in this codebase's taxonomy — there is no
+  // remove_from_bag event either, even though removing from the Bag is a
+  // real, named PROJECT.md §47 action). Considered and deliberately not
+  // wired, matching D-055's own "considered and excluded" style.
+  add_to_wishlist: {
+    currency: string;
+    value: number;
+    items: [AnalyticsItem];
   };
   // Uses GA4's own standard recommended event exactly where it's an honest
   // match (DECISIONS.md D-055's own test, applied here): a real search
