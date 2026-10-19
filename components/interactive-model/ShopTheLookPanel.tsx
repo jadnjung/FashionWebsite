@@ -153,7 +153,27 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
                     {String(index + 1).padStart(2, '0')} — {garment.regionLabel}
                   </p>
                   <p className="text-product-name text-esque-text">{garment.product.title}</p>
-                  <p className="text-body text-esque-text-secondary">{formatPrice(displayPrice)}</p>
+                  {/* Per-row aria-live — DECISIONS.md D-066, resolving D-051's
+                      deferred finding: each garment's price can change
+                      independently (its own VariantPicker selection, below),
+                      and a single panel-wide live region would re-announce
+                      every visible garment's full text on any one garment's
+                      change — chattier than useful for a user adjusting
+                      several items in succession. Scoped to just this row's
+                      price text, mirroring ProductPurchasePanel's/
+                      ActiveGarmentPanel's "scope to the text that actually
+                      changes, not the whole panel" precedent (D-051 Finding
+                      4 / D-049) one level deeper — one live region per
+                      garment row instead of one per product page. "NO LONGER
+                      AVAILABLE." below needs no live region of its own: it's
+                      derived from `soldOut`, which reflects the garment's own
+                      fixed availability data, not the user's selection, so
+                      it never actually changes while this panel is open. */}
+                  <div aria-live="polite" aria-atomic="true">
+                    <p className="text-body text-esque-text-secondary">
+                      {formatPrice(displayPrice)}
+                    </p>
+                  </div>
                 </div>
               </label>
               {soldOut ? (
