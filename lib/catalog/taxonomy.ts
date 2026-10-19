@@ -16,15 +16,16 @@ import { NAVIGATION } from '@/lib/navigation-data';
 export type CategorySlug = 'new' | 'tops' | 'bottoms' | 'etc';
 
 // Which top-level NAVIGATION entries correspond to a route that actually
-// exists this far into the roadmap — NAVIGATION also lists /collections
-// and /about (ROADMAP.md Phase 10/11+, not built yet). Read by
-// app/sitemap.ts (which routes to list) and searchCategories below (which
-// routes a search result may link to) — a single source of truth rather
-// than two lists that could drift. Needs a new entry the day either of
-// those ships as a real route. Relocated here from app/sitemap.ts
-// (DECISIONS.md D-053: lib/ must not depend on app/, and this taxonomy
-// module already owns every other piece of NAVIGATION-derived logic).
-export const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc']);
+// exists this far into the roadmap — NAVIGATION also lists /about
+// (ROADMAP.md Phase 10+, not built yet). Read by app/sitemap.ts (which
+// routes to list) and searchCategories below (which routes a search result
+// may link to) — a single source of truth rather than two lists that could
+// drift. Needs a new entry the day /about ships as a real route (/collections
+// shipped — ROADMAP.md Phase 11, the /collections index — and was added
+// here). Relocated here from app/sitemap.ts (DECISIONS.md D-053: lib/ must
+// not depend on app/, and this taxonomy module already owns every other
+// piece of NAVIGATION-derived logic).
+export const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc', '/collections']);
 
 function findCategoryEntry(category: CategorySlug) {
   return NAVIGATION.find((c) => c.href === `/${category}`);

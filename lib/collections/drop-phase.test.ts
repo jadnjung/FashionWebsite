@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getDropPhase, isCollectionUpcoming } from './drop-phase';
+import { getCollectionHref, getDropPhase, isCollectionUpcoming } from './drop-phase';
 
 const NOW = new Date('2026-10-18T12:00:00Z');
 
@@ -59,5 +59,29 @@ describe('isCollectionUpcoming', () => {
         NOW,
       ),
     ).toBe(false);
+  });
+});
+
+describe('getCollectionHref', () => {
+  test('returns /archive/[handle] when archived — its real home per the notFound() branch in page.tsx', () => {
+    expect(getCollectionHref({ ...BASE, handle: 'collection-000', dropStatus: 'archived' })).toBe(
+      '/archive/collection-000',
+    );
+  });
+
+  test('returns /collections/[handle] when current', () => {
+    expect(getCollectionHref({ ...BASE, handle: 'collection-001' })).toBe(
+      '/collections/collection-001',
+    );
+  });
+
+  test('returns /collections/[handle] when upcoming (the teaser/countdown lives inside that route, not in this helper)', () => {
+    // Comfortably in the future relative to any real wall-clock time this
+    // test will ever run at — getCollectionHref calls getDropPhase with no
+    // injected `now` (no such parameter exists on this helper), so unlike
+    // the fixed-NOW tests above, this must stay genuinely future-dated.
+    expect(
+      getCollectionHref({ ...BASE, handle: 'collection-002', dropDate: '2099-01-01T00:00:00Z' }),
+    ).toBe('/collections/collection-002');
   });
 });

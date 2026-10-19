@@ -132,10 +132,13 @@ describe('searchCategories', () => {
     expect(searchCategories('   ')).toEqual([]);
   });
 
-  test('never matches /collections or /about, even though NAVIGATION lists them and the query textually matches', () => {
-    // Proves the BUILT_CATEGORY_HREFS gate actually excludes these entries,
-    // not just that no test happens to try them.
-    expect(searchCategories('collect')).toEqual([]);
+  test('matches /collections now that it has shipped as a real route (ROADMAP.md Phase 11)', () => {
+    expect(searchCategories('collect')).toEqual([{ label: 'COLLECTIONS', href: '/collections' }]);
+  });
+
+  test('never matches /about, even though NAVIGATION lists it and the query textually matches', () => {
+    // Proves the BUILT_CATEGORY_HREFS gate actually excludes this entry,
+    // not just that no test happens to try it. /about remains unbuilt.
     expect(searchCategories('abo')).toEqual([]);
   });
 

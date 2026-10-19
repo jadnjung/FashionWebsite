@@ -5,9 +5,12 @@ import { NAVIGATION } from '@/lib/navigation-data';
 import { SITE_URL } from '@/lib/seo/site';
 
 // BUILT_CATEGORY_HREFS: only NAVIGATION entries that correspond to a route
-// actually built this far into the roadmap — NAVIGATION also lists
-// /collections and /about (ROADMAP.md Phase 10/11+, not built yet), which
-// would 404 if included here. Relocated to lib/catalog/taxonomy.ts
+// actually built this far into the roadmap — NAVIGATION also lists /about
+// (ROADMAP.md Phase 10+, not built yet), which would 404 if included here.
+// /collections now ships as a real index route (ROADMAP.md Phase 11) and
+// is included below via BUILT_CATEGORY_HREFS like any other built
+// category — not as a second, separately-hardcoded path literal, which
+// would risk listing it twice. Relocated to lib/catalog/taxonomy.ts
 // (DECISIONS.md D-058) so search's category matching reads the same single
 // source of truth rather than a second, independently-drifting copy — a
 // deliberate, documented tradeoff rather than teaching NAVIGATION itself

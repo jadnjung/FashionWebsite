@@ -40,3 +40,32 @@ export function getDropPhase(collection: DropPhaseInput, now: Date = new Date())
 export function isCollectionUpcoming(collection: DropPhaseInput, now: Date = new Date()): boolean {
   return getDropPhase(collection, now) === 'upcoming';
 }
+
+/**
+ * Resolves the one correct link for a collection list entry — the
+ * /collections index (app/(storefront)/collections/CollectionsIndex.tsx)
+ * today, and search's own future COLLECTIONS result group later (ROADMAP.md
+ * Phase 4's Search line deferred that group specifically for lack of a
+ * /collections/[handle] index to link to; this is that same link logic,
+ * not reimplemented a second time). Archived collections live at
+ * /archive/[handle], never /collections/[handle]:
+ * app/(storefront)/collections/[handle]/page.tsx calls notFound() on an
+ * archived handle outright ("its real home is /archive/[handle]"), so
+ * pointing there for an archived collection would be a dead link.
+ * `current`/`upcoming` both resolve to /collections/[handle] — the
+ * upcoming teaser/countdown is rendered entirely inside that route, not by
+ * this helper.
+ *
+ * Deliberately takes the same unnarrowed Pick<CollectionSummary, ...>
+ * shape `getDropPhase` itself accepts, plus `handle`, rather than a
+ * narrower type scoped to just this function's own needs — every caller
+ * (present and future) can then pass a real CollectionSummary straight
+ * through with no per-call-site reshaping.
+ */
+export function getCollectionHref(
+  collection: Pick<CollectionSummary, 'handle' | 'dropStatus' | 'archivedAt' | 'dropDate'>,
+): string {
+  return getDropPhase(collection) === 'archived'
+    ? `/archive/${collection.handle}`
+    : `/collections/${collection.handle}`;
+}
