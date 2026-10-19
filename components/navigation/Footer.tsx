@@ -49,6 +49,21 @@ export function Footer() {
           Archive
         </Link>
       </nav>
+      {/* A third, separate <nav> landmark — About is neither a legal/support
+          page nor a shopping/commerce-browsing destination, so folding it
+          into either nav above would misrepresent that nav's own accessible
+          name, the same reasoning that already kept Wishlist/Archive out of
+          "Legal and support". "Company" is the conventional, accurate label
+          for an About-only nav group (distinct from the two labels above);
+          it's an aria-label, not visible on-page copy, so PROJECT.md §60's
+          "editorial rather than corporate" guidance for the About page's own
+          content doesn't bear on it. Same WCAG 2.5.8 touch-target padding
+          technique as the navs above. See DECISIONS.md D-070. */}
+      <nav aria-label="Company" className="mt-4 flex flex-wrap gap-4 -my-2">
+        <Link href="/about" className="inline-block py-2 hover:text-esque-text">
+          About
+        </Link>
+      </nav>
     </footer>
   );
 }

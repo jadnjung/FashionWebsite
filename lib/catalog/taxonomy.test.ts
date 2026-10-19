@@ -136,10 +136,12 @@ describe('searchCategories', () => {
     expect(searchCategories('collect')).toEqual([{ label: 'COLLECTIONS', href: '/collections' }]);
   });
 
-  test('never matches /about, even though NAVIGATION lists it and the query textually matches', () => {
-    // Proves the BUILT_CATEGORY_HREFS gate actually excludes this entry,
-    // not just that no test happens to try it. /about remains unbuilt.
-    expect(searchCategories('abo')).toEqual([]);
+  test('matches /about now that it has shipped as a real route (DECISIONS.md D-070)', () => {
+    // Was previously asserted as a never-matches case (BUILT_CATEGORY_HREFS
+    // excluded /about while it remained unbuilt) — updated to the new,
+    // correct match now that it ships, rather than left to silently assert
+    // something now false. Mirrors D-067's identical update for /collections.
+    expect(searchCategories('abo')).toEqual([{ label: 'ABOUT', href: '/about' }]);
   });
 
   test('respects the limit parameter', () => {

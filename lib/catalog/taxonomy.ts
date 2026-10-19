@@ -16,16 +16,24 @@ import { NAVIGATION } from '@/lib/navigation-data';
 export type CategorySlug = 'new' | 'tops' | 'bottoms' | 'etc';
 
 // Which top-level NAVIGATION entries correspond to a route that actually
-// exists this far into the roadmap — NAVIGATION also lists /about
-// (ROADMAP.md Phase 10+, not built yet). Read by app/sitemap.ts (which
-// routes to list) and searchCategories below (which routes a search result
-// may link to) — a single source of truth rather than two lists that could
-// drift. Needs a new entry the day /about ships as a real route (/collections
-// shipped — ROADMAP.md Phase 11, the /collections index — and was added
-// here). Relocated here from app/sitemap.ts (DECISIONS.md D-053: lib/ must
-// not depend on app/, and this taxonomy module already owns every other
-// piece of NAVIGATION-derived logic).
-export const BUILT_CATEGORY_HREFS = new Set(['/new', '/tops', '/bottoms', '/etc', '/collections']);
+// exists this far into the roadmap. Read by app/sitemap.ts (which routes to
+// list) and searchCategories below (which routes a search result may link
+// to) — a single source of truth rather than two lists that could drift.
+// /collections shipped — ROADMAP.md Phase 11, the /collections index — and
+// was added here (DECISIONS.md D-067). /about shipped next (DECISIONS.md
+// D-070) and is added here too — the same free, correct side effect D-067
+// already named: searchCategories below now surfaces ABOUT for a matching
+// query with no special-casing needed. Relocated here from app/sitemap.ts
+// (DECISIONS.md D-053: lib/ must not depend on app/, and this taxonomy
+// module already owns every other piece of NAVIGATION-derived logic).
+export const BUILT_CATEGORY_HREFS = new Set([
+  '/new',
+  '/tops',
+  '/bottoms',
+  '/etc',
+  '/collections',
+  '/about',
+]);
 
 function findCategoryEntry(category: CategorySlug) {
   return NAVIGATION.find((c) => c.href === `/${category}`);
