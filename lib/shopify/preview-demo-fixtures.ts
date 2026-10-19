@@ -331,16 +331,31 @@ export function getPreviewProductsByCollection(handle: string): ProductSummary[]
 }
 
 /**
- * Looks up one fixture collection's product list by handle for the Demo
- * Mode-gated drop-gate path (products.ts's getProductListItemsByCollection
- * — the ProductListItem-shaped sibling of getProductsByCollection above,
- * used by /collections/[handle]'s unlocked CollectionView). Returns null
- * for an unrecognized handle, mirroring that function's real not-found
- * contract. Only 'collection-002' is modeled here: it's the one fixture
- * collection this drop-gate route's unlocked path actually needs to
- * preview locally.
+ * Looks up one fixture collection's product list by handle for
+ * products.ts's getProductListItemsByCollection — the ProductListItem-
+ * shaped sibling of getProductsByCollection above, used by
+ * /collections/[handle]'s unlocked CollectionView (both the drop-gate's
+ * post-unlock view for an upcoming collection, and the plain, no-gate view
+ * for the current one). Returns null for an unrecognized handle, mirroring
+ * that function's real not-found contract.
+ *
+ * 'collection-001' (current) was found missing here independently, during
+ * live Demo Mode verification of the /collections index (which is the
+ * first thing in this codebase to ever link to /collections/collection-001
+ * — nothing did before it existed): CollectionView rendered "NOTHING HERE
+ * YET." instead of the six real PREVIEW_PRODUCTS fixtures, because this
+ * function returned null for a collection that very much has products via
+ * every *other* Demo Mode lookup (getPreviewProductDetail,
+ * getPreviewProductsByCollection). D-064's own work only ever wired
+ * 'collection-002' here, since that pass's own manual verification only
+ * exercised the drop-gate unlock flow, not the plain current-collection
+ * case — a real, pre-existing fixture-completeness gap, not a defect in
+ * the /collections index code itself. Fixed by adding 'collection-001'
+ * here too, returning the same PREVIEW_PRODUCTS set every other Demo Mode
+ * lookup already associates with that handle.
  */
 export function getPreviewProductListItemsByCollection(handle: string): ProductListItem[] | null {
+  if (handle === 'collection-001') return PREVIEW_PRODUCTS;
   if (handle === 'collection-002') return PREVIEW_UPCOMING_PRODUCTS;
   return null;
 }

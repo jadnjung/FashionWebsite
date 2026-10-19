@@ -4,6 +4,7 @@ import {
   PREVIEW_PRODUCTS,
   getPreviewCollectionDetail,
   getPreviewProductDetail,
+  getPreviewProductListItemsByCollection,
   getPreviewProductsByCollection,
 } from '@/lib/shopify/preview-demo-fixtures';
 
@@ -138,5 +139,30 @@ describe('getPreviewProductsByCollection', () => {
 
   test('returns null for an unrecognized handle', () => {
     expect(getPreviewProductsByCollection('does-not-exist')).toBeNull();
+  });
+});
+
+describe('getPreviewProductListItemsByCollection', () => {
+  // Regression test for a real defect found independently via live Demo
+  // Mode verification of the /collections index (ROADMAP.md Phase 11):
+  // this function previously had no 'collection-001' case at all, so
+  // /collections/collection-001's real, unlocked CollectionView rendered
+  // "NOTHING HERE YET." instead of its own real catalog — a fixture-
+  // completeness gap from the drop-gate work (D-064), which only ever
+  // wired 'collection-002' here, not a defect in the /collections index
+  // code itself.
+  test("returns PREVIEW_PRODUCTS for 'collection-001' — its own real launch catalog, not an empty list", () => {
+    const result = getPreviewProductListItemsByCollection('collection-001');
+    expect(result).toHaveLength(PREVIEW_PRODUCTS.length);
+    expect(result?.map((p) => p.handle)).toEqual(PREVIEW_PRODUCTS.map((p) => p.handle));
+  });
+
+  test("returns the upcoming-drop fixtures for 'collection-002'", () => {
+    const result = getPreviewProductListItemsByCollection('collection-002');
+    expect(result).toHaveLength(2);
+  });
+
+  test('returns null for an unrecognized handle', () => {
+    expect(getPreviewProductListItemsByCollection('does-not-exist')).toBeNull();
   });
 });
