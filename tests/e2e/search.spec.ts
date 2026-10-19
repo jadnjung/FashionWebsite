@@ -1,16 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 // ROADMAP.md Phase 4 — full-screen predictive search overlay, resolving
-// DECISIONS.md D-025's deferral. See
+// DECISIONS.md D-025's deferral (and, for the COLLECTIONS result group,
+// D-058 Part 3's later deferral — resolved by D-069). See
 // docs/superpowers/specs/2026-09-18-search-design.md for the full
-// architecture and why COLLECTIONS/a dedicated results page aren't built.
+// architecture and why a dedicated results page isn't built.
 //
 // SHOPIFY_STORE_DOMAIN/SHOPIFY_STOREFRONT_API_TOKEN are intentionally
 // unset in this E2E environment (playwright.config.ts's webServer.env sets
-// only the access-gate/Klaviyo fixtures) — every products search below
-// therefore hits a genuinely unconfigured Shopify client and settles to
-// SearchOverlay's own scoped error state. This mirrors catalog.spec.ts's
-// same honest-about-the-environment approach. Category matching has no
+// only the access-gate/Klaviyo fixtures) — every products/collections
+// search below therefore hits a genuinely unconfigured Shopify client
+// (searchProducts/searchCollections rejecting together via
+// app/api/search/route.ts's Promise.all) and settles to SearchOverlay's
+// own scoped error state. This mirrors catalog.spec.ts's same
+// honest-about-the-environment approach. Category matching has no
 // Shopify dependency (lib/catalog/taxonomy.ts is pure/local), so it's
 // fully, genuinely verifiable here.
 test.describe('search overlay', () => {

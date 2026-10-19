@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { getCollection, getCollections } from '@/lib/shopify/collections';
+import { getCollection, getCollections, searchCollections } from '@/lib/shopify/collections';
 import * as clientModule from '@/lib/shopify/client';
 
 function mockClient(response: unknown) {
@@ -255,5 +255,130 @@ describe('getCollections — Demo Mode', () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getCollections(1);
     expect(result.collections).toHaveLength(1);
+  });
+});
+
+// Predictive collection search (DECISIONS.md D-058 Part 3's original
+// deferral, resolved — D-069) — a sibling of products.test.ts's own
+// searchProducts describe blocks, mirrored exactly. See
+// lib/shopify/queries/collections.ts's GET_COLLECTION_PREDICTIVE_SEARCH_QUERY
+// for why this is a separate query from products.ts's own predictive
+// search rather than one combined request.
+describe('searchCollections', () => {
+  test('calls client.request with GET_COLLECTION_PREDICTIVE_SEARCH_QUERY and the trimmed query + default limit', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { predictiveSearch: { collections: [] } },
+    });
+    vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({
+      request,
+    } as unknown as ReturnType<typeof clientModule.getStorefrontClient>);
+
+    await searchCollections('  collection  ');
+
+    expect(request).toHaveBeenCalledWith(expect.any(String), {
+      variables: { query: 'collection', limit: 6 },
+    });
+  });
+
+  test('passes a custom limit through', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { predictiveSearch: { collections: [] } },
+    });
+    vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({
+      request,
+    } as unknown as ReturnType<typeof clientModule.getStorefrontClient>);
+
+    await searchCollections('collection', { limit: 3 });
+
+    expect(request).toHaveBeenCalledWith(expect.any(String), {
+      variables: { query: 'collection', limit: 3 },
+    });
+  });
+
+  test('maps a real-shaped predictiveSearch response into CollectionSummary[], defaulting absent metafields to null', async () => {
+    mockClient({
+      data: {
+        predictiveSearch: {
+          collections: [
+            {
+              id: 'gid://shopify/Collection/1',
+              handle: 'collection-001',
+              title: 'Collection 001',
+              dropStatus: { value: 'active' },
+              dropDate: null,
+              archivedAt: null,
+            },
+          ],
+        },
+      },
+    });
+
+    const result = await searchCollections('collection');
+
+    expect(result).toEqual([
+      {
+        id: 'gid://shopify/Collection/1',
+        handle: 'collection-001',
+        title: 'Collection 001',
+        dropStatus: 'active',
+        dropDate: null,
+        archivedAt: null,
+      },
+    ]);
+  });
+
+  test('returns [] when predictiveSearch is unexpectedly absent from data', async () => {
+    mockClient({ data: {} });
+    const result = await searchCollections('collection');
+    expect(result).toEqual([]);
+  });
+
+  test('throws when the response includes errors, rather than returning an empty list', async () => {
+    mockClient({
+      data: undefined,
+      errors: { message: 'Throttled by Shopify', networkStatusCode: 429 },
+    });
+    await expect(searchCollections('collection')).rejects.toThrow('Throttled by Shopify');
+  });
+
+  // Mirrors products.test.ts's identical technique for asserting a
+  // short-circuit never touches the client: compares the shared spy's call
+  // count before/after, since this file has no restoreMocks/clearMocks and
+  // every earlier test's calls otherwise accumulate on the same spy.
+  test('returns [] for a blank/whitespace-only query without ever calling getStorefrontClient', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+
+    expect(await searchCollections('')).toEqual([]);
+    expect(await searchCollections('   ')).toEqual([]);
+
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+});
+
+describe('searchCollections — Demo Mode', () => {
+  test('a query matching a real fixture title (case-insensitive substring) returns that fixture', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await searchCollections('COLLECTION 001');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((c) => c.title.toLowerCase().includes('collection 001'))).toBe(true);
+  });
+
+  // Deliberately the same "no match -> []" fallback as searchProducts'
+  // own Demo Mode branch (not getCollections' own full-list fallback) — a
+  // real "no results" state is exactly what this feature must be able to
+  // demonstrate.
+  test('a query matching nothing real returns [], not the full fixture list', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await searchCollections('zzz-not-a-real-collection');
+    expect(result).toEqual([]);
+  });
+
+  test('never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    await searchCollections('collection');
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
 });

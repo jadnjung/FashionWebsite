@@ -7,6 +7,8 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { Button } from '@/components/ui/Button';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { searchCategories } from '@/lib/catalog/taxonomy';
+import { getCollectionHref } from '@/lib/collections/drop-phase';
+import type { CollectionSummary } from '@/lib/shopify/collections';
 import type { ProductListItem } from '@/lib/shopify/products';
 
 interface SearchOverlayProps {
@@ -32,17 +34,27 @@ const MIN_QUERY_LENGTH = 2;
 // transitions.
 const DEBOUNCE_MS = 200;
 
-type ProductsState =
+// Products and collections arrive together from one /api/search response
+// (one fetch, one loading lifecycle) — the loaded variant carries both
+// rather than tracking a second, separately-fetched state variable that
+// would just mirror this same lifecycle a second time (two sources of
+// truth for one state transition). Renamed from the original
+// products-only ProductsState now that this state also carries the
+// COLLECTIONS result group (DECISIONS.md D-058 Part 3's original
+// deferral, resolved — see D-069).
+type SearchResultsState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'loaded'; results: ProductListItem[] };
+  | { status: 'loaded'; products: ProductListItem[]; collections: CollectionSummary[] };
 
 // DESIGN_SYSTEM.md §50 — full-screen predictive search overlay, triggered
 // by Header's SEARCH button. Resolves DECISIONS.md D-025's deferral: see
 // the design spec (docs/superpowers/specs/2026-09-18-search-design.md) for
-// the full architecture and why COLLECTIONS/a dedicated results page/
-// enableSharedTransition are all deliberately not built here.
+// the full architecture. The COLLECTIONS result group, originally deferred
+// here (D-058 Part 3), is now built (D-069) — a dedicated results page and
+// enableSharedTransition remain deliberately not built, for the reasons
+// D-058 already recorded.
 //
 // Reuses FullScreenMenu.tsx's exact, already-reviewed accessibility
 // mechanics (role="dialog" + aria-modal, the hasOpenedRef-gated open/close
@@ -66,7 +78,9 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   const pathname = usePathname();
 
   const [query, setQuery] = useState('');
-  const [productsState, setProductsState] = useState<ProductsState>({ status: 'idle' });
+  const [searchResultsState, setSearchResultsState] = useState<SearchResultsState>({
+    status: 'idle',
+  });
   // Retry re-runs the debounced product-search effect for the current
   // query without duplicating its fetch logic in a second function —
   // incrementing this is included in that effect's dependency array below.
@@ -108,16 +122,16 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
       triggerRef.current?.focus();
       // Reopening always starts fresh, matching this project's few other
       // modal-like surfaces (none persist state across a close/reopen).
-      // productsState is reset alongside query — without this, a settled
-      // result/error from a *previous*, fully-closed session could flash
-      // briefly (until the new debounced fetch overwrites it) the moment a
-      // freshly reopened search crosses MIN_QUERY_LENGTH again. This is a
-      // real side effect of the close transition (like the focus() call
-      // above), not an effect whose only job is mirroring state, so it
-      // doesn't reintroduce the react-hooks/set-state-in-effect shape the
-      // debounced-fetch effect's own early return avoids below.
+      // searchResultsState is reset alongside query — without this, a
+      // settled result/error from a *previous*, fully-closed session could
+      // flash briefly (until the new debounced fetch overwrites it) the
+      // moment a freshly reopened search crosses MIN_QUERY_LENGTH again.
+      // This is a real side effect of the close transition (like the
+      // focus() call above), not an effect whose only job is mirroring
+      // state, so it doesn't reintroduce the react-hooks/set-state-in-effect
+      // shape the debounced-fetch effect's own early return avoids below.
       setQuery('');
-      setProductsState({ status: 'idle' });
+      setSearchResultsState({ status: 'idle' });
     }
   }, [open, triggerRef]);
 
@@ -154,15 +168,15 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  // The debounced, cancelable product fetch — the only network-backed part
-  // of this component. A setTimeout (cleared on every keystroke) wraps a
-  // fetch bound to an AbortController, whose cleanup both clears the timer
-  // and aborts any in-flight request, so a fast typist never has an
-  // earlier, slower response clobber a later, faster one. Closing the
-  // overlay (or a query dropping below MIN_QUERY_LENGTH) hits the early
-  // return below, which both resets to idle and — via this effect's own
-  // cleanup running first — aborts whatever was in flight, with no extra
-  // code needed.
+  // The debounced, cancelable products+collections fetch — the only
+  // network-backed part of this component. A setTimeout (cleared on every
+  // keystroke) wraps a fetch bound to an AbortController, whose cleanup
+  // both clears the timer and aborts any in-flight request, so a fast
+  // typist never has an earlier, slower response clobber a later, faster
+  // one. Closing the overlay (or a query dropping below MIN_QUERY_LENGTH)
+  // hits the early return below, which both resets to idle and — via this
+  // effect's own cleanup running first — aborts whatever was in flight,
+  // with no extra code needed.
   //
   // searchCategories(trimmedQuery) is called again directly inside the
   // resolved-fetch branch below (rather than closing over the render-time
@@ -176,32 +190,38 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     // Nothing to fetch. Deliberately no setState here — react-hooks'
     // set-state-in-effect rule flags a synchronous setState at the top of
     // an effect body as a sign the value should be derived during render
-    // instead (see effectiveProductsState below), not synchronized via an
-    // effect: `query` is always reset to '' on close (the open/close
+    // instead (see effectiveSearchResultsState below), not synchronized via
+    // an effect: `query` is always reset to '' on close (the open/close
     // effect above), so the next time this becomes true `isQueryLongEnough`
-    // is already false, and effectiveProductsState masks whatever stale
-    // value productsState is still holding — no explicit reset needed.
+    // is already false, and effectiveSearchResultsState masks whatever
+    // stale value searchResultsState is still holding — no explicit reset
+    // needed.
     if (!open || !isQueryLongEnough) return;
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      setProductsState({ status: 'loading' });
+      setSearchResultsState({ status: 'loading' });
       fetch(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, { signal: controller.signal })
         .then((res) => {
           if (!res.ok) throw new Error('search request failed');
-          return res.json() as Promise<{ products: ProductListItem[] }>;
+          return res.json() as Promise<{
+            products: ProductListItem[];
+            collections: CollectionSummary[];
+          }>;
         })
-        .then(({ products }) => {
-          setProductsState({ status: 'loaded', results: products });
+        .then(({ products, collections }) => {
+          setSearchResultsState({ status: 'loaded', products, collections });
           // Discovery: "search queries, no-result searches" (PROJECT.md
-          // §82) — DECISIONS.md D-058. Fired once per settled (debounced,
-          // resolved) query, not per keystroke, with result_count equal to
-          // exactly what the UI itself treats as "nothing matches", so the
-          // analytics signal and the visible empty state can never
+          // §82) — DECISIONS.md D-058/D-069. Fired once per settled
+          // (debounced, resolved) query, not per keystroke, with
+          // result_count equal to exactly what the UI itself treats as
+          // "nothing matches" (products + collections + categories), so
+          // the analytics signal and the visible empty state can never
           // disagree.
           trackEvent('search', {
             search_term: trimmedQuery,
-            result_count: products.length + searchCategories(trimmedQuery).length,
+            result_count:
+              products.length + collections.length + searchCategories(trimmedQuery).length,
           });
         })
         .catch(() => {
@@ -209,7 +229,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
           // having been superseded/aborted (a new keystroke, a close, or
           // this same effect's own cleanup) — an abort is not an error.
           if (controller.signal.aborted) return;
-          setProductsState({ status: 'error' });
+          setSearchResultsState({ status: 'error' });
         });
     }, DEBOUNCE_MS);
 
@@ -219,18 +239,19 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     };
   }, [open, trimmedQuery, isQueryLongEnough, retryToken]);
 
-  // Masks a stale productsState value the moment open/isQueryLongEnough
+  // Masks a stale searchResultsState value the moment open/isQueryLongEnough
   // goes false, without needing an effect to explicitly reset it (see the
   // comment on the debounced-fetch effect above) — query always resets to
   // '' on close, so the next open naturally starts derived-idle too.
-  const effectiveProductsState: ProductsState =
-    open && isQueryLongEnough ? productsState : { status: 'idle' };
+  const effectiveSearchResultsState: SearchResultsState =
+    open && isQueryLongEnough ? searchResultsState : { status: 'idle' };
 
   const showNothingMatches =
     isQueryLongEnough &&
     categoryResults.length === 0 &&
-    effectiveProductsState.status === 'loaded' &&
-    effectiveProductsState.results.length === 0;
+    effectiveSearchResultsState.status === 'loaded' &&
+    effectiveSearchResultsState.products.length === 0 &&
+    effectiveSearchResultsState.collections.length === 0;
 
   return (
     <div
@@ -301,19 +322,19 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
               </div>
             )}
 
-            {effectiveProductsState.status !== 'idle' && (
+            {effectiveSearchResultsState.status !== 'idle' && (
               <div className="flex flex-col gap-4">
                 <h2 className="text-utility uppercase tracking-metadata text-esque-text-secondary">
                   Products
                 </h2>
-                {effectiveProductsState.status === 'loading' && (
+                {effectiveSearchResultsState.status === 'loading' && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                     {[0, 1, 2].map((i) => (
                       <div key={i} className="aspect-[4/5] animate-pulse bg-esque-surface" />
                     ))}
                   </div>
                 )}
-                {effectiveProductsState.status === 'error' && (
+                {effectiveSearchResultsState.status === 'error' && (
                   <div className="flex flex-col items-start gap-4">
                     <p className="font-display text-heading-3 uppercase text-esque-text">
                       SOMETHING WENT WRONG.
@@ -329,16 +350,55 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
                     </Button>
                   </div>
                 )}
-                {effectiveProductsState.status === 'loaded' &&
-                  effectiveProductsState.results.length > 0 && (
+                {effectiveSearchResultsState.status === 'loaded' &&
+                  effectiveSearchResultsState.products.length > 0 && (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      {effectiveProductsState.results.map((product) => (
+                      {effectiveSearchResultsState.products.map((product) => (
                         <ProductCard key={product.id} product={product} layout="standard" />
                       ))}
                     </div>
                   )}
               </div>
             )}
+
+            {/* DESIGN_SYSTEM.md §50 lists PRODUCTS, CATEGORIES, COLLECTIONS
+                in that order; this overlay already renders CATEGORIES before
+                PRODUCTS (a pre-existing deviation, not this change's to fix
+                — DECISIONS.md D-058/D-069). COLLECTIONS is placed after
+                PRODUCTS, preserving the doc's signal that it comes last
+                without compounding that existing ordering deviation further.
+                Styled exactly like the CATEGORIES group above (same heading
+                treatment, same link typography) — plain title text, no
+                status badge/phase indicator; that context lives on the
+                destination page itself once clicked through. getCollectionHref
+                (lib/collections/drop-phase.ts) resolves the correct
+                destination for every phase, including routing an archived
+                collection to /archive/[handle] instead of the dead
+                /collections/[handle] link it would otherwise produce. */}
+            {effectiveSearchResultsState.status === 'loaded' &&
+              effectiveSearchResultsState.collections.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                    Collections
+                  </h2>
+                  <ul className="flex flex-col gap-3">
+                    {effectiveSearchResultsState.collections.map((collection) => (
+                      <li key={collection.id}>
+                        {/* Explicit tabIndex — same WebKit default-Tab-
+                            sequence quirk as the CATEGORIES links above. */}
+                        <Link
+                          href={getCollectionHref(collection)}
+                          onClick={onClose}
+                          tabIndex={0}
+                          className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                        >
+                          {collection.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
             {showNothingMatches && (
               <p className="font-display text-heading-3 uppercase text-esque-text">

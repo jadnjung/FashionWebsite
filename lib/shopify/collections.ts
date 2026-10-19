@@ -1,5 +1,9 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
-import { GET_COLLECTION_QUERY, GET_COLLECTIONS_QUERY } from '@/lib/shopify/queries/collections';
+import {
+  GET_COLLECTION_PREDICTIVE_SEARCH_QUERY,
+  GET_COLLECTION_QUERY,
+  GET_COLLECTIONS_QUERY,
+} from '@/lib/shopify/queries/collections';
 // Demo Mode (PREVIEW_DEMO_MODE) — see preview-demo-fixtures.ts's file
 // header and DECISIONS.md D-057 for what this is, why it exists, and how
 // it's scoped (opt-in, off by default everywhere). This import and the
@@ -128,4 +132,60 @@ export async function getCollections(
     hasNextPage: data?.collections?.pageInfo?.hasNextPage ?? false,
     endCursor: data?.collections?.pageInfo?.endCursor ?? null,
   };
+}
+
+export interface SearchCollectionsOptions {
+  limit?: number;
+}
+
+/**
+ * Predictive collection search for the full-screen search overlay's
+ * COLLECTIONS result group — a sibling of products.ts's searchProducts,
+ * built against a deliberately separate query
+ * (GET_COLLECTION_PREDICTIVE_SEARCH_QUERY, types: [COLLECTION]) rather than
+ * extending GET_PREDICTIVE_SEARCH_QUERY to request both result types at
+ * once — see that query's own comment for why. app/api/search/route.ts
+ * calls this alongside searchProducts in one Promise.all, so the two
+ * Storefront round-trips happen concurrently, not sequentially. Returns
+ * [] for a blank/whitespace-only query without ever calling
+ * getStorefrontClient() — same contract as searchProducts. Throws via
+ * toRequestError on a real Storefront API error, never swallowed here —
+ * the caller decides how to surface that to its own client.
+ */
+export async function searchCollections(
+  query: string,
+  options: SearchCollectionsOptions = {},
+): Promise<CollectionSummary[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const limit = options.limit ?? 6;
+
+  // Demo Mode short-circuit — DECISIONS.md D-057, extended for this
+  // feature per D-058's original COLLECTIONS deferral. Mirrors
+  // searchProducts' own inline Demo Mode filtering style exactly: filters
+  // PREVIEW_COLLECTIONS directly (title substring match, case-insensitive)
+  // rather than adding a new, separate fixture export.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const q = trimmed.toLowerCase();
+    return PREVIEW_COLLECTIONS.filter((c) => c.title.toLowerCase().includes(q)).slice(0, limit);
+  }
+
+  const client = getStorefrontClient();
+  const { data, errors } = await client.request(GET_COLLECTION_PREDICTIVE_SEARCH_QUERY, {
+    variables: { query: trimmed, limit },
+  });
+
+  if (errors) {
+    throw toRequestError(errors);
+  }
+
+  const collections = data?.predictiveSearch?.collections ?? [];
+  return collections.map((node) => ({
+    id: node.id,
+    handle: node.handle,
+    title: node.title,
+    dropStatus: node.dropStatus?.value ?? null,
+    dropDate: node.dropDate?.value ?? null,
+    archivedAt: node.archivedAt?.value ?? null,
+  }));
 }
