@@ -106,6 +106,17 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
       <JsonLd
         data={buildBreadcrumbJsonLd([
           { name: 'Home', path: '/' },
+          // Updated for DECISIONS.md D-067: /collections (the index) is now
+          // a real, linked-to page — this breadcrumb's own true navigational
+          // hierarchy is Home -> Collections -> {this collection}, matching
+          // /archive/[handle]'s identical Home -> Archive -> {collection}
+          // shape (ArchivedCollectionView.tsx). Before D-067, /collections
+          // didn't exist, so a 2-level Home -> {collection} breadcrumb was
+          // the correct reflection of this page's real reachable hierarchy
+          // at the time; this is a consistency fix following that route's
+          // own first real intermediate page coming into existence, not a
+          // new design decision.
+          { name: 'Collections', path: '/collections' },
           { name: collection.title, path: `/collections/${handle}` },
         ])}
       />
