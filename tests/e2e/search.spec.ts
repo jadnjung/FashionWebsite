@@ -13,10 +13,6 @@ import { test, expect } from '@playwright/test';
 // same honest-about-the-environment approach. Category matching has no
 // Shopify dependency (lib/catalog/taxonomy.ts is pure/local), so it's
 // fully, genuinely verifiable here.
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 test.describe('search overlay', () => {
   test('opens via the SEARCH button with the input immediately focused', async ({ page }) => {
     await page.goto('/');

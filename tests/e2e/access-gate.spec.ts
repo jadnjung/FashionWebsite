@@ -3,200 +3,55 @@ import { test, expect, type Page } from '@playwright/test';
 // Next.js's App Router ships its own persistent `role="alert"` element
 // (`#__next-route-announcer__`, used to announce client-side route changes
 // to screen readers) on every page, including this one. It coexists with
-// our own branded incorrect-password `<p role="alert">`, so a plain
-// `page.getByRole('alert')` is ambiguous (resolves to two elements) —
-// this scopes queries to our own element specifically.
+// our own branded request-access error `<p role="alert">`, so a plain
+// `page.getByRole('alert')` is ambiguous (resolves to two elements) — this
+// scopes queries to our own element specifically.
 function accessErrorAlert(page: Page) {
   return page.locator('[role="alert"]:not(#__next-route-announcer__)');
 }
 
-// EntranceMotion's giant background "ESQUE" typography (DESIGN_SYSTEM.md §53
-// layer 4) is an <h2> inside a deliberately `aria-hidden="true"` decorative
-// container — it's atmosphere, not content, so it's correctly excluded from
-// the accessibility tree and `getByRole` can never find it (verified
-// directly: `getByRole('heading', {name: 'ESQUE'})` matches only 1 element,
-// AccessForm's real <h1>, even though the DOM has two ESQUE headings).
-// AccessForm's own <h1>ESQUE</h1> sits on top of it and now shares the exact
-// same text, so a plain `getByText` match is ambiguous between the two — the
-// tag selector (which, unlike getByRole, doesn't filter by accessibility
-// tree) is what disambiguates them, not the text or an a11y role.
-async function backgroundWordmark(page: Page) {
-  const locator = page.locator('h2').filter({ hasText: /^ESQUE$/ });
-  await expect(locator).toHaveCount(1);
-  return locator;
-}
-
-test.describe('access gate — password entry', () => {
-  test('renders ESQUE with a password field and both buttons', async ({ page }) => {
-    await page.goto('/access');
-    await expect(page.getByRole('heading', { level: 1, name: 'ESQUE' })).toBeVisible();
-    await expect(page.getByLabel('PASSWORD')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ENTER' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'REQUEST ACCESS' })).toBeVisible();
-    await expect(page.getByText('ACCESS TO CURRENT COLLECTIONS.')).toBeVisible();
-  });
-
-  test('the correct general password grants access and redirects home', async ({ page }) => {
-    await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('ci-test-general-password');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
+// Whole-site gate removal (design spec "2026-10-18-drop-access-gate-design.md"):
+// the general "enter Esque" password screen and its proxy.ts enforcement are
+// deleted entirely. /access is no longer a gate a visitor is redirected to —
+// it is now the Request Access signup form directly, reached only by
+// deliberate navigation (a link from the drop teaser, or typing the URL).
+test.describe('whole-site gate removed', () => {
+  test('/ is reachable with zero cookies and never redirects to /access', async ({
+    page,
+    context,
+  }) => {
+    expect(await context.cookies()).toEqual([]);
+    await page.goto('/');
     await expect(page).toHaveURL('/');
-    // Override 5: control-flow assumption check — validatePassword's
-    // redirect() should mean the code below it (which would set a branded
-    // error line) never runs on a correct password. If this ever fails, it
-    // means that assumption is wrong and the handler needs restructuring.
-    await expect(accessErrorAlert(page)).toHaveCount(0);
-    const cookies = await page.context().cookies();
-    expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
-    expect(cookies.find((c) => c.name === 'esque_vip_access')).toBeFalsy();
+    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
   });
 
-  test('the correct early-access password grants both access cookies and redirects home', async ({
+  // A second, Shopify-independent route proves this isn't a special case of
+  // the homepage alone — ordinary browsing generally is no longer gated.
+  test('an ordinary, Shopify-independent route is also reachable with zero cookies and never redirects', async ({
     page,
+    context,
   }) => {
-    await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('ci-test-vip-password');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    await expect(page).toHaveURL('/');
-    await expect(accessErrorAlert(page)).toHaveCount(0);
-    const cookies = await page.context().cookies();
-    expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
-    expect(cookies.find((c) => c.name === 'esque_vip_access')).toBeTruthy();
-  });
-
-  test('a password set natively on the DOM input (bypassing React entirely) is still the value that gets validated', async ({
-    page,
-  }) => {
-    // Regression test pinning the actual mobile-safari defect directly and
-    // deterministically, without depending on a hydration-timing race:
-    // sets the input's value via the native DOM property with no
-    // `input`/`change` event dispatched at all, exactly the observable
-    // effect of a keystroke React's onChange never saw (confirmed by
-    // capturing the real Server Action POST body during a live failure —
-    // see actions.ts's validatePassword docstring). Against the previous
-    // controlled-input (`useState` + `onChange`) implementation, React
-    // would never learn about this value, so the submitted password would
-    // be empty and this test would fail exactly as the real defect did.
-    // Against the current implementation, the password is read from the
-    // submitted FormData — the browser's own native form serialization,
-    // which reflects the DOM's actual value regardless of whether React
-    // ever saw it change — so this must still succeed.
-    await page.goto('/access');
-    await page.evaluate((password) => {
-      const input = document.querySelector<HTMLInputElement>('input[name="password"]');
-      if (!input) throw new Error('password input not found');
-      input.value = password;
-    }, 'ci-test-general-password');
-
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    await expect(page).toHaveURL('/');
-    const cookies = await page.context().cookies();
-    expect(cookies.find((c) => c.name === 'esque_access')).toBeTruthy();
-  });
-
-  test('an incorrect password shows a branded line, not a generic message, and does not navigate', async ({
-    page,
-  }) => {
-    await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('definitely-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    const alert = accessErrorAlert(page);
-    await expect(alert).toBeVisible();
-    const messages = [
-      'NOT THIS ONE.',
-      'ACCESS NOT RECOGNIZED.',
-      'TRY ANOTHER.',
-      'ACCESS DENIED.',
-      'TRY AGAIN.',
-    ];
-    await expect(alert).toHaveText(new RegExp(messages.join('|')));
-    await expect(page).toHaveURL(/\/access$/);
-  });
-
-  test('returns focus to the password field after a failed attempt', async ({ page }) => {
-    await page.goto('/access');
-    const passwordField = page.getByLabel('PASSWORD');
-    await passwordField.fill('definitely-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    await expect(accessErrorAlert(page)).toBeVisible();
-    await expect(passwordField).toBeFocused();
-  });
-
-  // DECISIONS.md D-050 — the role="alert" announcement above is already a
-  // WCAG-recognized sufficient technique (ARIA19) on its own; this pins the
-  // additional, explicit field<->error association for a screen-reader user
-  // who tabs back into the field after the initial announcement has passed.
-  test('marks the password field aria-invalid and describes it by the error message after a failed attempt', async ({
-    page,
-  }) => {
-    await page.goto('/access');
-    const passwordField = page.getByLabel('PASSWORD');
-    await expect(passwordField).not.toHaveAttribute('aria-invalid');
-
-    await passwordField.fill('definitely-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    const alert = accessErrorAlert(page);
-    await expect(alert).toBeVisible();
-    await expect(passwordField).toHaveAttribute('aria-invalid', 'true');
-    await expect(passwordField).toHaveAttribute('aria-describedby', 'access-password-error');
-    await expect(alert).toHaveAttribute('id', 'access-password-error');
-  });
-
-  test('two consecutive failures show two different branded lines', async ({ page }) => {
-    await page.goto('/access');
-    const passwordField = page.getByLabel('PASSWORD');
-    const alert = accessErrorAlert(page);
-
-    await passwordField.fill('definitely-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-    await expect(alert).toBeVisible();
-    const firstMessage = await alert.textContent();
-
-    await passwordField.fill('still-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-    // handleSubmit is async (it calls the validatePassword server action),
-    // so the click resolves before the state update lands — the old alert
-    // is still visible and toBeVisible() would pass immediately, reading
-    // stale (first-message) content. Wait for the text to actually change.
-    await expect(alert).not.toHaveText(firstMessage ?? '');
-    const secondMessage = await alert.textContent();
-
-    expect(secondMessage).not.toBe(firstMessage);
-  });
-
-  test('respects prefers-reduced-motion for the incorrect-password animation', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/access');
-    await page.getByLabel('PASSWORD').fill('definitely-wrong');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-
-    const alert = accessErrorAlert(page);
-    await expect(alert).toBeVisible();
-    const duration = await alert.evaluate((el) => getComputedStyle(el).animationDuration);
-    expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
+    expect(await context.cookies()).toEqual([]);
+    await page.goto('/legal/privacy');
+    await expect(page).toHaveURL(/\/legal\/privacy$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeVisible();
   });
 });
 
 test.describe('access gate — request access', () => {
-  test('REQUEST ACCESS on the entry screen reveals the request-access form', async ({ page }) => {
+  // /access *is* the request-access form directly now — there is no
+  // sibling password screen to reveal it from (AccessForm/EntranceMotion
+  // are both deleted), so every test here navigates straight to it.
+  test('renders the request-access form with its fields and consent checkbox', async ({ page }) => {
     await page.goto('/access');
-    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
-
-    // Guards the structural decision (made in the previous task) to hoist
-    // the ESQUE heading above the showRequestAccess conditional in
-    // AccessForm — without that, this screen would render heading-less.
     await expect(page.getByRole('heading', { level: 1, name: 'ESQUE' })).toBeVisible();
     await expect(page.getByLabel('FIRST NAME')).toBeVisible();
     await expect(page.getByLabel('EMAIL', { exact: true })).toBeVisible();
     await expect(
       page.getByText('I agree to receive Esque emails, including access and collection updates.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'REQUEST ACCESS' })).toBeVisible();
   });
 
   test('the server rejects an unchecked consent box even when the client-side required check is bypassed', async ({
@@ -212,7 +67,6 @@ test.describe('access gate — request access', () => {
     // asserts its returned state renders — without navigating away and
     // without hitting the error boundary.
     await page.goto('/access');
-    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
     await page.getByLabel('FIRST NAME').fill('Sam');
     await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
     await page.evaluate(() => {
@@ -226,17 +80,15 @@ test.describe('access gate — request access', () => {
   });
 
   // DECISIONS.md D-050 — three fields can each independently error here, so
-  // (unlike AccessForm's single-field case) the fix must mark exactly the
-  // one field the returned state actually names, not all three. A
-  // whitespace-only first name (rather than an empty one) reaches the
-  // server without needing to bypass the native `required` attribute, the
-  // same way lib/.../actions.test.ts's own "whitespace-only" case does —
-  // the browser's required check only rejects a truly empty value.
+  // the fix must mark exactly the one field the returned state actually
+  // names, not all three. A whitespace-only first name (rather than an empty
+  // one) reaches the server without needing to bypass the native `required`
+  // attribute — the browser's own required check only rejects a truly empty
+  // value.
   test('marks only the actually-invalid field aria-invalid, describing it by the error message', async ({
     page,
   }) => {
     await page.goto('/access');
-    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
     const firstName = page.getByLabel('FIRST NAME');
     const email = page.getByLabel('EMAIL', { exact: true });
     await firstName.fill('   ');
@@ -265,7 +117,6 @@ test.describe('access gate — request access', () => {
     // already-tested error.tsx boundary is the correct, honest behavior,
     // not a workaround.
     await page.goto('/access');
-    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
     await page.getByLabel('FIRST NAME').fill('Sam');
     await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
     await page.getByText('I agree to receive Esque emails').click();
@@ -275,269 +126,21 @@ test.describe('access gate — request access', () => {
   });
 });
 
-test.describe('access gate — entrance motion', () => {
-  test('renders the background silhouettes and ESQUE typography behind the form', async ({
-    page,
-  }) => {
-    await page.goto('/access');
-    const entrance = page.locator('div[aria-hidden="true"]').first();
-    await expect(entrance.locator('svg')).toHaveCount(3);
-
-    const backgroundTypography = await backgroundWordmark(page);
-    await expect(backgroundTypography).toBeVisible();
-  });
-
-  test('respects prefers-reduced-motion: the typography renders instantly and cursor parallax is disabled', async ({
-    page,
-  }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/access');
-
-    const heading = await backgroundWordmark(page);
-    await expect(heading).toHaveCSS('opacity', '1');
-
-    // Move the pointer and confirm the silhouette layers do not receive a
-    // transform-driven offset (motion/react's inline style, not a CSS
-    // transition the global reduced-motion rule already covers).
-    await page.mouse.move(100, 100);
-    await page.mouse.move(800, 50);
-    const svg = page.locator('div[aria-hidden="true"] svg').first();
-    const transform = await svg.evaluate((el) => getComputedStyle(el).transform);
-    expect(transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)').toBe(true);
-  });
-
-  // Regression for DECISIONS.md D-047: motion/react's own useReducedMotion()
-  // resolves its real value synchronously on the client's very first
-  // (hydration) render — not deferred to an effect — while the server can
-  // only ever render as if reduced motion were off (no `window`). For a
-  // visitor whose OS already has reduced motion enabled, that mismatch was
-  // real and reproducible: confirmed via `git stash` against this exact
-  // test before the fix (fails — a "Prop `style`/`initial` did not match"
-  // hydration warning is logged for each silhouette <svg> and the <h2>)
-  // and after it (passes). This is the one console-error assertion in this
-  // describe block that specifically exercises reduced motion + hydration
-  // together — the "respects prefers-reduced-motion" test above only
-  // asserts the settled post-hydration CSS state, which passes either way.
-  test('mounts under prefers-reduced-motion with no hydration-mismatch console warning', async ({
-    page,
-  }) => {
-    const consoleErrors: string[] = [];
-    const pageErrors: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        consoleErrors.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => {
-      pageErrors.push(error.message);
-    });
-
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/access');
-    await expect(await backgroundWordmark(page)).toHaveCSS('opacity', '1');
-
-    expect(consoleErrors).toEqual([]);
-    expect(pageErrors).toEqual([]);
-  });
-
-  test('cursor parallax moves silhouette layers, and different depths move by different amounts', async ({
-    page,
-  }) => {
-    // Reduced motion is NOT emulated here (default Playwright preference is
-    // "no-preference") — this is the positive complement to the test above:
-    // it fails if handlePointerMove is a no-op, or if every layer moved by
-    // the same amount regardless of `depth` (i.e. a uniform shift instead of
-    // actual parallax).
-    await page.goto('/access');
-    const svgs = page.locator('div[aria-hidden="true"] svg');
-    await expect(svgs).toHaveCount(3);
-
-    const viewport = page.viewportSize();
-    if (!viewport) throw new Error('viewport size unavailable in this project');
-
-    const shallow = svgs.nth(0); // SILHOUETTE_LAYERS[0], depth 0.3
-    const deep = svgs.nth(2); // SILHOUETTE_LAYERS[2], depth 1.0
-    const identity = /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/;
-
-    // Moving into a corner the centered AccessForm never covers, so the
-    // pointermove actually lands on EntranceMotion's div rather than being
-    // captured by the form's higher z-indexed wrapper. The move (and both
-    // reads) live *inside* the poll callback, not just the shallow-layer
-    // read, and are retried together — a pointermove dispatched before
-    // React attaches its listener is simply dropped, not merely delayed,
-    // observed in practice on mobile-safari's WebKit engine (which
-    // hydrates measurably slower here than Chromium) and intermittently
-    // under full-suite load on any engine. Reading only the shallow layer
-    // inside the poll and the deep layer in a separate one-shot read
-    // afterward left a narrow gap where the deep layer's subscription
-    // hadn't flushed yet even though the shallow one had; capturing both
-    // together each iteration closes that gap without weakening either
-    // assertion below, which still run against the real last-read values.
-    let shallowTransform = '';
-    let deepTransform = '';
-    await expect
-      .poll(
-        async () => {
-          await page.mouse.move(viewport.width / 2, viewport.height / 2);
-          await page.mouse.move(20, 20);
-          [shallowTransform, deepTransform] = await Promise.all([
-            shallow.evaluate((el) => getComputedStyle(el).transform),
-            deep.evaluate((el) => getComputedStyle(el).transform),
-          ]);
-          return !identity.test(shallowTransform) && !identity.test(deepTransform);
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true);
-
-    expect(shallowTransform).not.toMatch(identity);
-    expect(deepTransform).not.toMatch(identity);
-    expect(deepTransform).not.toBe(shallowTransform);
-  });
-
-  test('/access loads without console errors, including after cursor movement', async ({
-    page,
-  }) => {
-    // Mirrors smoke.spec.ts's "homepage loads without console errors" —
-    // listeners must be attached before navigation so nothing during initial
-    // load or hydration is missed.
-    const consoleErrors: string[] = [];
-    const pageErrors: string[] = [];
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        consoleErrors.push(message.text());
-      }
-    });
-    page.on('pageerror', (error) => {
-      pageErrors.push(error.message);
-    });
-
-    await page.goto('/access');
-
-    // Exercise the parallax code path itself, not just initial load — polling
-    // (rather than a single move) is what actually guarantees
-    // handlePointerMove ran before asserting, per the hydration-race finding
-    // in the "cursor parallax" test above: a pointermove dispatched before
-    // React attaches its listener is dropped, not merely delayed.
-    const svg = page.locator('div[aria-hidden="true"] svg').first();
-    const viewport = page.viewportSize();
-    if (!viewport) throw new Error('viewport size unavailable in this project');
-    const identity = /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/;
-    await expect
-      .poll(
-        async () => {
-          await page.mouse.move(viewport.width / 2, viewport.height / 2);
-          await page.mouse.move(20, 20);
-          return svg.evaluate((el) => getComputedStyle(el).transform);
-        },
-        { timeout: 10_000 },
-      )
-      .not.toMatch(identity);
-
-    expect(consoleErrors).toEqual([]);
-    expect(pageErrors).toEqual([]);
-  });
-});
-
-test.describe('access gate — proxy enforcement', () => {
-  test('an ungated request to / redirects to /access', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/access$/);
-  });
-
-  test('an ungated request to /accessories (a bare-prefix match on "access") still redirects to /access', async ({
-    page,
-  }) => {
-    // Guards the matcher's segment anchoring: an unanchored
-    // `(?!access|api|...)` negative lookahead would treat any path merely
-    // STARTING WITH "access" as excluded from the gate, silently bypassing
-    // it. /accessories doesn't exist yet (a plausible Phase 4 category
-    // route) — the point is that the proxy redirects before Next.js's own
-    // router ever resolves the path, so a 404 here would prove the bypass
-    // bug and a redirect to /access proves the matcher is correctly
-    // segment-anchored.
-    await page.goto('/accessories');
-    await expect(page).toHaveURL(/\/access$/);
-  });
-
-  test('a normal browser user agent is still gated (proves the crawler bypass is UA-conditional)', async ({
-    browser,
-  }) => {
-    // Structurally identical to the Googlebot test below — only the
-    // user-agent differs — so together they prove isBot() is actually
-    // gating the decision, not something else about how the context was
-    // constructed.
-    const context = await browser.newContext({
-      userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-    });
-    const page = await context.newPage();
-
-    await page.goto('/');
-
-    await expect(page).toHaveURL(/\/access$/);
-    await context.close();
-  });
-
-  test('a simulated crawler (Googlebot) reaches the homepage with no access cookie set', async ({
-    browser,
-  }) => {
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-    });
-    const page = await context.newPage();
-
-    await page.goto('/');
-
-    await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
-    const cookies = await context.cookies();
-    expect(cookies.find((c) => c.name === 'esque_access')).toBeFalsy();
-    await context.close();
-  });
-
-  test('a second real crawler (Bingbot) also reaches the homepage with no access cookie set', async ({
-    browser,
-  }) => {
-    // Confirms the bypass exercises isbot's maintained bot list generally
-    // (ARCHITECTURE.md §6's "bots/crawlers" plural), not a single
-    // hardcoded "Googlebot" string check.
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
-    });
-    const page = await context.newPage();
-
-    await page.goto('/');
-
-    await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { name: 'ESQUE' })).toBeVisible();
-    const cookies = await context.cookies();
-    expect(cookies.find((c) => c.name === 'esque_access')).toBeFalsy();
-    await context.close();
-  });
-
-  test('a granted visitor is not redirected away from /', async ({ page, context }) => {
-    await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-    await page.goto('/');
-    await expect(page).toHaveURL('/');
-  });
-
-  test('an ungated request to /robots.txt is not redirected to /access', async ({ page }) => {
-    // ROADMAP.md Phase 12's SEO pass added a real app/robots.ts — the point
-    // of this test is that the proxy's matcher doesn't intercept the path
-    // and 307-redirect it to /access; it now also confirms the real file
-    // resolves and allows crawling (DECISIONS.md D-005/D-052).
-    const response = await page.goto('/robots.txt');
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveURL(/\/robots\.txt$/);
-    await expect(page.locator('body')).toContainText('Allow: /');
-  });
-
-  test('an ungated request to /sitemap.xml is not redirected to /access', async ({ page }) => {
-    // Same proxy-matcher guarantee as /robots.txt above, now backed by a
-    // real app/sitemap.ts (DECISIONS.md D-052).
-    const response = await page.goto('/sitemap.xml');
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveURL(/\/sitemap\.xml$/);
+// /collections/[handle] is necessarily Shopify-dependent (it must fetch the
+// collection to classify its drop phase before it can decide whether to
+// render the teaser or the real grid) — this environment has no real
+// Shopify store and Playwright's shared webServer can't selectively enable
+// PREVIEW_DEMO_MODE for a subset of specs. This is the same honest,
+// already-established limitation catalog.spec.ts/pdp.spec.ts/archive.spec.ts
+// already live with for their own Shopify-dependent routes, and the one new-
+// route assertion that *is* honestly E2E-testable here without a real store
+// or Demo Mode. The real teaser/countdown/code-entry/unlock flow is covered
+// by unit tests (lib/collections/drop-phase.test.ts, actions.test.ts,
+// cookies.test.ts) and was manually verified via a temporary fixture probe
+// during implementation, per the design spec's Testing section.
+test.describe('collections route — reachable and fails honestly without a configured store', () => {
+  test('surfaces the error boundary rather than crashing uncleanly', async ({ page }) => {
+    await page.goto('/collections/any-handle');
+    await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toBeVisible();
   });
 });

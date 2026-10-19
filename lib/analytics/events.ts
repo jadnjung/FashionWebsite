@@ -53,10 +53,12 @@ const ANALYTICS_EVENT_NAMES = [
   'hotspot_selected',
   'shop_the_look_open',
   // Access Funnel
-  'access_gate_view',
   'request_access_open',
   'request_access_attempt',
-  'access_granted',
+  // Drop Access (collection-scoped early-access gate)
+  'drop_teaser_view',
+  'drop_access_attempt',
+  'drop_access_granted',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number];
@@ -154,11 +156,25 @@ interface EventPropertiesMap {
     item_name: string;
   };
   shop_the_look_open: NoProperties;
-  access_gate_view: NoProperties;
   request_access_open: NoProperties;
   request_access_attempt: NoProperties;
-  access_granted: {
-    tier: 'general' | 'vip';
+  // Fires once per mount of CollectionTeaser (the locked, upcoming-drop
+  // view only) — the collection-scoped funnel-entry analog of the deleted
+  // whole-site gate's access_gate_view.
+  drop_teaser_view: {
+    collection_handle: string;
+  };
+  // Fires on every code submission, success or failure — mirrors
+  // request_access_attempt's "fires regardless of outcome" shape. Never
+  // includes the submitted code itself.
+  drop_access_attempt: {
+    collection_handle: string;
+  };
+  // Fires once, post-redirect, via the ShellClient signal-cookie mechanism
+  // (DROP_ACCESS_EVENT_COOKIE_NAME) — the collection-scoped analog of the
+  // deleted whole-site gate's access_granted.
+  drop_access_granted: {
+    collection_handle: string;
   };
 }
 
@@ -183,6 +199,7 @@ const PII_KEY_DENYLIST = new Set([
   'phone',
   'address',
   'consent',
+  'code',
 ]);
 
 /**

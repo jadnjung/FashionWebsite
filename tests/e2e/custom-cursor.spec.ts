@@ -14,10 +14,6 @@ import { test, expect, type Page } from '@playwright/test';
 // without depending on a configured store — the same honest-limitation
 // pattern this codebase already uses elsewhere.
 
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 const CURSOR_ACTIVE_CLASS = 'esque-cursor-none';
 
 // CustomCursor only attaches its pointermove listener once client-side
@@ -93,12 +89,21 @@ test.describe('custom cursor — accessibility fallback', () => {
     await expect(page.locator('.esque-custom-cursor')).toHaveAttribute('data-hidden', 'false');
   });
 
-  test('/access never mounts the custom cursor (keeps its own existing entrance motion instead)', async ({
+  test('/access mounts the custom cursor like any other storefront page', async ({
     page,
+    isMobile,
   }) => {
+    // /access moved from a standalone, shell-less route group into
+    // app/(storefront) (the whole-site password gate this route used to
+    // serve is gone — see the drop-gate design spec's §6). It now renders
+    // inside the same ShellClient tree as every other storefront page, so
+    // it mounts CustomCursor exactly like them — the opposite of this
+    // test's pre-move assertion, which assumed /access rendered outside
+    // the shell entirely.
+    test.skip(isMobile, 'activation is desktop-only by design; see the touch-devices suite');
     await page.goto('/access');
     await activateCursor(page);
-    await expect(page.locator('.esque-custom-cursor')).toHaveCount(0);
+    await expect(page.locator('.esque-custom-cursor')).toHaveCount(1);
   });
 });
 

@@ -22,12 +22,17 @@ export interface CollectionSummary {
   handle: string;
   title: string;
   dropStatus: string | null;
+  // Needed by lib/collections/drop-phase.ts/lib/home/upcoming-drop.ts to
+  // classify a summary-shaped collection (from getCollections()) as
+  // upcoming, without a second round-trip through getCollection() just to
+  // read one more metafield — same low-risk "add another metafield alias
+  // field" extension D-062 used for archivedAt below.
+  dropDate: string | null;
   archivedAt: string | null;
 }
 
 export interface CollectionDetail extends CollectionSummary {
   description: string;
-  dropDate: string | null;
   products: { id: string; handle: string; title: string }[];
   hasNextPage: boolean;
   endCursor: string | null;
@@ -117,6 +122,7 @@ export async function getCollections(
       handle: node.handle,
       title: node.title,
       dropStatus: node.dropStatus?.value ?? null,
+      dropDate: node.dropDate?.value ?? null,
       archivedAt: node.archivedAt?.value ?? null,
     })),
     hasNextPage: data?.collections?.pageInfo?.hasNextPage ?? false,

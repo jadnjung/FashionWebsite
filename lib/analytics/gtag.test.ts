@@ -38,15 +38,15 @@ describe('trackEvent', () => {
   it('never throws when called with no `window` (SSR-safe), whether or not GA4 is configured', () => {
     expect(typeof window).toBe('undefined');
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', undefined);
-    expect(() => trackEvent('access_gate_view', {})).not.toThrow();
+    expect(() => trackEvent('request_access_open', {})).not.toThrow();
 
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
-    expect(() => trackEvent('access_gate_view', {})).not.toThrow();
+    expect(() => trackEvent('request_access_open', {})).not.toThrow();
   });
 
   it('never forwards to the real GA4 sink when there is no `window`', () => {
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
-    trackEvent('access_granted', { tier: 'general' });
+    trackEvent('drop_access_granted', { collection_handle: 'collection-002' });
     expect(sendGAEvent).not.toHaveBeenCalled();
   });
 
@@ -87,10 +87,11 @@ describe('trackEvent', () => {
         item_name: 'Hoodie 01',
       });
       trackEvent('shop_the_look_open', {});
-      trackEvent('access_gate_view', {});
       trackEvent('request_access_open', {});
       trackEvent('request_access_attempt', {});
-      trackEvent('access_granted', { tier: 'vip' });
+      trackEvent('drop_teaser_view', { collection_handle: 'collection-002' });
+      trackEvent('drop_access_attempt', { collection_handle: 'collection-002' });
+      trackEvent('drop_access_granted', { collection_handle: 'collection-002' });
     }).not.toThrow();
   });
 });

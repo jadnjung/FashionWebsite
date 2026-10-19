@@ -11,6 +11,7 @@ const CURRENT_SUMMARY = {
   handle: 'collection-001',
   title: 'Collection 001',
   dropStatus: 'active',
+  dropDate: null,
   archivedAt: null,
 };
 
@@ -19,6 +20,7 @@ const ARCHIVED_SUMMARY = {
   handle: 'collection-000',
   title: 'Collection 000',
   dropStatus: 'archived',
+  dropDate: null,
   archivedAt: '2026-06-01T00:00:00Z',
 };
 

@@ -5,7 +5,7 @@ import { Header } from '@/components/navigation/Header';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
 import { SearchOverlay } from '@/components/navigation/SearchOverlay';
 import { CustomCursor } from '@/components/navigation/CustomCursor';
-import { ACCESS_EVENT_COOKIE_NAME, parseAccessEventCookie } from '@/lib/access/cookies';
+import { DROP_ACCESS_EVENT_COOKIE_NAME, parseDropAccessEventCookie } from '@/lib/access/cookies';
 import { trackEvent } from '@/lib/analytics/gtag';
 
 // Owns the shell-wide client state (currently just menu-open) so that
@@ -37,19 +37,22 @@ export function ShellClient({
   const [searchOpen, setSearchOpen] = useState(false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
-  // Access Funnel: "successful access" (PROJECT.md §82) — DECISIONS.md
-  // D-055. ShellClient mounts on every storefront page, including the one
-  // a successful password redirects to, so this is the natural place to
-  // observe "did the visitor just pass the gate." The real access cookies
-  // are httpOnly (unreadable here by design); actions.ts additionally sets
-  // a short-lived, non-httpOnly signal cookie on success specifically for
-  // this. Read and immediately cleared so it can only ever fire once per
-  // grant, not on every subsequent storefront page view.
+  // Access Funnel: "drop-gate unlock" — the collection-scoped analog of the
+  // deleted whole-site gate's access_granted. ShellClient mounts on every
+  // storefront page, including the one a successful drop-code redirects
+  // back to (app/(storefront)/collections/[handle]/actions.ts's
+  // validateDropAccessCode), so this is the natural place to observe "did
+  // the visitor just unlock a drop." The real unlock cookie
+  // (DROP_ACCESS_COOKIE_NAME) is httpOnly (unreadable here by design);
+  // that action additionally sets a short-lived, non-httpOnly signal
+  // cookie on success specifically for this. Read and immediately cleared
+  // so it can only ever fire once per grant, not on every subsequent
+  // storefront page view.
   useEffect(() => {
-    const tier = parseAccessEventCookie(document.cookie);
-    if (!tier) return;
-    trackEvent('access_granted', { tier });
-    document.cookie = `${ACCESS_EVENT_COOKIE_NAME}=; Max-Age=0; path=/`;
+    const handle = parseDropAccessEventCookie(document.cookie);
+    if (!handle) return;
+    trackEvent('drop_access_granted', { collection_handle: handle });
+    document.cookie = `${DROP_ACCESS_EVENT_COOKIE_NAME}=; Max-Age=0; path=/`;
   }, []);
 
   return (

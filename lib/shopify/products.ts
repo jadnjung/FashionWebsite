@@ -1,5 +1,6 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
+  GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY,
   GET_PREDICTIVE_SEARCH_QUERY,
   GET_PRODUCT_QUERY,
   GET_PRODUCTS_BY_COLLECTION_QUERY,
@@ -8,11 +9,12 @@ import {
 import type { ProductSortKeys } from '@/lib/shopify/storefront.types';
 // Demo Mode (PREVIEW_DEMO_MODE) — see preview-demo-fixtures.ts's file
 // header and DECISIONS.md D-057 for what this is, why it exists, and how
-// it's scoped (opt-in, off by default everywhere). This import and the two
+// it's scoped (opt-in, off by default everywhere). This import and the
 // short-circuits below are the only places this file branches on it.
 import {
   PREVIEW_PRODUCTS,
   getPreviewProductDetail,
+  getPreviewProductListItemsByCollection,
   getPreviewProductsByCollection,
 } from '@/lib/shopify/preview-demo-fixtures';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
@@ -197,6 +199,62 @@ export interface ProductListItem {
   minPrice: { amount: string; currencyCode: string };
   availableForSale: boolean;
   images: ProductImage[];
+}
+
+/**
+ * Fetches a page of a collection's products shaped for direct ProductGrid/
+ * ProductCard consumption (availableForSale + up to 2 images), unlike
+ * getProductsByCollection's ProductSummary shape above (single image, no
+ * availableForSale — correct for Archive's inert ArchivedProductTile, but
+ * structurally insufficient for a real, interactive product card's SOLD
+ * OUT badge and hover crossfade). Built for
+ * app/(storefront)/collections/[handle]'s unlocked CollectionView, whose
+ * products are live and purchasable, unlike Archive's historical record.
+ * Same null-on-missing-collection / throw-on-real-error contract as
+ * getProductsByCollection.
+ */
+export async function getProductListItemsByCollection(
+  handle: string,
+  first = 24,
+  after?: string,
+): Promise<{ products: ProductListItem[]; hasNextPage: boolean; endCursor: string | null } | null> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const products = getPreviewProductListItemsByCollection(handle);
+    if (!products) return null;
+    return { products, hasNextPage: false, endCursor: null };
+  }
+  const client = getStorefrontClient();
+  const { data, errors } = await client.request(GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY, {
+    variables: { handle, first, after: after ?? null },
+  });
+
+  if (errors) {
+    throw toRequestError(errors);
+  }
+
+  const collection = data?.collection;
+  if (!collection) return null;
+
+  return {
+    products: collection.products.edges.map(({ node }) => ({
+      id: node.id,
+      handle: node.handle,
+      title: node.title,
+      productType: node.productType,
+      tags: node.tags,
+      minPrice: node.priceRange.minVariantPrice,
+      availableForSale: node.availableForSale,
+      images: node.images.edges.map(({ node: image }) => ({
+        url: image.url,
+        altText: image.altText ?? null,
+        width: image.width ?? null,
+        height: image.height ?? null,
+      })),
+    })),
+    hasNextPage: collection.products.pageInfo.hasNextPage,
+    endCursor: collection.products.pageInfo.endCursor ?? null,
+  };
 }
 
 export interface GetProductsOptions {

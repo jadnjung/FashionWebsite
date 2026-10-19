@@ -49,6 +49,9 @@ export const GET_COLLECTIONS_QUERY = `#graphql
           dropStatus: metafield(namespace: "custom", key: "drop_status") {
             value
           }
+          dropDate: metafield(namespace: "custom", key: "drop_date") {
+            value
+          }
           archivedAt: metafield(namespace: "custom", key: "archived_at") {
             value
           }

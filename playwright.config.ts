@@ -62,19 +62,25 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
-    // Obviously-fake test fixtures, not secrets — the access-gate E2E specs
-    // need real (test) values to actually grant access. @next/env does not
-    // override a key already present in process.env (verified against the
-    // installed Next 16.3.1 behavior), so these win even for a developer
-    // who has real passwords set in their own .env.local. Playwright merges
-    // this into the child process's env on top of the inherited one
-    // (verified against the installed 1.62.1 behavior), so PATH etc. still
-    // resolve normally.
+    // Obviously-fake test fixtures, not secrets. @next/env does not override
+    // a key already present in process.env (verified against the installed
+    // Next 16.3.1 behavior), so these win even for a developer who has real
+    // values set in their own .env.local. Playwright merges this into the
+    // child process's env on top of the inherited one (verified against the
+    // installed 1.62.1 behavior), so PATH etc. still resolve normally.
+    //
+    // ESQUE_ACCESS_PASSWORD/ESQUE_EARLY_ACCESS_PASSWORD (the whole-site
+    // gate's general/early-access passwords) were removed here — the gate
+    // itself is deleted (DECISIONS.md's gate-removal entry), so nothing in
+    // this codebase reads either name anymore. The drop-gate that replaced
+    // it (ESQUE_DROP_ACCESS_CODE) needs no fixture here: every e2e test that
+    // reaches /collections/[handle] in this Shopify-unconfigured environment
+    // hits the generic error boundary before the code-check logic is ever
+    // reached, so there is nothing for a fixture value to unlock in this
+    // suite today.
     env: {
-      ESQUE_ACCESS_PASSWORD: 'ci-test-general-password',
-      ESQUE_EARLY_ACCESS_PASSWORD: 'ci-test-vip-password',
-      // Pinned empty (not omitted) for the same reason as the password
-      // fixtures above: getKlaviyoConfig() treats '' as unconfigured, same
+      // Pinned empty (not omitted) for the same reason as above:
+      // getKlaviyoConfig() treats '' as unconfigured, same
       // as unset, so this keeps access-gate.spec.ts's "Klaviyo not
       // configured" test exercising the not-configured path deterministically
       // — instead of, the moment a developer's own .env.local gains real

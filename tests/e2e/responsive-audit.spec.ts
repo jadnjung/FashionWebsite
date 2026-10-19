@@ -29,10 +29,6 @@ import { test, expect } from '@playwright/test';
 // A permanent automated test for them would need the same real store this
 // project has never had; recorded honestly rather than invented around.
 
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 // A representative sample of real, reachable routes — not a duplicate of
 // catalog.spec.ts's full seven-route functional sweep, which already exists
 // for content correctness. Every category/subcategory route renders the

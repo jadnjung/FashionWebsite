@@ -105,6 +105,7 @@ describe('getCollections', () => {
                 handle: 'collection-001',
                 title: 'Collection 001',
                 dropStatus: { value: 'active' },
+                dropDate: null,
                 archivedAt: null,
               },
             },
@@ -123,6 +124,7 @@ describe('getCollections', () => {
           handle: 'collection-001',
           title: 'Collection 001',
           dropStatus: 'active',
+          dropDate: null,
           archivedAt: null,
         },
       ],
@@ -143,6 +145,7 @@ describe('getCollections', () => {
                 handle: 'collection-000',
                 title: 'Collection 000',
                 dropStatus: { value: 'archived' },
+                dropDate: null,
                 archivedAt: { value: '2026-06-01T00:00:00Z' },
               },
             },
@@ -154,6 +157,32 @@ describe('getCollections', () => {
 
     const result = await getCollections();
     expect(result.collections[0].archivedAt).toBe('2026-06-01T00:00:00Z');
+  });
+
+  test('maps a real, non-null dropDate metafield through — the signal lib/collections/drop-phase.ts relies on to classify an upcoming drop', async () => {
+    mockClient({
+      data: {
+        collections: {
+          edges: [
+            {
+              cursor: 'c1',
+              node: {
+                id: 'gid://shopify/Collection/3',
+                handle: 'collection-002',
+                title: 'Collection 002',
+                dropStatus: { value: 'active' },
+                dropDate: { value: '2026-11-20T12:00:00Z' },
+                archivedAt: null,
+              },
+            },
+          ],
+          pageInfo: { hasNextPage: false, endCursor: 'c1' },
+        },
+      },
+    });
+
+    const result = await getCollections();
+    expect(result.collections[0].dropDate).toBe('2026-11-20T12:00:00Z');
   });
 
   test('throws when the response includes errors, rather than returning an empty page', async () => {

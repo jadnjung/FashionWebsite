@@ -98,15 +98,65 @@ export const GET_PRODUCTS_BY_COLLECTION_QUERY = `#graphql
   }
 `;
 
+// Collection-scoped products connection, shaped to match ProductListItem
+// (availableForSale + up to 2 images), not ProductSummary — a sibling of
+// GET_PRODUCTS_BY_COLLECTION_QUERY above, not a replacement for it.
+// GET_PRODUCTS_BY_COLLECTION_QUERY stays exactly as-is (Archive's
+// established, working consumer, lib/archive/collections.ts via
+// getProductsByCollection — ProductSummary's single `image`/`description`
+// shape is correct there and must not change). This query exists because
+// /collections/[handle]'s unlocked CollectionView renders real, live,
+// purchasable products through the ordinary ProductGrid/ProductCard
+// (DESIGN_SYSTEM.md §39's SOLD OUT badge + hover crossfade), which needs
+// the richer ProductListItem shape GET_PRODUCTS_QUERY's root-products
+// consumers already get — ProductSummary structurally cannot supply it
+// (no availableForSale field, only one image).
+export const GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY = `#graphql
+  query GetCollectionProductListItems($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after) {
+        edges {
+          cursor
+          node {
+            id
+            handle
+            title
+            productType
+            tags
+            availableForSale
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            images(first: 2) {
+              edges {
+                node {
+                  url
+                  altText
+                  width
+                  height
+                }
+              }
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+`;
+
 // Root products connection, filtered by product type (not a Collection —
 // see DECISIONS.md D-023, ARCHITECTURE.md §5) — used by category listing
 // pages (lib/catalog/taxonomy.ts + lib/catalog/filters.ts build the
 // $query/$sortKey/$reverse variables). Distinct from
-// GET_PRODUCTS_BY_COLLECTION_QUERY above: a different connection entirely,
-// and this one also fetches availableForSale + a 2nd image, for the
-// Availability filter/SOLD OUT badge and the product card's hover
-// crossfade, which the collection-scoped query above has no consumer that
-// needs yet.
+// GET_PRODUCTS_BY_COLLECTION_QUERY/GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY
+// above: a different connection entirely.
 export const GET_PRODUCTS_QUERY = `#graphql
   query GetProducts($first: Int!, $after: String, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {
     products(first: $first, after: $after, query: $query, sortKey: $sortKey, reverse: $reverse) {

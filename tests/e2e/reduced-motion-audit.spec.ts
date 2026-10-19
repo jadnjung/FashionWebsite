@@ -19,10 +19,6 @@ import { test, expect } from '@playwright/test';
 // shared-element transition CSS itself (Task 5), not discovered here after
 // the fact; this file's own new assertion below is what confirms the fix.
 
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 test.describe('reduced-motion audit — pre-existing surfaces (regression)', () => {
   test('FullScreenMenu open/close transition collapses to near-zero', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -35,16 +31,19 @@ test.describe('reduced-motion audit — pre-existing surfaces (regression)', () 
     }
   });
 
-  test('access-gate incorrect-password animation collapses to near-zero', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/access');
-    await page.getByLabel(/password/i).fill('definitely-wrong-password');
-    await page.getByRole('button', { name: 'ENTER' }).click();
-    const shift = page.locator('.esque-access-error-shift');
-    await expect(shift).toBeVisible();
-    const duration = await shift.evaluate((el) => getComputedStyle(el).animationDuration);
-    expect(parseFloat(duration)).toBeLessThan(0.05);
-  });
+  // The whole-site password gate this test audited (/access's incorrect-
+  // password shift) is deleted — see the drop-gate design spec's gate-
+  // removal section. The identical `.esque-access-error-shift` CSS class
+  // (and the global reduced-motion rule collapsing its animation-duration)
+  // is reused verbatim by the new collection-scoped drop-gate's incorrect-
+  // code form (app/(storefront)/collections/[handle]/DropAccessForm.tsx),
+  // but that route is necessarily Shopify-dependent (it must know if the
+  // collection exists/is upcoming) and has no real store or Demo Mode
+  // configured in this CI environment — the same honest, already-
+  // documented limitation this project's own design specs apply to every
+  // other Shopify-dependent surface (D-058's precedent). No replacement
+  // E2E assertion is fabricated here; this is a genuine coverage gap for
+  // the new surface, not a silently-dropped one.
 
   test('homepage hero entrance fade collapses to near-zero', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });

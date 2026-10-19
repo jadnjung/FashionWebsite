@@ -7,11 +7,6 @@ import { test, expect } from '@playwright/test';
 // and that each resolves to a real (non-404) page, are covered by
 // tests/e2e/smoke.spec.ts's footer suite — this file covers each
 // destination page's own content/metadata/draft-framing in depth.
-test.beforeEach(async ({ context }) => {
-  // Every route under app/(storefront)/** is gated by proxy.ts for human
-  // visitors — see smoke.spec.ts's identical setup and its own comment.
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
 
 const DRAFT_POLICIES = [
   { path: '/legal/privacy', heading: 'Privacy Policy' },

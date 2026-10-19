@@ -145,12 +145,22 @@ export function getPreviewProductDetail(handle: string): ProductDetail | null {
 // (lib/archive/collections.ts's getArchivedCollection) actually excludes
 // something even under Demo Mode, and 'collection-000' is the one that
 // populates /archive and /archive/[handle].
+//
+// 'collection-002' (added for the drop-gate feature) is a genuinely future
+// dropDate relative to this environment's "today" — it's the fixture that
+// lets the project owner preview the locked teaser/countdown and, after
+// entering ESQUE_DROP_ACCESS_CODE, the unlocked CollectionView, entirely
+// locally. The drop-gate's code check itself needs no Demo Mode branch at
+// all: validateDropAccessCode compares against process.env.
+// ESQUE_DROP_ACCESS_CODE directly, which works identically whether
+// PREVIEW_DEMO_MODE is set or not (the comparison never touches Shopify).
 export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
   {
     id: 'preview-collection-current',
     handle: 'collection-001',
     title: 'Collection 001',
     dropStatus: 'active',
+    dropDate: null,
     archivedAt: null,
   },
   {
@@ -158,7 +168,16 @@ export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
     handle: 'collection-000',
     title: 'Collection 000',
     dropStatus: 'archived',
+    dropDate: null,
     archivedAt: '2026-06-01T00:00:00Z',
+  },
+  {
+    id: 'preview-collection-upcoming',
+    handle: 'collection-002',
+    title: 'Collection 002',
+    dropStatus: 'active',
+    dropDate: '2026-11-20T12:00:00Z',
+    archivedAt: null,
   },
 ];
 
@@ -189,6 +208,38 @@ const PREVIEW_ARCHIVE_PRODUCTS: ProductSummary[] = [
     minPrice: { amount: '118.00', currencyCode: 'USD' },
     description: PREVIEW_DESCRIPTION,
     image: IMG('product-2.jpg', 900, 1125),
+  },
+];
+
+// Drop-gate Demo Mode fixtures — 'collection-002's own products, so the
+// *unlocked* path (CollectionView, after a correct ESQUE_DROP_ACCESS_CODE
+// is entered) is previewable end-to-end too, not just the locked teaser
+// (which never fetches products at all). Shaped as ProductListItem (not
+// ProductSummary, unlike PREVIEW_ARCHIVE_PRODUCTS above) because
+// CollectionView renders real, interactive ProductCards via the ordinary
+// ProductGrid — the same shape PREVIEW_PRODUCTS already uses for
+// 'collection-001'. Reuses product-4.jpg/product-5.jpg under new demo
+// titles, same licensing/reuse framing as PREVIEW_ARCHIVE_PRODUCTS.
+const PREVIEW_UPCOMING_PRODUCTS: ProductListItem[] = [
+  {
+    id: 'preview-upcoming-1',
+    handle: 'preview-draped-satin-slip',
+    title: 'Draped Satin Slip Dress',
+    productType: 'T-Shirts',
+    tags: [],
+    minPrice: { amount: '164.00', currencyCode: 'USD' },
+    availableForSale: true,
+    images: [IMG('product-4.jpg', 900, 1125)],
+  },
+  {
+    id: 'preview-upcoming-2',
+    handle: 'preview-boxy-denim-jacket',
+    title: 'Boxy Denim Jacket',
+    productType: 'Jackets',
+    tags: [],
+    minPrice: { amount: '218.00', currencyCode: 'USD' },
+    availableForSale: true,
+    images: [IMG('product-5.jpg', 900, 1125)],
   },
 ];
 
@@ -235,6 +286,24 @@ export function getPreviewCollectionDetail(handle: string): CollectionDetail | n
       endCursor: null,
     };
   }
+  if (handle === 'collection-002') {
+    return {
+      id: 'preview-collection-upcoming',
+      handle: 'collection-002',
+      title: 'Collection 002',
+      description: 'The next Esque collection — real campaign copy, held back until launch.',
+      dropStatus: 'active',
+      dropDate: '2026-11-20T12:00:00Z',
+      archivedAt: null,
+      products: PREVIEW_UPCOMING_PRODUCTS.map((p) => ({
+        id: p.id,
+        handle: p.handle,
+        title: p.title,
+      })),
+      hasNextPage: false,
+      endCursor: null,
+    };
+  }
   return null;
 }
 
@@ -258,5 +327,20 @@ export function getPreviewProductsByCollection(handle: string): ProductSummary[]
     }));
   }
   if (handle === 'collection-000') return PREVIEW_ARCHIVE_PRODUCTS;
+  return null;
+}
+
+/**
+ * Looks up one fixture collection's product list by handle for the Demo
+ * Mode-gated drop-gate path (products.ts's getProductListItemsByCollection
+ * — the ProductListItem-shaped sibling of getProductsByCollection above,
+ * used by /collections/[handle]'s unlocked CollectionView). Returns null
+ * for an unrecognized handle, mirroring that function's real not-found
+ * contract. Only 'collection-002' is modeled here: it's the one fixture
+ * collection this drop-gate route's unlocked path actually needs to
+ * preview locally.
+ */
+export function getPreviewProductListItemsByCollection(handle: string): ProductListItem[] | null {
+  if (handle === 'collection-002') return PREVIEW_UPCOMING_PRODUCTS;
   return null;
 }

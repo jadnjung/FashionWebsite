@@ -16,44 +16,33 @@ const nextConfig: NextConfig = {
     // DECISIONS.md D-057 for the full feature. This comment covers only
     // why `unoptimized` is set here.
     //
-    // Root cause (verified directly, not assumed): the failure this works
-    // around is NOT `sharp` being missing. `sharp` is already installed —
-    // as `next`'s own optionalDependency, resolved by pnpm into next's
-    // private dependency tree (node_modules/.pnpm/next@.../node_modules/
-    // sharp), just not hoisted to the top-level node_modules/sharp, which
-    // is ordinary pnpm behavior, not a broken install (confirmed via
-    // `pnpm why sharp`). The real cause: Next's image optimizer fetches a
-    // *local* /public image via an internal server-to-server loopback
-    // request (fetchInternalImage, next/dist/server/image-optimizer.js),
-    // and that synthetic request carries neither this app's access cookie
-    // nor a user-agent isbot() recognizes as a crawler — so proxy.ts's
-    // access gate (ARCHITECTURE.md §6, DECISIONS.md D-005/D-018/D-019)
-    // redirects it to /access exactly as it would a cookie-less human
-    // visitor. The optimizer receives that redirect/HTML instead of JPEG
-    // bytes and correctly rejects it — "isn't a valid image... received
-    // null" is detectContentType's magic-byte sniff failing, which runs
-    // before sharp (or any decoder) is ever invoked. Reproduced directly:
-    // curl'ing a demo image path with a real-browser user-agent and no
-    // cookie 307-redirects to /access; the same request with the access
-    // cookie, or with curl's own default (isbot-classified) user-agent,
-    // returns the real image. This codebase's only next/image consumer
-    // before Demo Mode (ProductCard, real Shopify photography) always used
-    // a remote cdn.shopify.com URL, which never exercises the local-
-    // loopback path — so this interaction had never been triggered before
-    // Demo Mode's local preview-demo/*.jpg images.
+    // Historical root cause (verified directly at the time, not assumed):
+    // the failure this worked around was NOT `sharp` being missing —
+    // `sharp` was already installed as `next`'s own optionalDependency,
+    // just not hoisted to the top-level node_modules (ordinary pnpm
+    // behavior, confirmed via `pnpm why sharp`). The real cause: Next's
+    // image optimizer fetches a *local* /public image via an internal
+    // server-to-server loopback request (fetchInternalImage,
+    // next/dist/server/image-optimizer.js), and that synthetic request
+    // carried neither this app's access cookie nor a user-agent isbot()
+    // recognized as a crawler — so the whole-site password gate's Proxy
+    // (proxy.ts, since deleted — see DECISIONS.md's gate-removal entry)
+    // redirected it to /access exactly as it would a cookie-less human
+    // visitor, and the optimizer correctly rejected the resulting
+    // redirect/HTML instead of JPEG bytes.
     //
-    // Fix chosen: bypass the optimizer entirely for Demo Mode's local
-    // images (this flag) rather than change proxy.ts's matcher to exempt
-    // local static paths. The latter would be the structurally "complete"
-    // fix — real local-path next/image usage would work everywhere, not
-    // just here — but it means changing a security-relevant access-control
-    // boundary to benefit a narrow, off-by-default preview convenience
-    // with no other current consumer. `undefined`, not `false`, when the
-    // flag is unset, so Next's own default optimizer behavior (and real
-    // Shopify photography via remotePatterns below) is untouched at every
-    // other time. If this codebase ever adds a real (non-Demo-Mode)
-    // local-path next/image consumer, revisit proxy.ts's matcher — the
-    // interaction above will reproduce for that usage too.
+    // Re-verified live after proxy.ts's removal (per this feature's design
+    // spec's explicit instruction not to remove this flag speculatively):
+    // with `unoptimized` temporarily forced to `false` under
+    // PREVIEW_DEMO_MODE, `/_next/image?url=%2Fpreview-demo%2F...` now
+    // returns a real, correctly-optimized JPEG — the interaction this flag
+    // worked around no longer reproduces, since nothing intercepts the
+    // loopback request anymore. The flag is deliberately kept anyway (not
+    // removed on this finding alone): it costs nothing to leave — Demo
+    // Mode is an explicitly low-fidelity preview convenience (D-057) — and
+    // removing a working-as-shipped flag belongs with a reviewed decision,
+    // not a speculative edit made while verifying something else. See
+    // DECISIONS.md for this finding's recorded disposition.
     unoptimized: process.env.PREVIEW_DEMO_MODE === '1' ? true : undefined,
     // ProductCard (ROADMAP.md Phase 4) is the first real next/image
     // consumer of Shopify product photography. next/image refuses to

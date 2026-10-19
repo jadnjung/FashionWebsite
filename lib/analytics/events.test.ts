@@ -19,10 +19,11 @@ describe('isKnownAnalyticsEvent', () => {
       'search',
       'hotspot_selected',
       'shop_the_look_open',
-      'access_gate_view',
       'request_access_open',
       'request_access_attempt',
-      'access_granted',
+      'drop_teaser_view',
+      'drop_access_attempt',
+      'drop_access_granted',
     ];
     for (const name of names) {
       expect(isKnownAnalyticsEvent(name)).toBe(true);
@@ -44,9 +45,23 @@ describe('sanitizeEventProperties', () => {
 
   it('strips a PII-shaped key (email) before sending', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const result = sanitizeEventProperties({ tier: 'general', email: 'visitor@example.com' });
-    expect(result).toEqual({ tier: 'general' });
+    const result = sanitizeEventProperties({
+      collection_handle: 'collection-002',
+      email: 'visitor@example.com',
+    });
+    expect(result).toEqual({ collection_handle: 'collection-002' });
     expect(result).not.toHaveProperty('email');
+    warnSpy.mockRestore();
+  });
+
+  it('strips a "code" key before sending, defense-in-depth for the drop-gate events', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = sanitizeEventProperties({
+      collection_handle: 'collection-002',
+      code: 'super-secret',
+    });
+    expect(result).toEqual({ collection_handle: 'collection-002' });
+    expect(result).not.toHaveProperty('code');
     warnSpy.mockRestore();
   });
 
@@ -74,8 +89,10 @@ describe('sanitizeEventProperties', () => {
 describe('dispatchAnalyticsEvent', () => {
   it('calls the sink with the event name and sanitized properties', () => {
     const sink = vi.fn();
-    dispatchAnalyticsEvent('access_granted', { tier: 'general' }, sink);
-    expect(sink).toHaveBeenCalledWith('access_granted', { tier: 'general' });
+    dispatchAnalyticsEvent('drop_access_granted', { collection_handle: 'collection-002' }, sink);
+    expect(sink).toHaveBeenCalledWith('drop_access_granted', {
+      collection_handle: 'collection-002',
+    });
   });
 
   it('dispatches a real search event with search_term and result_count', () => {

@@ -1,12 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 // SHOPIFY_STORE_DOMAIN/SHOPIFY_STOREFRONT_API_TOKEN are intentionally unset
 // in this E2E environment (playwright.config.ts's webServer.env sets only
-// the access-gate/Klaviyo fixtures) — every route below therefore calls a
+// the Klaviyo fixtures) — every route below therefore calls a
 // genuinely unconfigured Shopify client. This mirrors catalog.spec.ts's/
 // pdp.spec.ts's already-established precedent and is the honest limit of
 // what's E2E-verifiable without a live store — see the design spec's

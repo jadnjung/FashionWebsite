@@ -12,11 +12,6 @@ import { test, expect } from '@playwright/test';
 // toggled on for committed Playwright (no per-test mechanism exists to do
 // so against the suite's single shared webServer). That verification is a
 // live, manual pass, not a committed automated test.
-test.beforeEach(async ({ context }) => {
-  // Every route under app/(storefront)/** is gated by proxy.ts for human
-  // visitors — see smoke.spec.ts's identical setup and its own comment.
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
 
 test.describe('wishlist', () => {
   test('renders the WISHLIST heading and CONTENT.md §7 empty-state copy', async ({ page }) => {

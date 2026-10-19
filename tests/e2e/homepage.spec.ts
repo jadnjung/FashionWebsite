@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ context }) => {
-  await context.addCookies([{ name: 'esque_access', value: '1', url: 'http://localhost:3000' }]);
-});
-
 // SHOPIFY_STORE_DOMAIN/SHOPIFY_STOREFRONT_API_TOKEN are intentionally unset
 // in this E2E environment (playwright.config.ts's webServer.env) — Selected
 // Pieces' and the Interactive Model's fetches always fail here. This is

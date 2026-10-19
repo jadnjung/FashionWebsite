@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { trackEvent } from '@/lib/analytics/gtag';
@@ -8,8 +8,22 @@ import { submitRequestAccess, type RequestAccessState } from './actions';
 
 const initialState: RequestAccessState = { success: false };
 
-export function RequestAccessForm({ onBack }: { onBack: () => void }) {
+// `onBack` (and the rendered "Back" button it supported) is gone: this
+// form no longer toggles between itself and a sibling password screen —
+// there is no whole-site gate left to return to, and /access now lives
+// inside the storefront shell, so Header's own navigation already
+// provides a way elsewhere.
+export function RequestAccessForm() {
   const [state, formAction, pending] = useActionState(submitRequestAccess, initialState);
+
+  // Access Funnel: "Request Access opens" (PROJECT.md §82). Previously
+  // fired from AccessForm's now-deleted REQUEST ACCESS toggle button;
+  // visiting /access directly *is* opening the request-access flow now,
+  // with no separate "open" gesture left to attach the event to, so this
+  // fires once on mount instead.
+  useEffect(() => {
+    trackEvent('request_access_open', {});
+  }, []);
 
   if (state.success) {
     return (
@@ -59,14 +73,11 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
         name="firstName"
         required
         autoComplete="given-name"
-        // DECISIONS.md D-051 — this component only ever mounts when the
-        // visitor has just clicked REQUEST ACCESS on the entry screen (an
-        // independent review live-confirmed that transition previously
-        // dropped keyboard focus to <body> with nothing claiming it), so
-        // autofocusing its first field on every mount is always a wanted
-        // response to that deliberate action, unlike AccessForm's own
-        // PASSWORD field (which must NOT autofocus on an arriving visitor's
-        // very first, unprompted page load).
+        // DECISIONS.md D-051 — autofocusing the first field on every mount
+        // is a wanted response to the deliberate action of visiting /access
+        // (there is no longer a sibling screen this form toggles in from,
+        // but the same "arriving at this screen is always deliberate"
+        // reasoning holds for navigating here directly).
         autoFocus
         {...errorFieldProps('firstName')}
       />
@@ -113,8 +124,8 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
         // measures 3.40:1 against --color-esque-black (#050505) — below WCAG
         // AA's 4.5:1 minimum for this text size. DESIGN_SYSTEM.md's Error
         // entry also asks errors to rely on typography/motion rather than
-        // bright red UI. Matches the incorrect-password message in
-        // AccessForm.tsx for consistency (see DECISIONS.md D-021).
+        // bright red UI. Matches DropAccessForm.tsx's incorrect-code
+        // message for consistency (see DECISIONS.md D-021).
         <p
           id="request-access-error"
           role="alert"
@@ -126,9 +137,6 @@ export function RequestAccessForm({ onBack }: { onBack: () => void }) {
       <div className="flex items-center justify-center gap-4">
         <Button type="submit" variant="primary" disabled={pending}>
           REQUEST ACCESS
-        </Button>
-        <Button type="button" variant="editorial" onClick={onBack} disabled={pending}>
-          Back
         </Button>
       </div>
     </form>
