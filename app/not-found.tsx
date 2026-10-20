@@ -1,5 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import {
+  NOT_FOUND_DESCRIPTION,
+  NOT_FOUND_HEADING,
+  NOT_FOUND_HOME_LABEL,
+  NOT_FOUND_TITLE,
+} from '@/lib/content/not-found';
 
 // Next.js already auto-injects <meta name="robots" content="noindex"> for
 // any notFound()-triggered render (confirmed against current docs, and by
@@ -8,9 +14,14 @@ import Link from 'next/link';
 // back to the root layout's generic "Esque" title. No canonical/openGraph:
 // a 404 has no one real URL to canonicalize to (it renders at whatever bad
 // URL was requested).
+//
+// Copy is imported from lib/content/not-found.ts, not inlined — proxy.ts's
+// terminal 404 response for an unrecognized catalog subcategory (DECISIONS.md
+// D-072) needs the exact same text and would otherwise be a second,
+// hand-typed copy of it with no guard against drifting from this one.
 export const metadata: Metadata = {
-  title: 'Not Found — Esque',
-  description: "This piece doesn't exist.",
+  title: NOT_FOUND_TITLE,
+  description: NOT_FOUND_DESCRIPTION,
 };
 
 // CONTENT.md §6 — 404 copy is `THIS PIECE DOESN'T EXIST.`. Every category
@@ -38,13 +49,13 @@ export default function NotFound() {
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
       <h1 className="font-display text-display-l tracking-display text-esque-text">
-        THIS PIECE DOESN&apos;T EXIST.
+        {NOT_FOUND_HEADING}
       </h1>
       <Link
         href="/"
         className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline"
       >
-        ESQUE
+        {NOT_FOUND_HOME_LABEL}
       </Link>
     </main>
   );

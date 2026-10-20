@@ -75,3 +75,32 @@ test.describe('unknown subcategory', () => {
     await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toBeVisible();
   });
 });
+
+test.describe('unknown subcategory — real HTTP status (DECISIONS.md D-072)', () => {
+  // D-026/D-052 both confirmed the branded UI renders correctly but the
+  // response status stayed 200 — neither prior investigation ever pinned
+  // the actual status code in a permanent test, since neither found a fix
+  // to pin it against. proxy.ts now intercepts these three routes directly
+  // (before any page renders), so this is newly, genuinely assertable.
+  for (const route of [
+    '/tops/not-a-real-subcategory',
+    '/bottoms/not-a-real-subcategory',
+    '/etc/not-a-real-subcategory',
+  ]) {
+    test(`${route} returns a real HTTP 404, not a soft 200`, async ({ page }) => {
+      const response = await page.goto(route);
+      expect(response?.status()).toBe(404);
+    });
+  }
+
+  // Regression guard: proxy.ts must not start 404-ing real subcategories.
+  // Status is asserted directly rather than inferred from the rendered UI
+  // — the existing describe block above already covers the rendered-UI
+  // side for the unrecognized case.
+  for (const route of ['/tops/hoodies', '/bottoms/jeans', '/etc/jewelry']) {
+    test(`${route} (a real subcategory) still returns 200`, async ({ page }) => {
+      const response = await page.goto(route);
+      expect(response?.status()).toBe(200);
+    });
+  }
+});

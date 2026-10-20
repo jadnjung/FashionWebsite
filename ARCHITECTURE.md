@@ -119,7 +119,9 @@ Custom editorial content that doesn't fit Shopify's native product/collection fi
 
 ## 6. Access Gate Architecture
 
-**This section describes the current architecture, as of the whole-site gate's removal — [DECISIONS.md D-063/D-064](./DECISIONS.md).** The three-tier General/Private/VIP whole-site password model PROJECT.md §15-19 originally specified, and this section originally described, was a real, confirmed project-owner decision to retire: the site, including the already-live Collection 001, is unconditionally public now. There is no sitewide gate, no Proxy/Middleware file (`proxy.ts` is deleted), and no crawler-bypass mechanism to maintain, because there is no wall left for a crawler to need to bypass — [PROJECT.md §80](./PROJECT.md#80-important-access-gate-seo-rule)'s underlying SEO requirement is now satisfied structurally rather than by a carefully-scoped exception.
+**This section describes the current architecture, as of the whole-site gate's removal — [DECISIONS.md D-063/D-064](./DECISIONS.md).** The three-tier General/Private/VIP whole-site password model PROJECT.md §15-19 originally specified, and this section originally described, was a real, confirmed project-owner decision to retire: the site, including the already-live Collection 001, is unconditionally public now. There is no sitewide gate and no crawler-bypass mechanism to maintain, because there is no wall left for a crawler to need to bypass — [PROJECT.md §80](./PROJECT.md#80-important-access-gate-seo-rule)'s underlying SEO requirement is now satisfied structurally rather than by a carefully-scoped exception.
+
+`proxy.ts` itself did come back later ([DECISIONS.md D-072](./DECISIONS.md)), but not for this — it's a narrow, zero-I/O fix for the unrecognized-catalog-subcategory soft-404 (D-026/D-052), returning a terminal 404 response before any page renders. It carries no cookie check, no redirect, and no access-control logic of any kind; nothing in this section depends on it or is affected by its return.
 
 What replaces it is narrower and collection-scoped, not sitewide:
 
