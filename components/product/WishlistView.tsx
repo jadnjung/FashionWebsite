@@ -104,7 +104,7 @@ export function WishlistView() {
     // outside (never modified) since this is the only caller that needs
     // this shape.
     <div className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const hasLiveResult = Object.prototype.hasOwnProperty.call(liveResults, item.handle);
         const liveResult = liveResults[item.handle];
         const product = !hasLiveResult
@@ -118,7 +118,14 @@ export function WishlistView() {
             key={item.handle}
             className="col-span-2 flex flex-col gap-3 md:col-span-2 lg:col-span-3"
           >
-            <ProductCard product={product} layout="standard" />
+            {/* priority on the first card only — DECISIONS.md D-045's same
+                "this grid is the page's primary above-the-fold content"
+                reasoning applies here: /wishlist has no hero above this
+                grid, so its first image is the page's likely LCP element.
+                Found missing (unlike ProductGrid's own callers, which all
+                pass priorityFirstImage) during a live functionality pass —
+                see DECISIONS.md. */}
+            <ProductCard product={product} layout="standard" priority={index === 0} />
             <WishlistToggle item={item} />
           </div>
         );
