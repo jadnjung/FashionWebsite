@@ -147,7 +147,7 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
       <div className="flex items-center justify-between pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">{title}</h2>
         <Button variant="secondary" onClick={onClose}>
-          Close
+          CLOSE
         </Button>
       </div>
 

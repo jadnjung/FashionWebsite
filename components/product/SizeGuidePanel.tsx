@@ -63,7 +63,7 @@ export function SizeGuidePanel({ open, onClose }: SizeGuidePanelProps) {
       <div className="flex items-center justify-between pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">Size Guide</h2>
         <Button variant="secondary" onClick={onClose}>
-          Close
+          CLOSE
         </Button>
       </div>
       {/* text-esque-text-secondary, not text-esque-text-muted: muted
