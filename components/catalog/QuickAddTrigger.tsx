@@ -116,7 +116,17 @@ export function QuickAddTrigger({ handle, title }: QuickAddTriggerProps) {
         onMouseEnter={preloadQuickAddPanel}
         onFocus={preloadQuickAddPanel}
         aria-busy={isPending}
-        className="w-fit text-left text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 transition-opacity duration-200 ease-esque hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text md:pointer-events-none md:opacity-0 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100 md:group-hover:pointer-events-auto md:group-hover:opacity-100"
+        // py-1 — WCAG 2.2 AA (2.5.8): an independent review measured this
+        // button's hit box at 84x20 CSS px on mobile/tablet (no vertical
+        // padding at all, just the text-utility line box), below the 24x24
+        // minimum. Same py-1-grows-the-click-target technique DECISIONS.md
+        // D-051 already established for FilterBar's checkbox label — this
+        // component was a previously-unaddressed instance of that same
+        // issue class, not a new one. Purely additive: this trigger already
+        // occupies its own static layout row at every width (never
+        // display:none, see the comment above), so growing its box height
+        // here changes no post-paint layout and causes no CLS.
+        className="w-fit py-1 text-left text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 transition-opacity duration-200 ease-esque hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text md:pointer-events-none md:opacity-0 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100 md:group-hover:pointer-events-auto md:group-hover:opacity-100"
       >
         QUICK ADD
       </button>
