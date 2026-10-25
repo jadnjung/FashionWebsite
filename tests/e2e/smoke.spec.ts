@@ -273,13 +273,16 @@ test.describe('full-screen menu', () => {
   // like every other category link did — this proves they now resolve to
   // real routes (tests/e2e/catalog.spec.ts covers what each route does once
   // there, including the Shopify-unconfigured error boundary). Each
-  // iteration re-navigates to '/' first, rather than reusing one open-menu
-  // session across all three: landing on a category route in this
-  // Shopify-unconfigured environment throws up to the root app/error.tsx
-  // boundary, which unmounts app/(storefront)/layout.tsx — Header and its
-  // MENU button included — so a shared session would only survive the
-  // first iteration before timing out waiting for a MENU button that's no
-  // longer mounted.
+  // iteration re-navigates to '/' first — this used to be required (a
+  // Shopify-unconfigured category route throws up to the root
+  // app/error.tsx boundary, which used to unmount Header along with it,
+  // back when the shell lived inside the now-deleted
+  // app/(storefront)/layout.tsx, below that boundary) and is now just
+  // conservative rather than strictly necessary: DECISIONS.md D-074 moved
+  // the shell into the root layout itself, above app/error.tsx's boundary,
+  // so Header/MENU stay mounted through an error too. Left as-is — still
+  // correct, and re-navigating between independent test cases is ordinary
+  // Playwright hygiene regardless.
   for (const [name, path] of [
     ['TOPS', '/tops'],
     ['BOTTOMS', '/bottoms'],
@@ -406,13 +409,30 @@ test.describe('not-found', () => {
   }) => {
     await page.goto('/this-route-does-not-exist');
     await expect(page.getByRole('heading', { name: "THIS PIECE DOESN'T EXIST." })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'ESQUE' })).toBeVisible();
+    // Scoped to `main`: the page's own in-content recovery link. Header's
+    // identically-labeled "ESQUE" wordmark link is now also present here
+    // (DECISIONS.md D-074 moved the shell into the root layout, so this is
+    // no longer the one page without it) — an unscoped query would match
+    // both and violate Playwright's strict-mode single-element rule.
+    await expect(page.getByRole('main').getByRole('link', { name: 'ESQUE' })).toBeVisible();
   });
 
-  // Regression: this page has no Header/Footer (the shell only wraps
-  // app/(storefront)/**), so it must supply its own `<main>` landmark
-  // rather than relying on ShellClient's — otherwise the page has no
-  // landmark at all for screen-reader users.
+  // Regression (DECISIONS.md D-074): this page is now wrapped by the real
+  // shell (ShellClient, rendered from the root layout) like any other
+  // route — Header's MENU/SEARCH/ACCOUNT/BAG and Footer's links are all
+  // genuinely reachable from a 404, not just a bare "back to home" link.
+  test('renders inside the real shell — Header and Footer are present', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist');
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toBeVisible();
+  });
+
+  // Regression: ShellClient's own <main id="main-content"> (rendered from
+  // the root layout, DECISIONS.md D-074) is this page's one real landmark —
+  // app/not-found.tsx itself deliberately renders a plain <div>, not a
+  // second <main>, since HTML disallows nesting <main> landmarks. This
+  // proves exactly one exists, not two.
   test('has a single main landmark', async ({ page }) => {
     await page.goto('/this-route-does-not-exist');
     await expect(page.getByRole('main')).toBeVisible();
@@ -421,10 +441,11 @@ test.describe('not-found', () => {
   // Regression: the ESQUE link intentionally carries no focus-visible
   // classes of its own (removed as a duplicate of the global a:focus-visible
   // rule in app/globals.css) — confirms that global rule is genuinely
-  // applied, not merely assumed to cover it.
+  // applied, not merely assumed to cover it. Scoped to `main` for the same
+  // two-"ESQUE"-links reason as the first test in this block.
   test('the ESQUE link back to home still shows a visible focus ring', async ({ page }) => {
     await page.goto('/this-route-does-not-exist');
-    const homeLink = page.getByRole('link', { name: 'ESQUE' });
+    const homeLink = page.getByRole('main').getByRole('link', { name: 'ESQUE' });
     await homeLink.focus();
     await expect(homeLink).toBeFocused();
     await expect(homeLink).toHaveCSS('outline-style', 'solid');

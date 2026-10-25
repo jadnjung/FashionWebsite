@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { Footer } from '@/components/navigation/Footer';
+import { ShellClient } from '@/components/navigation/ShellClient';
 import { functionalFont, displayFont } from '@/lib/fonts';
 import {
   OG_IMAGE_ALT,
@@ -60,6 +62,20 @@ export const metadata: Metadata = {
 // Typed explicitly rather than via the generated `LayoutProps<'/'>` global:
 // that type only exists in `.next/types/` after a build, so `pnpm typecheck`
 // on a fresh checkout (as CI does, before `pnpm build`) would fail to resolve it.
+//
+// The shell (Header/FullScreenMenu/SearchOverlay/CustomCursor/Footer, via
+// ShellClient) renders here, at the root, rather than in a nested
+// app/(storefront)/layout.tsx — see DECISIONS.md D-074. It used to live in
+// that nested layout specifically so the now-deleted app/(access) route
+// group could render without it; that group is gone (D-063/D-064), so
+// every page in the tree — including root-level special files like
+// app/not-found.tsx, app/error.tsx, and app/loading.tsx, which previously
+// rendered with no navigation at all — now gets the real shell. Footer is
+// rendered here (a Server Component) and passed to ShellClient as a prop,
+// rather than ShellClient importing it directly — DECISIONS.md D-046.
+// Footer has no interactivity, so this keeps its markup out of the client
+// bundle entirely; only its already-server-rendered output crosses into
+// the client tree, the same slot pattern `children` already uses here.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -70,7 +86,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           §6 lists it for nav, controls, product info, forms, and utility text, i.e.
           most of the page. Display (§7) is expressive/editorial and opt-in per
           element via the font-display utility, not a body-wide default. */}
-      <body className="min-h-full flex flex-col font-functional">{children}</body>
+      <body className="min-h-full flex flex-col font-functional">
+        <ShellClient footer={<Footer />}>{children}</ShellClient>
+      </body>
       {/* @next/third-parties's GoogleAnalytics — the current, official
           Next.js-recommended mechanism for loading GA4's gtag.js (confirmed
           against this exact installed Next 16.3.1 version's own bundled

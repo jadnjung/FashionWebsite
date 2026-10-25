@@ -25,29 +25,30 @@ export const metadata: Metadata = {
 };
 
 // CONTENT.md §6 — 404 copy is `THIS PIECE DOESN'T EXIST.`. Every category
-// link (Header, FullScreenMenu) and footer link points to a route that
-// doesn't exist yet in this shell-only pass, so this page is reachable from
-// normal navigation, not just direct URL entry.
+// link (Header, FullScreenMenu) and footer link points to a real route, so
+// this page is reachable only via direct/stale URL entry, not normal
+// navigation.
 //
 // A truly-unmatched URL renders via Next.js's synthetic global not-found
 // route, which only ever consults the ROOT app/not-found.tsx (verified
 // against current Next.js internals — route-group-specific not-found files
-// are never used for this case). Since the shell (Header/Footer/
-// FullScreenMenu) now lives in app/(storefront)/layout.tsx rather than the
-// root layout (moved there so app/(access) can render without it — see this
-// task's own description), this page no longer has Header/Footer to
-// navigate back out through. The link below replaces that escape hatch,
-// reusing the same "ESQUE" wordmark-as-home-link pattern Header already
-// uses, rather than inventing new copy.
+// are never used for this case). The shell (Header/Footer/FullScreenMenu,
+// via ShellClient) now renders in the root layout itself (DECISIONS.md
+// D-074), so this page is wrapped by the real Header/Footer like any other
+// route — the ESQUE-wordmark link below is a deliberate second, in-content
+// way back home (CONTENT.md §6's own error-recovery expectation), not this
+// page's only one anymore.
 //
-// Follows the same visual pattern as app/loading.tsx and app/error.tsx
-// (dark background inherited from body, font-display, text-esque-text/
-// text-display-l). Unlike error.tsx, not-found.tsx has no reset/error-
+// Renders a <div>, not a <main>: ShellClient's own <main id="main-content">
+// already wraps {children} (including this page) at the root layout level —
+// a second nested <main> here would be invalid (HTML disallows nesting
+// <main> landmarks) and would break tests/e2e/smoke.spec.ts's single-main-
+// landmark assertion. Unlike error.tsx, not-found.tsx has no reset/error-
 // boundary semantics, so it stays a Server Component — no client
 // interactivity needed.
 export default function NotFound() {
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
       <h1 className="font-display text-display-l tracking-display text-esque-text">
         {NOT_FOUND_HEADING}
       </h1>
@@ -57,6 +58,6 @@ export default function NotFound() {
       >
         {NOT_FOUND_HOME_LABEL}
       </Link>
-    </main>
+    </div>
   );
 }

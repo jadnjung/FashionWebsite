@@ -122,12 +122,19 @@ test.describe('search overlay', () => {
     await expect(retryButton).toBeVisible();
 
     // Scoped, not the page-level boundary: app/error.tsx renders its
-    // message as a real <h1> heading, which must NOT appear anywhere
-    // (the dialog's own error text above is a plain, unscoped <p>, not a
-    // heading) — and the homepage underneath must still be genuinely
-    // present (app/error.tsx would have unmounted the whole (storefront)
-    // layout, Header/ESQUE wordmark included, were it the boundary that
-    // actually caught this).
+    // message as a real <h1> heading, which must NOT appear anywhere (the
+    // dialog's own error text above is a plain, unscoped <p>, not a
+    // heading) — this is the real discriminator, sufficient on its own to
+    // prove the error stayed scoped to the dialog rather than escaping to
+    // app/error.tsx's fallback.
+    //
+    // The ESQUE-link check below is kept as a basic sanity check that the
+    // homepage underneath the dialog is still genuinely there, but is no
+    // longer a *second* proof of the same distinction: DECISIONS.md D-074
+    // moved the shell into the root layout, above app/error.tsx's
+    // boundary, so Header now stays mounted even if the page-level
+    // boundary did fire — its presence alone can no longer tell the two
+    // cases apart.
     await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'ESQUE' })).toBeAttached();
 
