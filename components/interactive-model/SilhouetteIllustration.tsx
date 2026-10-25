@@ -22,7 +22,7 @@ interface RegionShape {
 // illustration's own responsive size at every viewport — see DECISIONS.md
 // D-035 for why this is a real <button> + percentage clip-path rather than
 // an SVG <path> or a px-based clip-path.
-const REGION_SHAPES: Record<HotspotRegion, RegionShape> = {
+export const REGION_SHAPES: Record<HotspotRegion, RegionShape> = {
   top: {
     box: { top: '12%', left: '20%', width: '60%', height: '46%' },
     clipPath: 'polygon(20% 0%, 80% 0%, 100% 15%, 85% 20%, 85% 100%, 15% 100%, 15% 20%, 0% 15%)',
@@ -30,6 +30,39 @@ const REGION_SHAPES: Record<HotspotRegion, RegionShape> = {
   bottom: {
     box: { top: '62%', left: '21.25%', width: '57.5%', height: '34%' },
     clipPath: 'polygon(0% 0%, 100% 0%, 95% 100%, 65% 100%, 60% 35%, 40% 35%, 35% 100%, 5% 100%)',
+  },
+};
+
+// Demo Mode shapes — calibrated against the real stock photo at
+// /preview-demo/model-full.jpg (900x1125, a 4:5 ratio matching the
+// illustration's own aspect-[4/5] rendering, so image percentages map
+// directly to box/clipPath percentages with no object-cover crop to account
+// for). REGION_SHAPES above was hand-authored for the abstract placeholder
+// silhouette and does not line up with this photo's actual garment
+// silhouettes (shoulder/hem lines, crossed-leg stance) — see the "bug"
+// section of the task that produced this constant for the live-reproduced
+// mismatch. These percentages were derived by sampling the photo's own
+// pixels (isolating near-black, low-saturation regions to exclude the
+// model's auburn hair and skin) and verified visually by rendering the
+// resulting clip-path polygons back over the source photo. If
+// model-full.jpg is ever replaced with different photography or a
+// different pose, these values will need to be recalibrated the same way —
+// they trace this specific photo, not a generic "top"/"bottom" region.
+export const DEMO_REGION_SHAPES: Record<HotspotRegion, RegionShape> = {
+  // Black sleeveless cropped top: narrow high neckline, flares out to the
+  // shoulders/armholes, widest across the ribcage, with an asymmetric
+  // diagonal hem (shorter on the model's right, longer/lower on her left).
+  top: {
+    box: { top: '18%', left: '32%', width: '27%', height: '22%' },
+    clipPath: 'polygon(33% 5%, 56% 18%, 78% 36%, 96% 64%, 96% 91%, 19% 95%, 4% 59%, 15% 18%)',
+  },
+  // Black high-waisted wide-leg trousers in a crossed/scissor stance: narrow
+  // waistband, widening hips, then two legs splitting apart below the
+  // crotch — one reaching down-and-left, the other down-and-right.
+  bottom: {
+    box: { top: '38%', left: '12%', width: '61%', height: '52%' },
+    clipPath:
+      'polygon(54% 2%, 72% 2%, 90% 27%, 97% 54%, 93% 97%, 72% 97%, 75% 58%, 67% 37%, 56% 58%, 31% 97%, 2% 94%, 21% 72%, 44% 27%)',
   },
 };
 
@@ -78,6 +111,7 @@ export function SilhouetteIllustration({
   onActivate,
   previewDemoMode = false,
 }: SilhouetteIllustrationProps) {
+  const shapes = previewDemoMode ? DEMO_REGION_SHAPES : REGION_SHAPES;
   return (
     <div className="relative aspect-[4/5] w-full bg-esque-elevated">
       {previewDemoMode ? (
@@ -97,7 +131,7 @@ export function SilhouetteIllustration({
         </p>
       )}
       {garments.map((garment) => {
-        const shape = REGION_SHAPES[garment.region];
+        const shape = shapes[garment.region];
         const isActive = activeRegion === garment.region;
         const isDimmed = activeRegion !== null && !isActive;
         const style: CSSProperties = {
