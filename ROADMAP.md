@@ -29,7 +29,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 ## Phase 3 — Core Storefront Shell
 
 - [x] Global layout, header (`ESQUE MENU SEARCH ACCOUNT BAG`) — including a mobile-responsive utility nav (icon-compressed SEARCH/ACCOUNT below `md`, see DECISIONS.md D-014)
-- [x] Full-screen experimental menu — focus trap, Escape-to-close, closes on navigation, reduced-motion support
+- [x] Full-screen experimental menu — focus trap, Escape-to-close, closes on navigation, reduced-motion support, subcategory disclosure (TOPS/BOTTOMS/ETC. — click/tap/keyboard accordion, hover as additive preview; DESIGN_SYSTEM.md §25's "subcategories reveal" was defined in `lib/navigation-data.ts` from this project's earliest scaffolding but never actually rendered until now — see DECISIONS.md D-075)
 - [x] Footer
 - [x] Base page transitions — the full-screen menu's open/close is the one transition that exists in this pass (the homepage placeholder is still a single route); cross-page shared-element transitions are deferred to whichever later phase first introduces a second route (see DECISIONS.md D-013)
 

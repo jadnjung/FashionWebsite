@@ -115,6 +115,47 @@ button:focus-visible {
     visibility 0s linear 0s;
 }
 
+/* FullScreenMenu subcategory reveal — DESIGN_SYSTEM.md §25 ("subcategories
+   reveal" on hover/expand). This is a reveal *within* an already-open
+   menu, not the menu's own open/close transition above — INTERACTIONS.md
+   §3's "Standard UI" tier (200-350ms, "menu item") fits here, not the
+   Layout-tier timing .esque-menu uses for its own open/close.
+
+   An `animation`, not a `transition`: FullScreenMenu.tsx conditionally
+   *mounts* the subcategory <ul> (only renders it while expanded) rather
+   than keeping it always-present and toggling a visibility class. That
+   choice is deliberate, not incidental — the Tab-focus-trap in
+   FullScreenMenu.tsx queries `a[href], button:not([disabled])` fresh on
+   every Tab keydown, so an always-mounted-but-visually-collapsed list
+   would still surface its links to that query, letting keyboard focus
+   land on something invisible/clipped. A `transition` needs an existing
+   element to change a property over time, which an element that was just
+   inserted doesn't have; a mount-triggered `animation` plays from its
+   first keyframe on insertion instead.
+
+   `animation-fill-mode` is left at its default (none) deliberately: once
+   the animation completes, the element reverts to its own authored
+   styles, which already equal the 100% keyframe (opacity 1, no offset) —
+   there's nothing extra to hold onto with `forwards`. The sitewide
+   prefers-reduced-motion rule above already zeroes `animation-duration`
+   to 0.01ms for every element; because the 100% keyframe IS the resting
+   state, collapsing the duration still lands on the correct, fully-visible
+   end state rather than a broken partially-applied one. */
+@keyframes esque-submenu-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.esque-submenu-reveal {
+  animation: esque-submenu-reveal 240ms var(--ease-esque);
+}
+
 /* SearchOverlay open/close — identical mechanics to .esque-menu above
    (DESIGN_SYSTEM.md §26's timing, reused for this second full-screen
    dialog). Deliberately a separate class rather than sharing .esque-menu:

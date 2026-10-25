@@ -205,10 +205,24 @@ test.describe('full-screen menu', () => {
 
     // Forward: Tab through every category link, ending back on the first —
     // exercises the actual wrap-forward branch of handleKeyDown, not just
-    // the initial-focus-on-open behavior.
-    for (const name of ['TOPS', 'BOTTOMS', 'ETC.', 'COLLECTIONS', 'ABOUT']) {
+    // the initial-focus-on-open behavior. TOPS/BOTTOMS/ETC. are each
+    // immediately followed by their own subcategory disclosure <button> in
+    // DOM order (FullScreenMenu.tsx) — real focusable elements the
+    // hand-rolled trap's querySelectorAll picks up automatically, so the
+    // full sequence must include them, not just the category links.
+    const forwardSequence = [
+      { role: 'link', name: 'TOPS' },
+      { role: 'button', name: 'TOPS subcategories' },
+      { role: 'link', name: 'BOTTOMS' },
+      { role: 'button', name: 'BOTTOMS subcategories' },
+      { role: 'link', name: 'ETC.' },
+      { role: 'button', name: 'ETC. subcategories' },
+      { role: 'link', name: 'COLLECTIONS' },
+      { role: 'link', name: 'ABOUT' },
+    ] as const;
+    for (const { role, name } of forwardSequence) {
       await page.keyboard.press('Tab');
-      await expect(menu.getByRole('link', { name })).toBeFocused();
+      await expect(menu.getByRole(role, { name })).toBeFocused();
     }
     await expect(lastLink).toBeFocused();
     await page.keyboard.press('Tab');
@@ -256,6 +270,39 @@ test.describe('full-screen menu', () => {
     const duration = await menu.evaluate((el) => getComputedStyle(el).transitionDuration);
     // "0s" or a near-instant value — not the full 350-500ms from DESIGN_SYSTEM.md §26.
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);
+
+    // The subcategory reveal (.esque-submenu-reveal, app/globals.css) uses
+    // a mount-triggered `animation`, a different CSS mechanism than the
+    // dialog's own open/close `transition` checked above — confirming the
+    // sitewide reduced-motion rule actually reaches it too, rather than
+    // assuming the same rule that zeroes transition-duration also zeroes
+    // animation-duration.
+    await menu.getByRole('button', { name: 'TOPS subcategories' }).click();
+    const subcategoryList = menu.locator('#menu-subcategories-tops');
+    const animationDuration = await subcategoryList.evaluate(
+      (el) => getComputedStyle(el).animationDuration,
+    );
+    expect(animationDuration === '0s' || parseFloat(animationDuration) < 0.05).toBe(true);
+    // And the end state is actually correct, not just fast — opacity 1,
+    // not frozen on the keyframe's 0%-opacity starting frame (the real
+    // risk this project's own §9/§94 review convention calls out for any
+    // animated mechanism beyond a plain opacity transition: a technically-
+    // instant animation that still lands on the wrong final frame is worse
+    // than not reducing motion at all). A web-first `toHaveCSS` assertion,
+    // not a one-shot `.evaluate()` read like the animationDuration check
+    // above: that check reads a *static authored* value (how long the
+    // animation is configured to run, true the instant styles are
+    // computed, matching this file's own pre-existing transitionDuration
+    // check's stable pattern above), but opacity here is the *live,
+    // in-progress* value of an actively-playing (if near-instant)
+    // animation — a single synchronous read can race the browser's own
+    // paint and sample the keyframe's 0% starting value before the
+    // 0.01ms-duration animation has actually committed its end state
+    // (reproduced empirically: flaked 1/8 on an isolated repeat run).
+    // `toHaveCSS` retries until it holds or times out, matching how this
+    // same file's own "the open/close transition genuinely animates
+    // opacity" test already asserts `menu`'s end-state opacity above.
+    await expect(subcategoryList).toHaveCSS('opacity', '1');
   });
 
   test('clicking a category link closes the menu and navigates', async ({ page }) => {
@@ -267,6 +314,72 @@ test.describe('full-screen menu', () => {
     await page.getByRole('link', { name: 'NEW' }).click();
     await expect(page).toHaveURL(/\/new$/);
     await expect(menu).toBeHidden();
+  });
+
+  // DESIGN_SYSTEM.md §25's "subcategories reveal" + PROJECT.md §72/§94 and
+  // DESIGN_SYSTEM.md §70's ban on hover-only critical navigation: the
+  // disclosure button is the mechanism that must work with no hover at
+  // all (click here stands in for a touch tap — there is no hover on
+  // mobile/tablet, so this is the path those devices actually take).
+  test('clicking the TOPS subcategories button reveals its subcategories, and clicking one closes the menu and navigates', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const disclosureButton = menu.getByRole('button', { name: 'TOPS subcategories' });
+    const tShirtsLink = menu.getByRole('link', { name: 'T-SHIRTS' });
+
+    await expect(disclosureButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(tShirtsLink).toBeHidden();
+
+    await disclosureButton.click();
+    await expect(disclosureButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(tShirtsLink).toBeVisible();
+
+    await tShirtsLink.click();
+    await expect(page).toHaveURL(/\/tops\/t-shirts$/);
+    await expect(menu).toBeHidden();
+  });
+
+  test('the subcategory disclosure button also toggles via keyboard (Enter)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const disclosureButton = menu.getByRole('button', { name: 'TOPS subcategories' });
+
+    await disclosureButton.focus();
+    await page.keyboard.press('Enter');
+    await expect(disclosureButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeVisible();
+
+    await page.keyboard.press('Enter');
+    await expect(disclosureButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeHidden();
+  });
+
+  test('only one category’s subcategories are expanded at a time', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+
+    await menu.getByRole('button', { name: 'TOPS subcategories' }).click();
+    await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeVisible();
+
+    await menu.getByRole('button', { name: 'BOTTOMS subcategories' }).click();
+    await expect(menu.getByRole('link', { name: 'JEANS' })).toBeVisible();
+    await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeHidden();
+  });
+
+  // Progressive-enhancement only — the test above already proves the
+  // click/tap mechanism works completely without this.
+  test('hovering TOPS previews its subcategories without clicking', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+
+    await menu.getByRole('link', { name: 'TOPS' }).hover();
+    await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeVisible();
   });
 
   // Regression: before ROADMAP.md Phase 4, every one of these hrefs 404'd
