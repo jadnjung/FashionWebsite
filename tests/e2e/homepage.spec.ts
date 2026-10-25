@@ -187,6 +187,25 @@ test.describe('homepage — structure and responsiveness', () => {
 
   test('renders scenes in the PROJECT.md §23 / DESIGN_SYSTEM.md §58 order', async ({ page }) => {
     await page.goto('/');
+    // Waits for the real page content, not just navigation ('load') —
+    // app/(storefront)/page.tsx's Home is one async Server Component
+    // (`Promise.all([getSelectedPieces(), getInteractiveModelLook()])`
+    // awaited before any JSX returns, no internal <Suspense> splitting
+    // the six scenes apart), so the whole scene list resolves as one
+    // atomic unit behind the root app/loading.tsx Suspense boundary.
+    // Collection Hero is always the first scene and never conditionally
+    // omitted (unlike Selected Pieces) — waiting for it is a reliable,
+    // sufficient signal that every region is now present, not just this
+    // one. Without this wait, evaluateAll() below raced goto()'s 'load'
+    // event against that Suspense boundary resolving: on an uncompiled
+    // dev-server route, `load` can fire while the DOM still shows
+    // loading.tsx's plain "ESQUE" fallback (confirmed via a captured page
+    // snapshot — zero role="region" elements present yet), which
+    // DECISIONS.md D-074 made newly reachable by moving the shell above
+    // that boundary (previously the shell was gated behind the same
+    // boundary as the content, so both were equally "not there yet" and
+    // this test's query window was effectively never hit in practice).
+    await expect(page.getByRole('region', { name: 'Collection Hero' })).toBeVisible();
     const regionNames = await page
       .getByRole('region')
       .evaluateAll((elements) => elements.map((el) => el.getAttribute('aria-label')));
