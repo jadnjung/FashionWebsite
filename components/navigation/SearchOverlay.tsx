@@ -322,7 +322,18 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
               </div>
             )}
 
-            {effectiveSearchResultsState.status !== 'idle' && (
+            {/* Not just `status !== 'idle'` — that rendered this heading
+                over empty space once a query settled to zero products
+                (status 'loaded', products: []), unlike CATEGORIES/
+                COLLECTIONS above/below, which are correctly gated on their
+                own `.length > 0`. PRODUCTS can't use that exact same
+                one-line gate: unlike those two (pure, synchronous data),
+                it has real loading/error sub-states that must still show
+                the heading with no products array to check yet. */}
+            {(effectiveSearchResultsState.status === 'loading' ||
+              effectiveSearchResultsState.status === 'error' ||
+              (effectiveSearchResultsState.status === 'loaded' &&
+                effectiveSearchResultsState.products.length > 0)) && (
               <div className="flex flex-col gap-4">
                 <h2 className="text-utility uppercase tracking-metadata text-esque-text-secondary">
                   Products
@@ -336,8 +347,13 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
                 )}
                 {effectiveSearchResultsState.status === 'error' && (
                   <div className="flex flex-col items-start gap-4">
+                    {/* Distinct from app/error.tsx's root-crash copy
+                        (CONTENT.md §6 treats "network failure" as its own
+                        row, separate from a generic crash) — names what
+                        actually failed rather than reusing the identical
+                        generic string for two different situations. */}
                     <p className="font-display text-heading-3 uppercase text-esque-text">
-                      SOMETHING WENT WRONG.
+                      COULD NOT LOAD RESULTS.
                     </p>
                     {/* tabIndex — same WebKit default-Tab-sequence quirk
                         as the CLOSE button above. */}

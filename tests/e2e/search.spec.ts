@@ -117,7 +117,7 @@ test.describe('search overlay', () => {
 
     await dialog.getByRole('searchbox').fill('hoodie');
     await expect(dialog.getByRole('heading', { name: /products/i })).toBeVisible();
-    await expect(dialog.getByText('SOMETHING WENT WRONG.')).toBeVisible();
+    await expect(dialog.getByText('COULD NOT LOAD RESULTS.')).toBeVisible();
     const retryButton = dialog.getByRole('button', { name: 'Retry' });
     await expect(retryButton).toBeVisible();
 
@@ -141,7 +141,84 @@ test.describe('search overlay', () => {
     // Retry re-attempts the same query and settles to the same honest
     // error again (this environment's Shopify client stays unconfigured).
     await retryButton.click();
-    await expect(dialog.getByText('SOMETHING WENT WRONG.')).toBeVisible();
+    await expect(dialog.getByText('COULD NOT LOAD RESULTS.')).toBeVisible();
+  });
+
+  // Regression: the PRODUCTS group's heading was gated only on
+  // `status !== 'idle'`, so a settled search with zero product matches
+  // still rendered the "Products" <h2> over empty space — unlike
+  // CATEGORIES/COLLECTIONS, each correctly gated on their own
+  // `.length > 0`. Mocked at the network boundary (not relying on Demo
+  // Mode) specifically to reach a genuine `loaded` status with an empty
+  // products array — this environment's Shopify client is always
+  // unconfigured, so an unmocked query only ever reaches the `error`
+  // status (the test above), never `loaded`.
+  test('the PRODUCTS heading does not render when a settled search has zero product matches', async ({
+    page,
+  }) => {
+    await page.route('**/api/search**', (route) =>
+      route.fulfill({ json: { products: [], collections: [] } }),
+    );
+    await page.goto('/');
+    await page.getByRole('button', { name: 'SEARCH' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+
+    // Matches no local category either, so every result group is
+    // genuinely empty and only the mocked PRODUCTS fetch is under test.
+    await dialog.getByRole('searchbox').fill('zzzznomatch');
+    await expect(dialog.getByText('NOTHING MATCHES.')).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
+    await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
+    await expect(dialog.getByRole('heading', { name: /collections/i })).toHaveCount(0);
+  });
+
+  // WCAG 2.5.8 (24x24px minimum) — the native type="search" clear ("x")
+  // button (app/globals.css's ::-webkit-search-cancel-button rule) had a
+  // 14x14px hit target. Fixed by growing the pseudo-element's own box to
+  // 24x24 while keeping the visible glyph at a fixed, smaller
+  // background-size — mirrors FullScreenMenu.tsx's small-glyph-in-a-
+  // bigger-hit-box pattern (h-6 w-6 wrapping a 16px ChevronIcon), just via
+  // background-size instead of a padded child, since this is one
+  // UA-rendered pseudo-element, not two nested real DOM nodes. A pseudo-
+  // element isn't reachable via a normal CSS selector/locator, so its
+  // computed size is read directly via getComputedStyle's two-argument
+  // form. Chromium and WebKit (this suite's 4 projects — see
+  // playwright.config.ts) both render this pseudo-element; Firefox isn't
+  // among this suite's projects and wouldn't render it if it were (see the
+  // CSS rule's own comment).
+  test('the native search-clear ("x") button has a WCAG 2.5.8-compliant 24x24px hit target', async ({
+    page,
+    browserName,
+  }) => {
+    // Chromium-engine only (this suite's `chromium`/`laptop` projects) —
+    // confirmed empirically, not assumed: WebKit (`mobile-safari`/`tablet`)
+    // does not expose this non-standard, vendor-prefixed pseudo-element's
+    // computed box through getComputedStyle(el, pseudoElt) the way
+    // Chromium does (every property reads back as '', so parseFloat gives
+    // NaN), even though WebKit fully supports *styling* it — the existing
+    // background-image/color override one-way above already proves that.
+    // This is a limitation of this verification technique on WebKit, not
+    // of the fix: the CSS rule itself is plain, engine-agnostic
+    // width/height on a selector WebKit already honors, so verifying it on
+    // Chromium is sufficient signal that the rule applies correctly.
+    test.skip(
+      browserName === 'webkit',
+      'WebKit does not expose this pseudo-element’s computed box via getComputedStyle(el, pseudoElt)',
+    );
+
+    await page.goto('/');
+    await page.getByRole('button', { name: 'SEARCH' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    const input = dialog.getByRole('searchbox');
+    // The cancel button only renders once the field has a value.
+    await input.fill('hoodie');
+
+    const size = await input.evaluate((el) => {
+      const style = getComputedStyle(el, '::-webkit-search-cancel-button');
+      return { width: parseFloat(style.width), height: parseFloat(style.height) };
+    });
+    expect(size.width).toBeGreaterThanOrEqual(24);
+    expect(size.height).toBeGreaterThanOrEqual(24);
   });
 
   test('Tab-cycle focus trap wraps forward and backward across CLOSE, input, and results', async ({
