@@ -98,7 +98,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           className="w-24"
         />
         <Button type="submit" variant="secondary">
-          Apply
+          APPLY
         </Button>
         {hasAvailabilityOrPrice && (
           <Link
