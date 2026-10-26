@@ -179,7 +179,33 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
       aria-modal="true"
       aria-label="Menu"
       data-open={open}
-      className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-8"
+      // py-16 (64px) alongside scroll-m*-16 on the focusable items below.
+      // Two independent gaps needed closing here, both confirmed live
+      // against a real production build, not assumed from the box model
+      // alone:
+      // 1. scroll-margin alone cannot rescue a focus ring that clips
+      //    off-screen when the scrollable area has no slack left to scroll
+      //    into — `my-auto` on the inner wrapper gives 0 top/bottom margin
+      //    the instant content overflows (by design, see that comment
+      //    below), so without real padding here the container's native
+      //    scrollIntoView was already at its max scrollTop with the last
+      //    link's border-box sitting flush against the viewport edge;
+      //    scroll-margin-bottom had no room left to push into. This padding
+      //    supplies that room on both edges.
+      // 2. Separately, and larger than expected: Chromium's own native
+      //    focus-triggered scroll-into-view, in this dialog specifically,
+      //    does not reliably use the full scroll-margin requested once
+      //    keyboard focus has moved through several Tab presses after the
+      //    dialog's own 400ms opacity transition has settled — repeatedly
+      //    reproduced on a production build (`next build && next start`,
+      //    not a dev-mode artifact) landing a fixed ~55px short of fully
+      //    clearing the ring at a plain 24px margin/padding, regardless of
+      //    inter-keypress timing. 64px (one more step up DESIGN_SYSTEM.md
+      //    §13's spacing scale) was the smallest on-scale value that closed
+      //    this gap with margin to spare across 10+ repeated runs. Flagged
+      //    to the dispatching review rather than silently shipping the
+      //    originally-estimated 24px, which reproducibly still clips.
+      className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-8 py-16"
     >
       {/* `my-auto` on this inner wrapper (not `justify-center` on the
           scrolling parent above) is what keeps all categories reachable.
@@ -208,7 +234,31 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
               // category with no subcategories collapses whatever panel
               // was previously open, keeping the accordion's "at most one
               // open" invariant true for hover too, not just click.
-              onMouseEnter={() => setExpandedCategory(hasSubcategories ? category.href : null)}
+              onMouseEnter={() => {
+                // A different category being hovered means the "last
+                // click" context is stale — the user's attention has
+                // moved elsewhere and back, so a following click on this
+                // category should count as a fresh open, not a second
+                // toggle in the same click/hover sequence. Without this,
+                // click TOPS (ref='TOPS') -> hover BOTTOMS (TOPS visually
+                // collapses, ref untouched) -> hover back onto TOPS (it
+                // visually re-expands) -> click TOPS's chevron again would
+                // read shouldCollapse=true from the stale ref and collapse
+                // a row the user just watched re-open and clicked to keep
+                // open. Checked unconditionally (not gated on
+                // hasSubcategories) — a category with no subcategories
+                // (NEW/COLLECTIONS/ABOUT) must invalidate the ref too when
+                // hovered, since it's just as capable of sitting between
+                // two clicks on the same disclosure category. See
+                // DECISIONS.md D-075.
+                if (
+                  lastClickedCategoryRef.current !== null &&
+                  lastClickedCategoryRef.current !== category.href
+                ) {
+                  lastClickedCategoryRef.current = null;
+                }
+                setExpandedCategory(hasSubcategories ? category.href : null);
+              }}
             >
               <div className="flex items-center gap-3">
                 <Link
@@ -239,7 +289,25 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                   // hand-rolled focus trap (handleKeyDown above) actually
                   // reachable by keyboard on every engine.
                   tabIndex={0}
-                  className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
+                  // scroll-mt-16/scroll-mb-16 (64px, DESIGN_SYSTEM.md §13's
+                  // spacing scale): the container's native focus-triggered
+                  // scroll-into-view (`overflow-y-auto` above) uses this
+                  // element's border-box, which doesn't include `outline`/
+                  // `outline-offset` (an outline occupies no layout space) —
+                  // so a newly-focused item can land flush with the
+                  // container edge while its focus ring (app/globals.css's
+                  // global a:focus-visible rule) still clips off-screen.
+                  // scroll-margin reserves room for that ring in the
+                  // scroll-into-view calculation — but only given actual
+                  // slack to scroll into (the container's own `py-16`
+                  // below supplies that) and only up to what Chromium's
+                  // native algorithm actually honors in practice, which
+                  // measured smaller than the margin requested in this
+                  // dialog (see the container's own comment for the
+                  // specifics). 64px, not a smaller on-scale value, is what
+                  // verified clean across 10+ repeated live runs at
+                  // 1440x900 against a production build.
+                  className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
                 >
                   {category.label}
                 </Link>
@@ -265,7 +333,9 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                     // h-6 w-6 (24x24px) — WCAG 2.5.8's minimum touch-target
                     // size, the same bar this codebase just applied to
                     // QuickAddTrigger's hit box (commit b37a937).
-                    className="flex h-6 w-6 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
+                    // scroll-mt-16/scroll-mb-16 — see the category Link's own
+                    // comment above for why.
+                    className="flex h-6 w-6 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
                   >
                     <ChevronIcon expanded={isExpanded} />
                   </button>
@@ -311,7 +381,9 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                         // change). Same hover treatment as the top-level
                         // links and SearchOverlay.tsx's own CATEGORIES
                         // result group, which this list's markup mirrors.
-                        className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest"
+                        // scroll-mt-16/scroll-mb-16 — see the top-level
+                        // category Link's own comment above for why.
+                        className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
                       >
                         {subcategory.label}
                       </Link>

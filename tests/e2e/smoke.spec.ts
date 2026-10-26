@@ -371,6 +371,48 @@ test.describe('full-screen menu', () => {
     await expect(menu.getByRole('link', { name: 'T-SHIRTS' })).toBeHidden();
   });
 
+  // Regression (DECISIONS.md D-075's lastClickedCategoryRef, extended): a
+  // category clicked open, then re-hovered after an *intervening* hover on a
+  // different category, must stay open on a second click of its own
+  // disclosure button — not collapse. lastClickedCategoryRef only ever gets
+  // written by a click, never by hover, so without invalidating it on
+  // hovering a *different* category, this exact sequence reproduced the bug:
+  // click TOPS (ref='TOPS') -> hover BOTTOMS (TOPS visually collapses, ref
+  // untouched) -> hover back onto TOPS (it visually re-expands, ref still
+  // stale at 'TOPS') -> click TOPS's chevron again reads
+  // shouldCollapse = (ref === 'TOPS') = true and incorrectly collapses a
+  // row the user just watched re-open and clicked specifically to confirm.
+  test('clicking TOPS open, hovering BOTTOMS, then hovering back onto TOPS and clicking again keeps TOPS expanded', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const topsDisclosure = menu.getByRole('button', { name: 'TOPS subcategories' });
+    const tShirtsLink = menu.getByRole('link', { name: 'T-SHIRTS' });
+
+    // 1. Click TOPS's chevron -> opens.
+    await topsDisclosure.click();
+    await expect(topsDisclosure).toHaveAttribute('aria-expanded', 'true');
+    await expect(tShirtsLink).toBeVisible();
+
+    // 2. Hover a different category's row (its Link, not its chevron) ->
+    // TOPS visually collapses, and the stale ref must be invalidated here.
+    await menu.getByRole('link', { name: 'BOTTOMS' }).hover();
+    await expect(tShirtsLink).toBeHidden();
+
+    // 3. Hover back onto TOPS's own row -> re-expands (the ref staying null
+    // from step 2 must not be re-poisoned by this hover).
+    await menu.getByRole('link', { name: 'TOPS' }).hover();
+    await expect(tShirtsLink).toBeVisible();
+
+    // 4. Click TOPS's chevron again -> must stay/return open (ref is null,
+    // not 'TOPS'), not collapse.
+    await topsDisclosure.click();
+    await expect(topsDisclosure).toHaveAttribute('aria-expanded', 'true');
+    await expect(tShirtsLink).toBeVisible();
+  });
+
   // Progressive-enhancement only — the test above already proves the
   // click/tap mechanism works completely without this.
   test('hovering TOPS previews its subcategories without clicking', async ({ page }) => {
@@ -468,6 +510,81 @@ test.describe('full-screen menu', () => {
     expect(closedMidway).toBeGreaterThan(0);
     expect(closedMidway).toBeLessThan(1);
     await expect(menu).toBeHidden();
+  });
+
+  // Regression: #esque-full-screen-menu's own `overflow-y-auto` makes the
+  // browser auto-scroll a newly-focused descendant into view, but that
+  // native scroll-into-view uses the focused element's border-box, which
+  // doesn't include `outline`/`outline-offset` (an outline occupies no
+  // layout space) — so the box can land flush with the container's edge
+  // while the focus ring itself still clips off-screen. None of this
+  // project's 4 Playwright projects (chromium/mobile-safari/tablet/laptop,
+  // playwright.config.ts) use this exact viewport, so this real desktop
+  // height had zero coverage. 1440x900 chosen as a common real desktop
+  // resolution landing above every configured project's height.
+  test('tabbing to the last focusable item (ABOUT) keeps its focus ring fully within the viewport at 1440x900', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'MENU' }).click();
+    const menu = page.getByRole('dialog', { name: /menu/i });
+    const aboutLink = menu.getByRole('link', { name: 'ABOUT' });
+
+    // Waits for the dialog's own 400ms opening transition to finish before
+    // tabbing — not just a `toBeVisible()`/focus check, both of which
+    // resolve immediately regardless of the CSS transition's progress
+    // (firstLinkRef's focus() runs synchronously in the same effect that
+    // opens the dialog). Confirmed live: without this wait, rapid Tab
+    // presses fired while `.esque-menu`'s opacity transition is still
+    // resolving land the native focus-triggered scroll-into-view against a
+    // transient mid-transition layout, giving flaky scrollHeight/scrollTop
+    // readings a run later (reproduced directly) — the same class of
+    // dialog-transition-vs-interaction race this file's own "the open/close
+    // transition genuinely animates opacity" test already demonstrates
+    // elsewhere in this block. Matches this file's own established
+    // `toHaveCSS('opacity', '1')` idiom rather than an arbitrary sleep.
+    await expect(menu).toHaveCSS('opacity', '1');
+
+    // Real Tab presses, not a programmatic .focus() — reproduces the actual
+    // bug mechanism (the browser's own native scroll-into-view triggered by
+    // keyboard focus moving through the trap), matching this same block's
+    // "Tab cycles focus" test's forward sequence (initial focus already
+    // lands on NEW/first link on open, so 8 presses reaches ABOUT/last).
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(aboutLink).toBeFocused();
+
+    // Confirms there's actually a visible, positioned ring to clear in the
+    // first place — FullScreenMenu's own links/buttons carry no local
+    // focus-visible classes, relying entirely on app/globals.css's sitewide
+    // `a:focus-visible, button:focus-visible` rule (the same rule
+    // not-found.spec's "the ESQUE link back to home still shows a visible
+    // focus ring" test already pins elsewhere).
+    await expect(aboutLink).toHaveCSS('outline-style', 'solid');
+    await expect(aboutLink).toHaveCSS('outline-color', 'rgb(243, 241, 234)'); // --color-esque-text
+
+    const ring = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      const outlineWidth = parseFloat(cs.outlineWidth) || 0;
+      const outlineOffset = parseFloat(cs.outlineOffset) || 0;
+      return {
+        top: rect.top - outlineWidth - outlineOffset,
+        bottom: rect.bottom + outlineWidth + outlineOffset,
+        innerHeight: window.innerHeight,
+      };
+    });
+
+    expect(ring).not.toBeNull();
+    // The ring's own edges, not just the link's border-box, stay within the
+    // viewport — this is exactly the box the native scroll-into-view
+    // mechanism doesn't account for on its own.
+    expect(ring!.top).toBeGreaterThanOrEqual(0);
+    expect(ring!.bottom).toBeLessThanOrEqual(ring!.innerHeight);
   });
 });
 
