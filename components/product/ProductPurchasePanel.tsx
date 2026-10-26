@@ -85,6 +85,12 @@ export function ProductPurchasePanel({
       )
     : null;
   const canAddToBag = !soldOut && matchedVariant !== null && matchedVariant.availableForSale;
+  // Real Shopify inventory, when known — `null` (unknown real-world
+  // inventory, DECISIONS.md D-028) and "no variant matched yet" both fall
+  // through to `undefined`, which resolveQuantity treats as "no known
+  // upper bound" rather than clamping to 0. See lib/product/quantity.ts's
+  // doc comment for the max-vs-min edge case this also covers.
+  const quantityMax = matchedVariant?.quantityAvailable ?? undefined;
 
   // Product Behavior: "Product views... sold-out views" (PROJECT.md §82) —
   // DECISIONS.md D-055. Fires once per real PDP mount (dependency array is
@@ -174,10 +180,11 @@ export function ProductPurchasePanel({
           label="Quantity"
           type="number"
           min={1}
+          max={quantityMax}
           name="quantity"
           value={quantityInput}
           onChange={(event) => setQuantityInput(event.target.value)}
-          onBlur={() => setQuantityInput(String(resolveQuantity(quantityInput)))}
+          onBlur={() => setQuantityInput(String(resolveQuantity(quantityInput, 1, quantityMax)))}
           className="w-24"
         />
       )}
