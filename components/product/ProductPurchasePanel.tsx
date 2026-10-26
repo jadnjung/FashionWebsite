@@ -166,10 +166,17 @@ export function ProductPurchasePanel({
       )}
 
       {!soldOut && options.length > 0 && (
+        // WCAG 2.2 AA (2.5.8): measured at 84.5x19.5px — under the 24px
+        // minimum on the vertical axis. `py-2` grows the clickable box
+        // (Footer.tsx's established technique) without changing the
+        // visible text size. No compensating negative margin: this is a
+        // standalone block in the panel's `flex flex-col gap-6` stack,
+        // with generous gap-6 (24px) on both sides already — nothing
+        // else's footprint depends on this button's exact height.
         <button
           type="button"
           onClick={() => setSizeGuideOpen(true)}
-          className="w-fit text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          className="w-fit py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
         >
           Size Guide
         </button>

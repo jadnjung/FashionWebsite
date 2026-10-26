@@ -52,9 +52,20 @@ export default function NotFound() {
       <h1 className="font-display text-display-l tracking-display text-esque-text">
         {NOT_FOUND_HEADING}
       </h1>
+      {/* WCAG 2.2 AA (2.5.8): measured at 50.1x19.5px — under the 24px
+          minimum on the vertical axis. `py-2` grows the clickable box
+          (Footer.tsx's established technique) without changing the
+          visible text size. No compensating negative margin: this is a
+          standalone link alone in a `flex flex-col items-center ... gap-4
+          text-center` block with generous surrounding space.
+
+          Also restores the focus-visible outline classes every other
+          instance of this exact hand-styled-link pattern in this codebase
+          carries (DECISIONS.md D-010 requires a visible focus indicator on
+          every interactive element) — this link was missing them. */}
       <Link
         href="/"
-        className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline"
+        className="py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
       >
         {NOT_FOUND_HOME_LABEL}
       </Link>

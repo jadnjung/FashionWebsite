@@ -118,9 +118,18 @@ export async function CategoryListing({
             {filtersActive ? 'NOTHING MATCHES.' : 'NOTHING HERE YET.'}
           </p>
           {filtersActive && (
+            // WCAG 2.2 AA (2.5.8): measured at under the 24px minimum on
+            // the vertical axis. `py-2` grows the clickable box
+            // (Footer.tsx's established technique) without changing the
+            // visible text size. No compensating negative margin: this is
+            // a standalone link in a `flex flex-col items-center gap-4
+            // py-24` empty-state block with generous surrounding space —
+            // distinct from FilterBar's own "Clear Filters" link, which
+            // sits in a tight row governed by taller siblings and uses
+            // `py-1` instead.
             <Link
               href={pathname}
-              className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+              className="py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
             >
               Clear Filters
             </Link>

@@ -45,9 +45,16 @@ export async function DropStatus() {
         AVAILABLE UNTIL GONE
       </p>
       {upcoming && (
+        // WCAG 2.2 AA (2.5.8): measured at under the 24px minimum on the
+        // vertical axis. `py-2` grows the clickable box (Footer.tsx's
+        // established technique) without changing the visible text size.
+        // No compensating negative margin: this is a standalone link
+        // alone in a `flex flex-col ... gap-3` section with generous
+        // `min-h-[50svh]` surrounding space — nothing else's footprint
+        // depends on this link's exact height.
         <Link
           href={`/collections/${upcoming.handle}`}
-          className="mt-4 text-utility uppercase tracking-metadata text-esque-text underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          className="mt-4 py-2 text-utility uppercase tracking-metadata text-esque-text underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
         >
           {upcoming.title.toUpperCase()} — COMING {dropDateLabel} — EXPLORE COLLECTION →
         </Link>

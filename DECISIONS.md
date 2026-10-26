@@ -1373,3 +1373,23 @@ This fix closes the gap against DESIGN_SYSTEM.md §29's basic "garment stays vis
 **Reason.** Per DECISIONS.md D-057, Demo Mode exists so a stakeholder can preview the built UI against real-looking data without a Shopify store — a filter control that silently does nothing (or an empty-category route that silently shows the wrong products) defeats that purpose and is indistinguishable, from the preview, from the real filter/routing logic itself being broken. Both bugs shared one function and one fix shape (parse the query honestly instead of pattern-matching the whole string), so they're recorded as one decision rather than two.
 
 ---
+
+## D-081 — WCAG 2.2 AA (2.5.8) touch-target sweep: 8 unpadded hand-styled links/buttons fixed, following this codebase's own established precedent
+
+**Context.** The same recurring convention already fixed twice in this codebase — a `<Link>`/`<button>` styled `text-utility uppercase tracking-metadata ...` (13px text, ~19.5px rendered line height) with no padding, giving a clickable box under the WCAG 2.2 AA (2.5.8) 24×24px minimum — was found, via live measurement, in 4 more places, plus 4 further instances found by grepping this exact className signature across every `<Link>`/`<button>` in `components/` and `app/`.
+
+**Decision.** Applied one of this codebase's two already-established patterns to each, chosen by live-measured layout context rather than mechanically picked:
+
+- **Footer.tsx's pattern** (`inline-block py-2` per link + a compensating `-my-2` on the row wrapper) for a control sitting in a *dedicated row of only small controls*, where nothing else already governs the row's height: `components/catalog/FilterBar.tsx`'s Sort `<nav>` links.
+- **FilterBar's own pre-existing "In Stock Only" checkbox-label pattern** (`py-1`, no compensating margin) for a control sharing a row with already-taller siblings (an `Input`/`Button`), where the row's footprint is already governed by them: `components/catalog/FilterBar.tsx`'s "Clear Filters" link (the one inside the filter `<form>`, sharing its row with Input/Button).
+- **Standalone padding** (`py-2`, no compensating margin — correct because nothing else's layout footprint depends on the padded element's exact height) for every control that sits alone with generous surrounding space: `components/home/CollectionHero.tsx`'s `ENTER COLLECTION` CTA, `components/product/ProductPurchasePanel.tsx`'s `Size Guide` trigger, `components/home/DropStatus.tsx`'s upcoming-drop teaser link, `components/catalog/CategoryListing.tsx`'s *second*, distinct "Clear Filters" link (the one in the zero-results empty state — same label text as FilterBar's, different layout context, so a different pattern), `app/not-found.tsx`'s home link, and `app/(storefront)/collections/[handle]/DropAccessForm.tsx`'s "Don't have a code?" link.
+
+Every one of the 8 was live-measured (via a one-off `@playwright/test` `chromium` script against an isolated dev server, deleted after use — not committed) both before and after; all now clear 24px on both axes. The Sort `<nav>`'s `-my-2` compensation was additionally confirmed, live, to leave the row's own outer bounding box unchanged (height and position both identical before/after).
+
+**Incidental finding, fixed alongside but recorded separately:** `app/not-found.tsx`'s home link was also missing the `focus-visible:outline` classes every other instance of this exact link pattern carries (D-010's visible-focus-indicator requirement) — a second, distinct defect on the same line being touched for the touch-target fix, not conflated with it.
+
+**Explicitly not touched** (already correctly padded, or not actually this pattern): `components/catalog/QuickAddTrigger.tsx` (`py-1` already present), `components/product/VariantPicker.tsx` (a deliberately-styled `px-4 py-2` pill/chip, not a bare link), `components/navigation/ComingSoonNotice.tsx` (a padded tooltip, not itself interactive).
+
+**Reason.** Per PROJECT.md §78/CLAUDE.md, accessibility is a product requirement, not optional cleanup — and per D-051 (this project's prior touch-target pass), the right response to finding this bug class again is to re-apply the same already-proven, already-reasoned-through fix shape, scoped to confirmed live instances of the exact signature, not to invent a third pattern or redesign the controls involved.
+
+---

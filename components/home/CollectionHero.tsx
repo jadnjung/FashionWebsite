@@ -138,10 +138,19 @@ export function CollectionHero() {
               destination until /collections/[handle] exists (unbuilt per
               ARCHITECTURE.md §3). Hand-styled to match this codebase's
               established "styled Link, not a wrapped Button" pattern for
-              navigational CTAs (see FilterBar's Clear Filters, Footer). */}
+              navigational CTAs (see FilterBar's Clear Filters, Footer).
+
+              WCAG 2.2 AA (2.5.8): measured at 139.3x19.5px — under the
+              24px minimum on the vertical axis. `py-2` grows the clickable
+              box (Footer.tsx's established technique) without changing the
+              visible text size. No compensating negative margin, unlike
+              Footer's tight single-row case: this is the last (and only
+              interactive) child of a `flex flex-col gap-3` column inside a
+              section with generous `pb-16` padding below it — nothing
+              else's footprint depends on this column's exact height. */}
           <Link
             href="/new"
-            className="w-fit text-utility uppercase tracking-nav text-esque-text underline-offset-4 transition-colors duration-200 ease-esque hover:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+            className="w-fit py-2 text-utility uppercase tracking-nav text-esque-text underline-offset-4 transition-colors duration-200 ease-esque hover:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
           >
             ENTER COLLECTION
           </Link>

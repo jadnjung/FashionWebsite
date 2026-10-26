@@ -29,7 +29,16 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
 
   return (
     <div className="flex flex-col gap-6 border-b border-esque-surface pb-6 md:flex-row md:flex-wrap md:items-end md:justify-between">
-      <nav aria-label="Sort" className="flex flex-wrap gap-4">
+      {/* WCAG 2.2 AA (2.5.8): each link measured 62.7x19.5px — under the
+          24px minimum on the vertical axis. This is a dedicated row of
+          only these links (no taller sibling governing the row), the same
+          situation as Footer.tsx's legal/support nav, not the "In Stock
+          Only" checkbox label's below (which sits alongside Input/Button
+          already taller than 24px). Full Footer treatment: `inline-block
+          py-2` per link grows the clickable box without changing the
+          visible text size, and `-my-2` on the nav offsets the added
+          padding so the row's footprint looks unchanged. */}
+      <nav aria-label="Sort" className="-my-2 flex flex-wrap gap-4">
         {SORT_OPTIONS.map((option) => {
           const active = option.value === filters.sort;
           return (
@@ -40,7 +49,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
               // DESIGN_SYSTEM.md §5 — green indicates selection; a sparing,
               // genuine use of forest here rather than decoration. The
               // focus ring stays --color-esque-text per D-010 regardless.
-              className={`text-utility uppercase tracking-metadata transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
+              className={`inline-block py-2 text-utility uppercase tracking-metadata transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
                 active
                   ? 'text-esque-text underline decoration-esque-forest underline-offset-4'
                   : 'text-esque-text-secondary hover:text-esque-text'
@@ -101,13 +110,19 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           APPLY
         </Button>
         {hasAvailabilityOrPrice && (
+          // WCAG 2.2 AA (2.5.8): measured at 112.7x19.5px — under the 24px
+          // minimum on the vertical axis. `py-1`, matching the "In Stock
+          // Only" label above, no compensating margin: this link sits in
+          // the same `flex items-end` row as that label and the
+          // Input/Button, both already taller than 24px, so the row's own
+          // footprint is already governed by them.
           <Link
             href={buildFilterHref(pathname, searchParams, {
               available: undefined,
               minPrice: undefined,
               maxPrice: undefined,
             })}
-            className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+            className="py-1 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
           >
             Clear Filters
           </Link>

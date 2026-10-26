@@ -111,9 +111,16 @@ export function DropAccessForm({ handle }: { handle: string }) {
           </Button>
         </div>
       </form>
+      {/* WCAG 2.2 AA (2.5.8): measured at 306.7x19.5px — under the 24px
+          minimum on the vertical axis. `py-2` grows the clickable box
+          (Footer.tsx's established technique) without changing the
+          visible text size. No compensating negative margin: this is a
+          standalone link at the bottom of a `flex w-full max-w-xs
+          flex-col items-center gap-4` column — not in the same row as its
+          Button, which sits in its own centered <div> above. */}
       <Link
         href="/access"
-        className="text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+        className="py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
       >
         DON&apos;T HAVE A CODE? REQUEST ACCESS.
       </Link>
