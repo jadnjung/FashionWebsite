@@ -141,6 +141,25 @@ export function SilhouetteIllustration({
           height: shape.box.height,
           clipPath: shape.clipPath,
         };
+        // Demo Mode (a real photo underneath, via the sibling <Image> above)
+        // needs a much lower fill opacity than the abstract placeholder: the
+        // placeholder IS a flat color (nothing to see through), but a
+        // near-opaque fill here would paint over the garment's own
+        // fabric/texture. Same previewDemoMode reason as the `shapes`
+        // selection above. DECISIONS.md D-079 covers this; D-034's Stage 4/5
+        // masked-luminance treatment remains separately deferred — this is
+        // just an opacity fix, not that treatment.
+        const fillClass = previewDemoMode
+          ? isActive
+            ? 'bg-esque-forest-highlight/15'
+            : isDimmed
+              ? 'bg-esque-text-muted/30'
+              : 'bg-esque-text-muted/10'
+          : isActive
+            ? 'bg-esque-forest-highlight'
+            : isDimmed
+              ? 'bg-esque-text-muted/40'
+              : 'bg-esque-text-muted/60';
         return (
           // DECISIONS.md D-039 — each hotspot always carries the
           // shared-element transition name for its own garment
@@ -163,13 +182,7 @@ export function SilhouetteIllustration({
               aria-pressed={isActive}
               onMouseEnter={() => onHover(garment.region)}
               onClick={() => onActivate(garment.region)}
-              className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
-                isActive
-                  ? 'bg-esque-forest-highlight'
-                  : isDimmed
-                    ? 'bg-esque-text-muted/40'
-                    : 'bg-esque-text-muted/60'
-              }`}
+              className={`absolute border-0 p-0 transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${fillClass}`}
             />
           </ViewTransition>
         );
