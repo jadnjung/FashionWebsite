@@ -203,7 +203,11 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
           ADD LOOK
         </Button>
         {!canAddLook && (
-          <p className="text-utility text-esque-text-secondary">
+          // text-esque-text, not -secondary — see
+          // ProductPurchasePanel.tsx's identical comment on this same class
+          // of helper copy (both of this panel's own variants, not just
+          // one).
+          <p className="text-utility text-esque-text">
             {garments.every((garment) => !selectionMap[garment.region].included)
               ? 'Select at least one piece to continue.'
               : 'Select all options to continue.'}

@@ -227,9 +227,10 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 ADD TO BAG
               </Button>
               {!selectionComplete && (
-                <p className="text-utility text-esque-text-secondary">
-                  Select all options to continue.
-                </p>
+                // text-esque-text, not -secondary — see
+                // ProductPurchasePanel.tsx's identical comment on this same
+                // helper copy.
+                <p className="text-utility text-esque-text">Select all options to continue.</p>
               )}
             </div>
           ))}

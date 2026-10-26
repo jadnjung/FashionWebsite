@@ -211,9 +211,13 @@ export function ProductPurchasePanel({
             ADD TO BAG
           </Button>
           {!selectionComplete && (
-            <p className="text-utility text-esque-text-secondary">
-              Select all options to continue.
-            </p>
+            // text-esque-text, not -secondary — this is the one message a
+            // user needs to read right when the primary CTA next to it is
+            // already at disabled:opacity-40 (Button.tsx); two muted
+            // elements stacked in the same spot made the one piece of
+            // guidance easy to miss, even though -secondary alone already
+            // passes WCAG AA contrast (D-048).
+            <p className="text-utility text-esque-text">Select all options to continue.</p>
           )}
         </div>
       )}
