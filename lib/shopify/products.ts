@@ -316,11 +316,46 @@ export async function getProducts(
   // CREATED_AT/featured have no real creation-date equivalent in static
   // fixture data, so `reverse` there only flips the fixed array order,
   // an honest approximation rather than fabricating dates.
+  //
+  // Also parses each clause of `options.query` independently and applies
+  // it as its own predicate (AND semantics, matching buildProductSearchQuery's
+  // own ' AND '-joined clauses) — the same real bug class again: this
+  // short-circuit used to treat the *entire* query string as a single
+  // `includes('"<productType>"')` check, so Availability
+  // (`available_for_sale:true`) and Price (`variants.price:>=N`/`<=N`) had
+  // zero effect in Demo Mode even though their UI (FilterBar.tsx) was fully
+  // wired. Price is compared against each fixture's minPrice, the same
+  // approximation the sort branch above already uses. Deliberately does
+  // NOT treat "a query string is present" as "a product-type filter was
+  // requested" — /new has no product-type taxonomy at all
+  // (getCategoryProductTypes('new') is null), so `/new?available=1` builds
+  // a query with only `available_for_sale:true` and no `product_type:`
+  // clause; applying a product-type predicate whenever `options.query` is
+  // merely non-empty would wrongly exclude every fixture on that route.
+  // A query that matches zero fixtures now returns an empty page rather
+  // than falling back to the full, unfiltered catalog — the previous
+  // fallback made `/tops/hoodies` (a real, nav-linked route with zero
+  // Hoodies fixtures) render all 6 fixtures instead of the site's own
+  // "NOTHING HERE YET." empty state.
   if (process.env.PREVIEW_DEMO_MODE === '1') {
-    const filtered = options.query
-      ? PREVIEW_PRODUCTS.filter((p) => options.query!.includes(`"${p.productType}"`))
-      : PREVIEW_PRODUCTS;
-    const base = filtered.length ? filtered : PREVIEW_PRODUCTS;
+    const query = options.query;
+    const wantedTypes = query
+      ? Array.from(query.matchAll(/product_type:"([^"]+)"/g), (m) => m[1])
+      : undefined;
+    const wantsAvailable = query?.includes('available_for_sale:true') ?? false;
+    const minPriceMatch = query?.match(/variants\.price:>=([\d.]+)/);
+    const maxPriceMatch = query?.match(/variants\.price:<=([\d.]+)/);
+    const minPrice = minPriceMatch ? Number(minPriceMatch[1]) : undefined;
+    const maxPrice = maxPriceMatch ? Number(maxPriceMatch[1]) : undefined;
+
+    const base = PREVIEW_PRODUCTS.filter((p) => {
+      if (wantedTypes?.length && !wantedTypes.includes(p.productType)) return false;
+      if (wantsAvailable && !p.availableForSale) return false;
+      const price = Number(p.minPrice.amount);
+      if (minPrice !== undefined && price < minPrice) return false;
+      if (maxPrice !== undefined && price > maxPrice) return false;
+      return true;
+    });
     const sorted =
       options.sortKey === 'PRICE'
         ? [...base].sort((a, b) => {

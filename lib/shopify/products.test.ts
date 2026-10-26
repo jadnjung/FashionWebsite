@@ -505,10 +505,10 @@ describe('getProducts — Demo Mode', () => {
     expect(result.products.every((product) => product.productType === 'Shirts')).toBe(true);
   });
 
-  test('falls back to the full fixture list, rather than an empty page, when no fixture matches the query', async () => {
+  test('returns an empty page, not the full fixture list, when no fixture matches the query', async () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getProducts({ query: 'product_type:"Hats"' });
-    expect(result.products.length).toBeGreaterThan(0);
+    expect(result.products).toEqual([]);
   });
 
   test('never touches the Storefront client', async () => {
@@ -532,6 +532,59 @@ describe('getProducts — Demo Mode', () => {
     const desc = await getProducts({ sortKey: 'PRICE', reverse: true });
     const descPrices = desc.products.map((p) => Number(p.minPrice.amount));
     expect(descPrices).toEqual([...descPrices].sort((a, b) => b - a));
+  });
+
+  // Regression tests for a real, reproduced bug: this short-circuit used to
+  // treat the whole query string as a single product-type substring check,
+  // so the Availability and Price filter UI (FilterBar.tsx) had zero effect
+  // in Demo Mode — e.g. `/tops?maxPrice=50` returned the same 4 products as
+  // unfiltered `/tops`, none of which are actually <= $50.
+  // Also doubles as the /new?available=1 regression case: a query with no
+  // product_type clause at all (the shape /new builds, since it has no
+  // product-type taxonomy — getCategoryProductTypes('new') is null) must
+  // NOT be treated as "a product-type filter was requested," which would
+  // wrongly exclude every fixture instead of just filtering by availability.
+  test('filters by available_for_sale:true alone, with no product_type clause', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'available_for_sale:true' });
+    expect(result.products.every((p) => p.availableForSale)).toBe(true);
+    // Only preview-relaxed-linen-trouser has availableForSale: false.
+    expect(result.products).toHaveLength(5);
+    expect(result.products.some((p) => p.handle === 'preview-relaxed-linen-trouser')).toBe(false);
+  });
+
+  test('filters by variants.price:>= (minPrice)', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'variants.price:>=150' });
+    expect(result.products.every((p) => Number(p.minPrice.amount) >= 150)).toBe(true);
+    expect(result.products.length).toBeGreaterThan(0);
+  });
+
+  test('filters by variants.price:<= (maxPrice)', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({ query: 'variants.price:<=50' });
+    expect(result.products).toEqual([]);
+
+    const partial = await getProducts({ query: 'variants.price:<=100' });
+    expect(partial.products.map((p) => p.handle).sort()).toEqual(
+      ['preview-fluid-knit-long-sleeve', 'preview-silk-cami-layer'].sort(),
+    );
+  });
+
+  test('combines a product_type clause with a price clause (AND semantics)', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const query =
+      '(product_type:"T-Shirts" OR product_type:"Shirts" OR product_type:"Sweaters" OR product_type:"Jackets") AND variants.price:<=100';
+    const result = await getProducts({ query });
+    expect(result.products.map((p) => p.handle).sort()).toEqual(
+      ['preview-fluid-knit-long-sleeve', 'preview-silk-cami-layer'].sort(),
+    );
+  });
+
+  test('returns every fixture, unfiltered, when options.query is undefined', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    const result = await getProducts({});
+    expect(result.products).toHaveLength(6);
   });
 });
 
