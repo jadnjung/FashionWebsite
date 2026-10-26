@@ -166,6 +166,7 @@ export function ProductPurchasePanel({
           label="Quantity"
           type="number"
           min={1}
+          name="quantity"
           value={quantity}
           onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
           className="w-24"
