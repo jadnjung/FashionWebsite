@@ -41,7 +41,20 @@ export function CollectionHero() {
   return (
     <section
       aria-label="Collection Hero"
-      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-esque-black px-4 pb-16 pt-24 md:px-8"
+      // min-h-[calc(100svh-72px)], not min-h-[100svh] — Header.tsx is
+      // `h-[72px]` and in normal document flow (ShellClient.tsx stacks
+      // Header/main/Footer as plain flex siblings; DECISIONS.md D-074), not
+      // a floating overlay, so a full `100svh` hero pushes this section's
+      // own bottom content (justify-end: the campaign statement + ENTER
+      // COLLECTION CTA) exactly 72px below the fold. DESIGN_SYSTEM.md §24
+      // actually specifies a transparent-over-hero/solid-on-scroll floating
+      // header, which would make this subtraction unnecessary — that is a
+      // real, separate architecture decision (cross-page blast radius: every
+      // other route would need compensating top padding, and
+      // FullScreenMenu/SearchOverlay's full-viewport overlays would need
+      // re-checking against a floating header) intentionally deferred, not
+      // implemented here. See DECISIONS.md.
+      className="relative flex min-h-[calc(100svh-72px)] flex-col justify-end overflow-hidden bg-esque-black px-4 pb-16 pt-24 md:px-8"
     >
       {/* DESIGN_SYSTEM.md §27 / DECISIONS.md D-032 — cursor-tracked depth
           across these three layers, picked up in ROADMAP.md Phase 9. See
