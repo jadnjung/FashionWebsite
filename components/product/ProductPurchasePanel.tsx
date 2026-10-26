@@ -8,6 +8,7 @@ import { VariantPicker } from '@/components/product/VariantPicker';
 import { WishlistToggle } from '@/components/product/WishlistToggle';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
+import { resolveQuantity } from '@/lib/product/quantity';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
 import {
   findMatchingVariant,
@@ -64,7 +65,14 @@ export function ProductPurchasePanel({
   const [selections, setSelections] = useState<OptionSelections>(() =>
     getInitialSelections(options),
   );
-  const [quantity, setQuantity] = useState(1);
+  // Raw string, not a clamped number — see lib/product/quantity.ts's
+  // resolveQuantity doc comment. Clamping on every keystroke (the previous
+  // behavior) snapped a momentarily-empty controlled input back to "1"
+  // before the next keystroke landed, corrupting a clear-then-retype
+  // sequence; this field now holds whatever the user is actually typing,
+  // including transiently empty, and only resolves to a valid minimum on
+  // blur.
+  const [quantityInput, setQuantityInput] = useState('1');
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const soldOut = isProductSoldOut(variants);
@@ -167,8 +175,9 @@ export function ProductPurchasePanel({
           type="number"
           min={1}
           name="quantity"
-          value={quantity}
-          onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
+          value={quantityInput}
+          onChange={(event) => setQuantityInput(event.target.value)}
+          onBlur={() => setQuantityInput(String(resolveQuantity(quantityInput)))}
           className="w-24"
         />
       )}
