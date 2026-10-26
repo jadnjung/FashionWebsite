@@ -63,7 +63,9 @@ describe('resolveQuantity', () => {
     expect(resolveQuantity('5.9', 1, 5)).toBe(5);
   });
 
-  test('when max is smaller than min, max wins and the result can be below min', () => {
-    expect(resolveQuantity('5', 1, 0)).toBe(0);
+  test('never resolves below min, even when max is smaller than min', () => {
+    expect(resolveQuantity('5', 1, 0)).toBe(1);
+    expect(resolveQuantity('5', 2, 0)).toBe(2);
+    expect(resolveQuantity('5', 2, 1)).toBe(2);
   });
 });

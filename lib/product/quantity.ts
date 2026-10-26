@@ -29,22 +29,32 @@
  * "0" already was — no extra branch needed for the sub-1 case.
  *
  * `max`, when provided, clamps the resolved integer down to not exceed it.
- * It's intended to be a matched variant's real `quantityAvailable`
- * (Shopify inventory — see lib/product/scarcity.ts and DECISIONS.md D-028
- * on never fabricating a count). Omit `max` (or pass `undefined`) for "no
- * known upper bound," which is the correct treatment both before a variant
- * is fully matched and when a matched variant's `quantityAvailable` is
- * `null` (real-world inventory Shopify hasn't told us) — neither case
- * should clamp to 0. If `max` ends up smaller than `min` (a matched
- * variant with, say, 0 `quantityAvailable` while `min` stays at its
- * default of 1), `max` wins: the resolved quantity drops below `min`
- * rather than silently implying units exist that don't. That pairing is
- * already inert in the UI — ProductPurchasePanel's `canAddToBag` disables
- * Add to Bag whenever the matched variant isn't `availableForSale`, so a
- * resolved value under `min` here never reaches an active purchase path.
+ * It's intended to be a matched variant's real, known-positive
+ * `quantityAvailable` (Shopify inventory — see lib/product/scarcity.ts and
+ * DECISIONS.md D-028 on never fabricating a count). Omit `max` (or pass
+ * `undefined`) for "no known upper bound."
+ *
+ * This function never returns less than `min`, even if `max` is smaller
+ * than `min` — a caller-supplied `max` below `min` is treated as a
+ * contradictory range, not as license to resolve to less than the
+ * declared minimum purchasable quantity (`Math.max(max, min)` floors the
+ * effective ceiling at `min` before applying it). Earlier, `max` was
+ * allowed to win outright, on the reasoning that a matched variant with
+ * `quantityAvailable <= 0` is already unpurchasable elsewhere in the UI —
+ * that reasoning was wrong in general: Shopify's "continue selling when
+ * out of stock" setting can leave a variant `availableForSale: true` with
+ * `quantityAvailable: 0`, a state this codebase's own
+ * `canAddToBag`/`getScarcityStatus` already treat as two independent
+ * signals, not one. This function has no way to know, from `max` alone,
+ * whether a sub-`min` cap reflects a genuinely blocked purchase or an
+ * oversold-but-still-sellable variant, so it no longer guesses — callers
+ * decide what a non-positive `quantityAvailable` means for *their* `max`
+ * argument (see ProductPurchasePanel.tsx, which now passes `undefined`
+ * rather than a non-positive number) rather than this function silently
+ * producing a quantity under its own stated minimum.
  */
 export function resolveQuantity(raw: string, min = 1, max?: number): number {
   const whole = Math.floor(Number(raw));
   const clamped = Math.max(min, whole || min);
-  return max === undefined ? clamped : Math.min(clamped, max);
+  return max === undefined ? clamped : Math.min(clamped, Math.max(max, min));
 }

@@ -85,12 +85,52 @@ export function ProductPurchasePanel({
       )
     : null;
   const canAddToBag = !soldOut && matchedVariant !== null && matchedVariant.availableForSale;
-  // Real Shopify inventory, when known — `null` (unknown real-world
-  // inventory, DECISIONS.md D-028) and "no variant matched yet" both fall
-  // through to `undefined`, which resolveQuantity treats as "no known
-  // upper bound" rather than clamping to 0. See lib/product/quantity.ts's
-  // doc comment for the max-vs-min edge case this also covers.
-  const quantityMax = matchedVariant?.quantityAvailable ?? undefined;
+  // Real Shopify inventory, when known AND actually a usable upper bound.
+  // "No variant matched yet", `quantityAvailable: null` (unknown real-world
+  // inventory, DECISIONS.md D-028), and a non-positive quantityAvailable
+  // all resolve to `undefined` ("no known bound") rather than clamping the
+  // field to 0 or a negative number. The non-positive case matters because
+  // `quantityAvailable` and `availableForSale` are independent Shopify
+  // signals, not one: a variant with "continue selling when out of stock"
+  // enabled can be `availableForSale: true` with `quantityAvailable: 0`,
+  // and `canAddToBag` below already treats `availableForSale` — not
+  // `quantityAvailable` — as the authoritative purchasability signal.
+  // Capping the Quantity field to 0 in that case would contradict the
+  // variant's own availableForSale: true and make a genuinely purchasable
+  // field unusable. For a matched variant that's actually unavailable
+  // (availableForSale: false), Add to Bag is already disabled by
+  // canAddToBag regardless of this value, so leaving the field uncapped
+  // there is harmless. See lib/product/quantity.ts's doc comment.
+  const quantityMax =
+    matchedVariant?.quantityAvailable != null && matchedVariant.quantityAvailable > 0
+      ? matchedVariant.quantityAvailable
+      : undefined;
+
+  // Re-resolves the committed quantity whenever the matched variant's real
+  // upper bound changes — e.g. switching from a well-stocked variant to a
+  // scarce one without blurring the Quantity field again in between. onBlur
+  // alone (below) only catches this the next time that field happens to
+  // blur, which may never happen before the shopper proceeds straight to
+  // Add to Bag, leaving a stale, over-cap value on display.
+  //
+  // Deliberately NOT a useEffect: this project's lint config enforces
+  // react-hooks' current "adjust state during render, not in an effect"
+  // rule (react-hooks/set-state-in-effect) for exactly this "re-derive
+  // local state when a dependency changes" shape — calling setState
+  // synchronously inside a bare effect causes an extra, avoidable
+  // commit/paint before the correction lands. Tracking the previous
+  // quantityMax in state and comparing during render is React's own
+  // documented alternative for this case ("Adjusting some state when a
+  // prop changes"): the conditional setState call below runs during this
+  // render, React immediately re-renders with the corrected value before
+  // anything is painted, and once prevQuantityMax catches up the
+  // condition is false on every subsequent render until quantityMax
+  // changes again — it converges, not an infinite loop.
+  const [prevQuantityMax, setPrevQuantityMax] = useState(quantityMax);
+  if (quantityMax !== prevQuantityMax) {
+    setPrevQuantityMax(quantityMax);
+    setQuantityInput((prev) => String(resolveQuantity(prev, 1, quantityMax)));
+  }
 
   // Product Behavior: "Product views... sold-out views" (PROJECT.md §82) —
   // DECISIONS.md D-055. Fires once per real PDP mount (dependency array is
