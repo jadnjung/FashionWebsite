@@ -161,6 +161,119 @@ test.describe('header', () => {
     await page.getByRole('button', { name: 'BAG (0)' }).click();
     await expect(notice).toHaveText('BAG — ARRIVING SOON.');
   });
+
+  // WCAG 2.2.1 (D-083): the passive 8s timeout alone isn't sufficient user
+  // control — Escape, an outside click, and the MENU/SEARCH overlay opening
+  // must all also dismiss the toast. See Header.tsx's own comments on
+  // utilityNavRef/the click-listener effect for the exact race this guards.
+  test.describe('ComingSoonNotice dismiss mechanisms', () => {
+    test('Escape dismisses a visible toast', async ({ page }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toBeVisible();
+
+      await page.keyboard.press('Escape');
+      await expect(notice).not.toBeVisible();
+    });
+
+    test('clicking outside the utility nav (the ESQUE logo) dismisses a visible toast', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'BAG (0)' }).click();
+      await expect(notice).toBeVisible();
+
+      await page.getByRole('link', { name: 'ESQUE' }).click();
+      await expect(notice).not.toBeVisible();
+    });
+
+    test('clicking outside the utility nav (the page body) dismisses a visible toast', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toBeVisible();
+
+      // click well outside the header's utility nav
+      await page.getByRole('main').click({ position: { x: 10, y: 10 } });
+      await expect(notice).not.toBeVisible();
+    });
+
+    // The specific regression this fix guards against: React's synthetic
+    // onClick for BAG (setComingSoonFeature('BAG')) fires before the native
+    // click reaches the document-level outside-click listener. If that
+    // listener only excluded the toast's own DOM node (not the whole
+    // utility nav), clicking BAG while ACCOUNT's toast was showing would be
+    // treated as "outside" and immediately clobber BAG's just-set value
+    // back to null in the same click, so the toast would go blank instead
+    // of switching to BAG's message.
+    test('clicking BAG while ACCOUNT toast is showing switches the message to BAG, not blank', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
+
+      await page.getByRole('button', { name: 'BAG (0)' }).click();
+      await expect(notice).toHaveText('BAG — ARRIVING SOON.');
+      // Also guards the inverse ordering, for good measure.
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
+    });
+
+    test('opening MENU while a toast is showing dismisses the toast and opens the menu', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toBeVisible();
+
+      await page.getByRole('button', { name: 'MENU' }).click();
+      await expect(notice).not.toBeVisible();
+      await expect(page.getByRole('dialog', { name: /menu/i })).toBeVisible();
+    });
+
+    test('opening SEARCH while a toast is showing dismisses the toast and opens the overlay', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'BAG (0)' }).click();
+      await expect(notice).toBeVisible();
+
+      await page.getByRole('button', { name: 'SEARCH' }).click();
+      await expect(notice).not.toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+    });
+
+    test('the toast auto-dismisses after 8s of passive inactivity', async ({ page }) => {
+      await page.clock.install();
+      await page.goto('/');
+      const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
+      await expect(notice).toBeVisible();
+
+      // Just under the 8s cutoff: still visible.
+      await page.clock.fastForward(7900);
+      await expect(notice).toBeVisible();
+
+      // Past the cutoff: dismissed, with no real multi-second sleep.
+      await page.clock.fastForward(200);
+      await expect(notice).not.toBeVisible();
+    });
+  });
 });
 
 test.describe('full-screen menu', () => {

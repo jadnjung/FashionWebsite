@@ -87,6 +87,74 @@ test.describe('search overlay', () => {
     await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
   });
 
+  // Below MIN_QUERY_LENGTH (2), the overlay previously showed nothing at
+  // all for a 1-character query — no feedback that typing more would do
+  // anything. Now shows a small muted "Keep typing…" hint instead.
+  test.describe('below the MIN_QUERY_LENGTH hint', () => {
+    test('a 1-character query shows the "Keep typing…" hint and no result sections', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'SEARCH' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Search' });
+
+      await dialog.getByRole('searchbox').fill('h');
+      await expect(dialog.getByText('Keep typing…')).toBeVisible();
+      await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
+      await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
+      await expect(dialog.getByRole('heading', { name: /collections/i })).toHaveCount(0);
+      await expect(dialog.getByText('NOTHING MATCHES.')).toHaveCount(0);
+    });
+
+    test('typing a 2nd character hides the hint and proceeds to the normal result flow', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'SEARCH' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Search' });
+      const searchbox = dialog.getByRole('searchbox');
+
+      await searchbox.fill('h');
+      await expect(dialog.getByText('Keep typing…')).toBeVisible();
+
+      await searchbox.fill('ho');
+      await expect(dialog.getByText('Keep typing…')).toHaveCount(0);
+      // Normal result flow proceeds — 'ho' matches the Hoodies category.
+      await expect(dialog.getByRole('heading', { name: /categories/i })).toBeVisible();
+    });
+
+    test('deleting back to 1 character brings the hint back', async ({ page }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'SEARCH' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Search' });
+      const searchbox = dialog.getByRole('searchbox');
+
+      await searchbox.fill('ho');
+      await expect(dialog.getByText('Keep typing…')).toHaveCount(0);
+
+      await searchbox.fill('h');
+      await expect(dialog.getByText('Keep typing…')).toBeVisible();
+    });
+
+    test('clearing to 0 characters shows nothing (no hint, no result sections) — no regression', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: 'SEARCH' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Search' });
+      const searchbox = dialog.getByRole('searchbox');
+
+      await searchbox.fill('h');
+      await expect(dialog.getByText('Keep typing…')).toBeVisible();
+
+      await searchbox.fill('');
+      await expect(dialog.getByText('Keep typing…')).toHaveCount(0);
+      await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
+      await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
+      await expect(dialog.getByText('NOTHING MATCHES.')).toHaveCount(0);
+    });
+  });
+
   test('typing a category-matching query shows a real, clickable result that navigates and closes the overlay', async ({
     page,
   }) => {

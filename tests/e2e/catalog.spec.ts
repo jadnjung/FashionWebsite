@@ -54,6 +54,61 @@ test.describe('category routes — static metadata does not depend on Shopify', 
   });
 });
 
+// lib/catalog/filters.ts's parseCatalogFilters/FilterBar.tsx — a maxPrice
+// below minPrice is a contradictory range, dropped rather than silently
+// querying a range that would read as "no products". FilterBar surfaces
+// that drop instead of leaving it silent. Requires PREVIEW_DEMO_MODE=1
+// (this worktree's throwaway playwright.worktree.config.ts) so FilterBar
+// actually renders real fixture products instead of this environment's
+// usual unconfigured-Shopify error boundary — see that config's own
+// comment.
+test.describe('FilterBar — dropped max-price feedback', () => {
+  test('maxPrice below minPrice: field renders blank, note is visible, aria-describedby wires it to the input', async ({
+    page,
+  }) => {
+    await page.goto('/tops?minPrice=200&maxPrice=50');
+    const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
+    const note = page.getByText('Max price below min — ignored.');
+
+    await expect(maxPriceInput).toHaveValue('');
+    await expect(note).toBeVisible();
+
+    const describedBy = await maxPriceInput.getAttribute('aria-describedby');
+    expect(describedBy).toBe('max-price-dropped-note');
+    await expect(page.locator(`#${describedBy}`)).toHaveText('Max price below min — ignored.');
+
+    // minPrice itself is untouched — only maxPrice was dropped.
+    await expect(page.getByRole('spinbutton', { name: 'Min Price' })).toHaveValue('200');
+  });
+
+  test('a valid range (minPrice < maxPrice): no note, no aria-describedby', async ({ page }) => {
+    await page.goto('/tops?minPrice=50&maxPrice=200');
+    const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
+
+    await expect(maxPriceInput).toHaveValue('200');
+    await expect(page.getByText('Max price below min — ignored.')).toHaveCount(0);
+    await expect(maxPriceInput).not.toHaveAttribute('aria-describedby');
+  });
+
+  test('no filters at all: no note', async ({ page }) => {
+    await page.goto('/tops');
+    await expect(page.getByText('Max price below min — ignored.')).toHaveCount(0);
+    await expect(page.getByRole('spinbutton', { name: 'Max Price' })).toHaveValue('');
+  });
+
+  // Boundary: minPrice === maxPrice is a valid (if degenerate) single-price
+  // range, not a contradictory one — must not be dropped (parseCatalogFilters
+  // only drops a strictly-lesser maxPrice).
+  test('minPrice equal to maxPrice is a valid range, not dropped', async ({ page }) => {
+    await page.goto('/tops?minPrice=100&maxPrice=100');
+    const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
+
+    await expect(maxPriceInput).toHaveValue('100');
+    await expect(page.getByText('Max price below min — ignored.')).toHaveCount(0);
+    await expect(maxPriceInput).not.toHaveAttribute('aria-describedby');
+  });
+});
+
 test.describe('unknown subcategory', () => {
   test('a nonexistent subcategory shows the branded 404, not the Shopify error boundary', async ({
     page,

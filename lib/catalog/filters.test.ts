@@ -14,6 +14,7 @@ describe('parseCatalogFilters', () => {
       available: false,
       minPrice: undefined,
       maxPrice: undefined,
+      maxPriceDropped: false,
     });
   });
 
@@ -54,6 +55,17 @@ describe('parseCatalogFilters', () => {
     const filters = parseCatalogFilters({ minPrice: '200', maxPrice: '50' }, 'featured');
     expect(filters.minPrice).toBe(200);
     expect(filters.maxPrice).toBeUndefined();
+    expect(filters.maxPriceDropped).toBe(true);
+  });
+
+  test('maxPriceDropped is false for a normal valid range', () => {
+    expect(
+      parseCatalogFilters({ minPrice: '50', maxPrice: '200' }, 'featured').maxPriceDropped,
+    ).toBe(false);
+  });
+
+  test('maxPriceDropped is false when maxPrice is simply absent', () => {
+    expect(parseCatalogFilters({ minPrice: '50' }, 'featured').maxPriceDropped).toBe(false);
   });
 
   test('takes the first value when a param is given more than once', () => {
@@ -128,7 +140,13 @@ describe('hasActiveFilters', () => {
   test('false when sort matches the default and nothing else is set', () => {
     expect(
       hasActiveFilters(
-        { sort: 'featured', available: false, minPrice: undefined, maxPrice: undefined },
+        {
+          sort: 'featured',
+          available: false,
+          minPrice: undefined,
+          maxPrice: undefined,
+          maxPriceDropped: false,
+        },
         'featured',
       ),
     ).toBe(false);
@@ -137,7 +155,13 @@ describe('hasActiveFilters', () => {
   test("false for New's own default sort (newest) with nothing else set", () => {
     expect(
       hasActiveFilters(
-        { sort: 'newest', available: false, minPrice: undefined, maxPrice: undefined },
+        {
+          sort: 'newest',
+          available: false,
+          minPrice: undefined,
+          maxPrice: undefined,
+          maxPriceDropped: false,
+        },
         'newest',
       ),
     ).toBe(false);
@@ -146,7 +170,13 @@ describe('hasActiveFilters', () => {
   test('true when sort differs from the default', () => {
     expect(
       hasActiveFilters(
-        { sort: 'newest', available: false, minPrice: undefined, maxPrice: undefined },
+        {
+          sort: 'newest',
+          available: false,
+          minPrice: undefined,
+          maxPrice: undefined,
+          maxPriceDropped: false,
+        },
         'featured',
       ),
     ).toBe(true);
@@ -155,13 +185,25 @@ describe('hasActiveFilters', () => {
   test('true when availability or a price bound is set, even with the default sort', () => {
     expect(
       hasActiveFilters(
-        { sort: 'featured', available: true, minPrice: undefined, maxPrice: undefined },
+        {
+          sort: 'featured',
+          available: true,
+          minPrice: undefined,
+          maxPrice: undefined,
+          maxPriceDropped: false,
+        },
         'featured',
       ),
     ).toBe(true);
     expect(
       hasActiveFilters(
-        { sort: 'featured', available: false, minPrice: 50, maxPrice: undefined },
+        {
+          sort: 'featured',
+          available: false,
+          minPrice: 50,
+          maxPrice: undefined,
+          maxPriceDropped: false,
+        },
         'featured',
       ),
     ).toBe(true);

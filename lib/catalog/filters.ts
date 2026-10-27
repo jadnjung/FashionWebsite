@@ -40,6 +40,10 @@ export interface CatalogFilters {
   available: boolean;
   minPrice?: number;
   maxPrice?: number;
+  // True only when a maxPrice value was actually provided and got dropped
+  // for being below minPrice — lets the UI surface what otherwise looks
+  // like a silently-ignored input (see FilterBar.tsx).
+  maxPriceDropped: boolean;
 }
 
 function firstValue(value: string | string[] | undefined): string | undefined {
@@ -71,12 +75,11 @@ export function parseCatalogFilters(
   // A max below min is a contradictory range, not a valid filter — drop it
   // rather than silently querying a range no visitor intended (which would
   // read as "no products" instead of "ignored your typo").
-  const maxPrice =
-    maxPriceRaw !== undefined && minPrice !== undefined && maxPriceRaw < minPrice
-      ? undefined
-      : maxPriceRaw;
+  const maxPriceDropped =
+    maxPriceRaw !== undefined && minPrice !== undefined && maxPriceRaw < minPrice;
+  const maxPrice = maxPriceDropped ? undefined : maxPriceRaw;
 
-  return { sort, available, minPrice, maxPrice };
+  return { sort, available, minPrice, maxPrice, maxPriceDropped };
 }
 
 /** Shopify sortKey/reverse variables for a parsed sort value. */

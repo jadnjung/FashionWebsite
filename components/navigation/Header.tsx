@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type RefObject, type SVGProps } from 'react';
+import { useEffect, useRef, useState, type RefObject, type SVGProps } from 'react';
 import { Button } from '@/components/ui/Button';
 import { ComingSoonNotice, type ComingSoonFeature } from '@/components/navigation/ComingSoonNotice';
 
@@ -83,15 +83,99 @@ export function Header({
   // section: no cart exists until ROADMAP.md Phase 2 wires up Shopify.
   const [bagCount] = useState(0);
 
-  // ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx).
-  // Auto-dismissed after a few seconds rather than requiring a manual close
-  // — this is an acknowledgment, not a decision the visitor needs to act on.
+  // ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx). This
+  // is an acknowledgment, not a decision the visitor needs to act on, so it
+  // still never requires a manual close — but WCAG 2.2.1 requires a timed
+  // auto-dismiss to also offer user control, so it now dismisses on any of
+  // four triggers rather than a single unconditional 3s cutoff
+  // (DECISIONS.md D-083): (1) the passive timeout below, lengthened to
+  // 8000ms — long enough to read a 3-4 word acknowledgment more than once,
+  // while still bounded; (2) Escape; (3) a click outside the utility nav
+  // (see utilityNavRef/the click-listener effect below); (4) the MENU/
+  // SEARCH overlay opening (see the render-time adjustment further below).
   const [comingSoonFeature, setComingSoonFeature] = useState<ComingSoonFeature | null>(null);
+  // Scopes the outside-click listener below to the whole utility nav, not
+  // just the toast's own DOM node — attached to the <nav> below.
+  const utilityNavRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (!comingSoonFeature) return;
-    const timer = setTimeout(() => setComingSoonFeature(null), 3000);
+    const timer = setTimeout(() => setComingSoonFeature(null), 8000);
     return () => clearTimeout(timer);
   }, [comingSoonFeature]);
+
+  // Escape and outside-click, mirroring FullScreenMenu.tsx's/
+  // SearchOverlay.tsx's own open-gated attach-in-effect/remove-in-cleanup
+  // document-listener idiom exactly. Neither of those files has a real
+  // "outside click" concept to copy — they're full-screen overlays with no
+  // concept of "outside" — so only the listener attach/cleanup mechanics
+  // are shared here, not an outside-click condition.
+  useEffect(() => {
+    if (!comingSoonFeature) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setComingSoonFeature(null);
+    }
+
+    // Scoped to the whole utility nav (MENU/SEARCH/ACCOUNT/BAG), not just
+    // the toast element: React's synthetic onClick for whichever button was
+    // clicked (e.g. BAG's own onClick, setComingSoonFeature('BAG')) fires
+    // first, then the native event continues bubbling to this document
+    // listener. If this only excluded the toast's own node, clicking BAG
+    // while ACCOUNT's toast was showing would set 'BAG' via that onClick,
+    // then this listener would immediately clobber it back to null as an
+    // "outside" click in the same click. Treating a click anywhere inside
+    // the utility nav as "inside" avoids that race — none of the four
+    // trigger buttons can ever be treated as an outside click by this
+    // listener, so it never fights with what a button's own onClick just
+    // set. Clicking MENU/SEARCH also won't dismiss via this listener, but
+    // that's fine — the render-time adjustment below handles those
+    // explicitly and independently. A click on the toast's own text is
+    // "outside" by this check and does dismiss it — the toast has no
+    // interactive content, and "click it to dismiss" is a reasonable toast
+    // convention, not a bug.
+    function handleClick(event: MouseEvent) {
+      if (!utilityNavRef.current?.contains(event.target as Node)) {
+        setComingSoonFeature(null);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    // `capture: true`, not the bubble phase: confirmed live (under
+    // concurrent server load, which delays a Suspense boundary resolving)
+    // that a click landing on a transient loading-fallback element can fail
+    // to ever reach a bubble-phase document listener, leaving the toast to
+    // fall back to the full passive timeout instead of dismissing
+    // immediately. A capture-phase listener runs top-down before the event
+    // reaches its target, so it isn't affected by whatever happens to the
+    // target subtree afterward. `removeEventListener` must repeat `{
+    // capture: true }` — it's part of matching the exact listener
+    // registration, not an optional hint.
+    document.addEventListener('click', handleClick, { capture: true });
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClick, { capture: true });
+    };
+  }, [comingSoonFeature]);
+
+  // Dismisses the toast the instant MENU/SEARCH opens. Derived state, not
+  // an effect: this is "adjusting state when a prop changes" (the same
+  // shape as DECISIONS.md D-082's quantityMax re-sync), which this
+  // project's react-hooks/set-state-in-effect rule forbids doing via
+  // useEffect(() => { if (overlayOpen) setComingSoonFeature(null) },
+  // [menuOpen, searchOpen]) — so the previous overlayOpen value is tracked
+  // in state and compared during render instead. Beyond overlapping with
+  // outside-click above, this has a real purpose on its own: Header becomes
+  // inert while an overlay is open (see searchOpen's own prop-doc comment
+  // above), so a still-pending toast could otherwise reappear the instant
+  // the overlay later closes and inert is removed, even if a lot of time
+  // has passed.
+  const overlayOpen = menuOpen || searchOpen;
+  const [prevOverlayOpen, setPrevOverlayOpen] = useState(overlayOpen);
+  if (overlayOpen !== prevOverlayOpen) {
+    setPrevOverlayOpen(overlayOpen);
+    if (overlayOpen) setComingSoonFeature(null);
+  }
 
   return (
     <header
@@ -102,7 +186,7 @@ export function Header({
         ESQUE
       </Link>
 
-      <nav aria-label="Utility" className="flex items-center gap-2 md:gap-6">
+      <nav ref={utilityNavRef} aria-label="Utility" className="flex items-center gap-2 md:gap-6">
         <Button
           ref={menuTriggerRef}
           variant="secondary"

@@ -97,15 +97,26 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           defaultValue={filters.minPrice ?? ''}
           className="w-24"
         />
-        <Input
-          label="Max Price"
-          name="maxPrice"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          defaultValue={filters.maxPrice ?? ''}
-          className="w-24"
-        />
+        <div className="flex flex-col gap-2">
+          <Input
+            label="Max Price"
+            name="maxPrice"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            defaultValue={filters.maxPrice ?? ''}
+            className="w-24"
+            aria-describedby={filters.maxPriceDropped ? 'max-price-dropped-note' : undefined}
+          />
+          {filters.maxPriceDropped && (
+            <p
+              id="max-price-dropped-note"
+              className="text-utility uppercase tracking-metadata text-esque-text-secondary"
+            >
+              Max price below min — ignored.
+            </p>
+          )}
+        </div>
         <Button type="submit" variant="secondary">
           APPLY
         </Button>

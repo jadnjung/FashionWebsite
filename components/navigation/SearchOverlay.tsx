@@ -295,8 +295,14 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
           />
         </div>
 
-        {isQueryLongEnough && (
+        {trimmedQuery.length > 0 && (
           <div aria-live="polite" aria-atomic="true" className="flex flex-col gap-10">
+            {!isQueryLongEnough && (
+              <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                Keep typing…
+              </p>
+            )}
+
             {categoryResults.length > 0 && (
               <div className="flex flex-col gap-4">
                 <h2 className="text-utility uppercase tracking-metadata text-esque-text-secondary">
