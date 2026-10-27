@@ -99,14 +99,24 @@ export const PREVIEW_PRODUCTS: ProductListItem[] = [
 
 /**
  * Looks up one fixture product by handle for the Demo Mode-gated PDP path
- * (products.ts's getProduct). Returns null for an unrecognized handle,
- * mirroring getProduct's real not-found contract — a Demo Mode PDP request
- * for an unknown handle still renders the real "THIS PIECE DOESN'T
+ * (products.ts's getProduct) — also, by extension, the Quick Add route
+ * handler (app/api/products/[handle]/route.ts), which calls getProduct
+ * directly. Searches PREVIEW_PRODUCTS first, then PREVIEW_UPCOMING_PRODUCTS
+ * (collection-002's drop-gate preview fixtures, defined below): without the
+ * second array, the two real ProductCards CollectionView renders once
+ * collection-002's drop gate is unlocked (D-064) had no matching entry
+ * here, so opening or Quick Adding either one 404'd even though the cards
+ * themselves render correctly straight from PREVIEW_UPCOMING_PRODUCTS. See
+ * DECISIONS.md D-085. Returns null for an unrecognized handle, mirroring
+ * getProduct's real not-found contract — a Demo Mode PDP request for an
+ * unknown handle still renders the real "THIS PIECE DOESN'T
  * EXIST." UI rather than a special-cased error, the same honest-absence
  * behavior DECISIONS.md D-026 established for the real Shopify path.
  */
 export function getPreviewProductDetail(handle: string): ProductDetail | null {
-  const item = PREVIEW_PRODUCTS.find((p) => p.handle === handle);
+  const item =
+    PREVIEW_PRODUCTS.find((p) => p.handle === handle) ??
+    PREVIEW_UPCOMING_PRODUCTS.find((p) => p.handle === handle);
   if (!item) return null;
   return {
     id: item.id,

@@ -45,10 +45,17 @@ const dropAccessEventCookieOptions = {
 
 /**
  * Compares the submitted `code` field against this one env-var-held
- * secret (plain string equality — intentionally not hashed/rate-limited;
- * this is a brand gate, not a security boundary, per CONTENT.md §5 and
- * DECISIONS.md D-005, carried over unchanged for the collection-scoped
- * mechanic). On a match, appends `handle` to the unlocked-handles cookie
+ * secret (plain string equality, after trimming incidental leading/
+ * trailing whitespace from both sides — intentionally not hashed/
+ * rate-limited; this is a brand gate, not a security boundary, per
+ * CONTENT.md §5 and DECISIONS.md D-005, carried over unchanged for the
+ * collection-scoped mechanic). The trim guards against the one real
+ * delivery channel for this code — a manually-sent Klaviyo email with the
+ * code on its own line (PROJECT.md §21) — where copy-pasting out of a
+ * mail client is exactly the action most likely to carry an incidental
+ * space; it does not loosen the match in any other way (still exact,
+ * still case-sensitive, still no substring match). See DECISIONS.md
+ * D-084. On a match, appends `handle` to the unlocked-handles cookie
  * and redirects back to the same `/collections/${handle}` URL — the fresh
  * server render then reads the now-set cookie and renders CollectionView
  * instead of the teaser. redirect() throws internally by design (Next.js's
@@ -76,7 +83,7 @@ export async function validateDropAccessCode(
   const configuredCode = process.env.ESQUE_DROP_ACCESS_CODE;
   const cookieStore = await cookies();
 
-  if (configuredCode && code === configuredCode) {
+  if (configuredCode && code.trim() === configuredCode.trim()) {
     const existing = cookieStore.get(DROP_ACCESS_COOKIE_NAME)?.value;
     cookieStore.set(
       DROP_ACCESS_COOKIE_NAME,

@@ -135,4 +135,67 @@ describe('validateDropAccessCode', () => {
     expect(result).toEqual({ success: false });
     expect(mockCookieStore.set).not.toHaveBeenCalled();
   });
+
+  // Regression coverage for D-084: the only real delivery channel for this
+  // code is a manually-sent Klaviyo email with the code on its own line
+  // (PROJECT.md §21), and copy-pasting out of a mail client is exactly the
+  // action most likely to carry an incidental leading/trailing space. These
+  // confirm the comparison now trims that incidental whitespace without
+  // loosening the match in any other way.
+  describe('whitespace handling (D-084)', () => {
+    test('matches when the submitted code has leading whitespace only', async () => {
+      vi.stubEnv('ESQUE_DROP_ACCESS_CODE', 'thursday-early');
+
+      const boundAction = validateDropAccessCode.bind(null, 'collection-002');
+      await expect(
+        boundAction({ success: false }, formData({ code: '  thursday-early' })),
+      ).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'esque_drop_access',
+        'collection-002',
+        expect.any(Object),
+      );
+    });
+
+    test('matches when the submitted code has trailing whitespace only', async () => {
+      vi.stubEnv('ESQUE_DROP_ACCESS_CODE', 'thursday-early');
+
+      const boundAction = validateDropAccessCode.bind(null, 'collection-002');
+      await expect(
+        boundAction({ success: false }, formData({ code: 'thursday-early  ' })),
+      ).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'esque_drop_access',
+        'collection-002',
+        expect.any(Object),
+      );
+    });
+
+    test('matches when the submitted code is padded on both sides, e.g. pasted from an email client', async () => {
+      vi.stubEnv('ESQUE_DROP_ACCESS_CODE', 'thursday-early');
+
+      const boundAction = validateDropAccessCode.bind(null, 'collection-002');
+      await expect(
+        boundAction({ success: false }, formData({ code: '  thursday-early  ' })),
+      ).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'esque_drop_access',
+        'collection-002',
+        expect.any(Object),
+      );
+    });
+
+    test('still rejects a wrong code even after trimming — does not weaken the gate into a substring match', async () => {
+      vi.stubEnv('ESQUE_DROP_ACCESS_CODE', 'thursday-early');
+
+      const boundAction = validateDropAccessCode.bind(null, 'collection-002');
+      const result = await boundAction({ success: false }, formData({ code: '  wrong-code  ' }));
+
+      expect(result).toEqual({ success: false });
+      expect(mockCookieStore.set).not.toHaveBeenCalled();
+    });
+  });
 });

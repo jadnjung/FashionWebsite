@@ -85,6 +85,17 @@ describe('getPreviewProductDetail', () => {
       expect(getPreviewProductDetail(product.handle)).not.toBeNull();
     }
   });
+
+  // Regression test for D-085: this function previously only ever searched
+  // PREVIEW_PRODUCTS, so once collection-002's drop gate is unlocked (D-064),
+  // the two real ProductCards its CollectionView renders — built directly
+  // from PREVIEW_UPCOMING_PRODUCTS — 404'd on open or Quick Add, because
+  // getProduct (and therefore the PDP route and the Quick Add route
+  // handler, both of which call it) found no matching entry here.
+  test("resolves both PREVIEW_UPCOMING_PRODUCTS handles — collection-002's drop-gate preview cards", () => {
+    expect(getPreviewProductDetail('preview-draped-satin-slip')).not.toBeNull();
+    expect(getPreviewProductDetail('preview-boxy-denim-jacket')).not.toBeNull();
+  });
 });
 
 describe('PREVIEW_COLLECTIONS', () => {
