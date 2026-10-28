@@ -1,11 +1,25 @@
 import { ProductCard } from '@/components/catalog/ProductCard';
-import { getGridItemLayout, type GridItemLayout } from '@/lib/catalog/grid-layout';
+import {
+  getGridItemLayout,
+  isUnpairedTrailingStandardAtMd,
+  type GridItemLayout,
+} from '@/lib/catalog/grid-layout';
 import type { ProductListItem } from '@/lib/shopify/products';
 
 const LAYOUT_CLASSES: Record<GridItemLayout, string> = {
   featured: 'col-span-4 md:col-span-8 lg:col-span-8',
   standard: 'col-span-2 md:col-span-4 lg:col-span-4',
 };
+
+// `md`-tier dead-half-row fix (see grid-layout.ts's
+// `isUnpairedTrailingStandardAtMd` for the full "why") — when the trailing
+// item is a standard item left without its usual pairing partner at the
+// 8-column tier, it gets the full 8 columns to itself instead of the
+// usual 4, so it fills its own row exactly like a lone trailing featured
+// item already does. Only the `md:col-span` fragment changes; base
+// (mobile) and `lg:` stay exactly LAYOUT_CLASSES.standard's own values —
+// this is an `md`-only correction, not a new layout variant.
+const STANDARD_UNPAIRED_AT_MD_CLASSES = 'col-span-2 md:col-span-8 lg:col-span-4';
 
 // DESIGN_SYSTEM.md §15/§36-38 — 12/8/4-column responsive grid (the first
 // real implementation of that scale; previously conceptual per
@@ -39,8 +53,11 @@ export function ProductGrid({ products, priorityFirstImage = false }: ProductGri
     <div className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8">
       {products.map((product, index) => {
         const layout = getGridItemLayout(index);
+        const className = isUnpairedTrailingStandardAtMd(index, products.length)
+          ? STANDARD_UNPAIRED_AT_MD_CLASSES
+          : LAYOUT_CLASSES[layout];
         return (
-          <div key={product.id} className={LAYOUT_CLASSES[layout]}>
+          <div key={product.id} className={className}>
             {/* DECISIONS.md D-038 — both of ProductGrid's consumers
                 (category pages, PDP's own Related Products) are single-
                 query results with no duplicate handles and are never

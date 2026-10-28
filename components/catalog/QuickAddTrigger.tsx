@@ -45,18 +45,29 @@ const QuickAddPanel = dynamic(
 // HTML; a click would also fire the outer navigation) — see
 // ProductCard.tsx's own comment.
 //
-// Visibility (DESIGN_SYSTEM.md §37/§39, PROJECT.md §74 "no interaction
-// should depend solely on hover"): below `md`, always visible/interactive
-// — no hover exists on touch. At `md` and up, hidden at rest
+// Visibility (DESIGN_SYSTEM.md §37/§39/§70 "no interaction should depend
+// solely on hover"): hidden-until-revealed only on a device that can
+// actually hover with a precise pointer — gated on the compound media
+// feature `(hover: hover) and (pointer: fine)` (mirrors
+// lib/motion/media.ts's `hasFinePointerAndHover`, expressed here as a pure
+// CSS arbitrary variant rather than JS, since this is a static class list
+// with no new client state to add). Everywhere else — touch devices of any
+// width, including a touch tablet at/above `md`, and coarse/hybrid
+// pointers — the trigger is always visible/interactive, because no hover
+// exists to reveal it with. A width-based (`md:`) gate was used originally
+// but was wrong: it hid the button behind hover on any viewport >= 768px
+// regardless of input method, so a touch tablet landed on a
+// `pointer-events: none` element it could never tap to focus. On a
+// qualifying fine-pointer+hover device, the trigger stays hidden at rest
 // (opacity-0/pointer-events-none, but still occupying its layout row — no
 // display:none, so revealing it never shifts the grid and never causes
-// CLS) and revealed by group-hover AND group-focus-within, so tabbing onto
-// the button reveals it exactly as it receives focus (a hover-only reveal
-// with no focus equivalent is the exact accessibility failure DECISIONS.md
-// D-037 already found and fixed once in this codebase). The 200ms
-// duration/easing matches this same card's existing secondary-image hover
-// crossfade (ProductCard.tsx) — one motion value for two related reveals
-// on the same component, not a new one invented for this feature.
+// CLS) and is revealed by group-hover AND group-focus-within, so tabbing
+// onto the button reveals it exactly as it receives focus (a hover-only
+// reveal with no focus equivalent is the exact accessibility failure
+// DECISIONS.md D-037 already found and fixed once in this codebase). The
+// 200ms duration/easing matches this same card's existing secondary-image
+// hover crossfade (ProductCard.tsx) — one motion value for two related
+// reveals on the same component, not a new one invented for this feature.
 export function QuickAddTrigger({ handle, title }: QuickAddTriggerProps) {
   const [open, setOpen] = useState(false);
   // Separate from `open`: once true, stays true for the rest of this
@@ -126,7 +137,7 @@ export function QuickAddTrigger({ handle, title }: QuickAddTriggerProps) {
         // occupies its own static layout row at every width (never
         // display:none, see the comment above), so growing its box height
         // here changes no post-paint layout and causes no CLS.
-        className="w-fit py-1 text-left text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 transition-opacity duration-200 ease-esque hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text md:pointer-events-none md:opacity-0 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100 md:group-hover:pointer-events-auto md:group-hover:opacity-100"
+        className="w-fit py-1 text-left text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 transition-opacity duration-200 ease-esque hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text [@media(hover:hover)_and_(pointer:fine)]:pointer-events-none [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within:pointer-events-auto [@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover:pointer-events-auto [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100"
       >
         QUICK ADD
       </button>
