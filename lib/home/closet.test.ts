@@ -26,6 +26,7 @@ const PRODUCT: productsModule.ClosetProduct = {
   minPrice: { amount: '180.00', currencyCode: 'USD' },
   image: null,
   modelUrl: null,
+  fabricColor: null,
 };
 
 function mockCollections(collections: collectionsModule.CollectionSummary[]) {

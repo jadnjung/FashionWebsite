@@ -2,7 +2,8 @@
 
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { MathUtils, type Group, type Mesh, type MeshBasicMaterial } from 'three';
+import { MathUtils, PMREMGenerator, type Group, type Mesh, type MeshBasicMaterial } from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ClosetGarment, getGarmentHeight } from '@/components/home/closet/ClosetGarment';
 import type { ClosetGesture } from '@/components/home/closet/closet-gesture';
 import { getPlaceholderShape } from '@/lib/home/closet-shape';
@@ -23,11 +24,12 @@ const MAX_CAMERA_Z = 9;
 // Distance from the camera to a focused garment.
 const FOCUS_DISTANCE = 4.2;
 const RECEDED_Z = -1.4;
-// On the rod, garments hang turned partly sideways, as in a real closet —
-// pulling one out turns it to face the viewer. Hover grows it slightly and
-// turns it a little toward the viewer, signalling it can be picked.
-const ROD_YAW = -0.7;
-const HOVER_YAW = -0.35;
+// On the rod, garments hang mostly side-on and closely spaced, as on a
+// real clothes rail — pulling one out turns it to face the viewer. Hover
+// grows it slightly and turns it partly toward the viewer, signalling it
+// can be picked.
+const ROD_YAW = -0.95;
+const HOVER_YAW = -0.5;
 const HOVER_SCALE = 1.06;
 const DRAG_THRESHOLD_PX = 6;
 // Damping rate for every eased transition (higher = faster).
@@ -83,16 +85,37 @@ export function ClosetScene(props: ClosetSceneProps) {
 
   return (
     <>
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[-3, 4, 6]} intensity={1.6} />
-      <directionalLight position={[4, 1, -3]} intensity={0.6} />
+      <StudioEnvironment />
+      {/* Soft fill from above and below, so the side of each garment
+          turned away from the key light still reads as cloth, not a void. */}
+      <hemisphereLight args={['#f4f1ea', '#2a2723', 0.6]} />
+      {/* Key light: soft shadows between neighbouring garments are what
+          make the rail read as real cloth hanging in a space. */}
+      <directionalLight
+        position={[-2.5, 4, 5]}
+        intensity={2.2}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-left={-5}
+        shadow-camera-right={5}
+        shadow-camera-top={4}
+        shadow-camera-bottom={-4}
+        shadow-camera-near={0.5}
+        shadow-camera-far={20}
+        shadow-bias={-0.0008}
+        shadow-normalBias={0.04}
+        // Partial shadows: neighbours and hangers shade a garment rather
+        // than blacking it out.
+        shadow-intensity={0.6}
+      />
+      <directionalLight position={[4, 1.5, -3]} intensity={0.7} />
 
       <CameraRig gesture={gesture} reducedMotion={reducedMotion} cameraZ={layout.cameraZ} />
       <Scrim active={state.selected !== null} reducedMotion={reducedMotion} />
       <ClosetControls {...props} layout={layout} />
 
       <group position={[0, layout.rodY, 0]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
           <cylinderGeometry args={[0.028, 0.028, rodLength, 16]} />
           <meshStandardMaterial color="#b9b9b1" metalness={0.8} roughness={0.3} />
         </mesh>
@@ -232,6 +255,23 @@ function ClosetItem({
       <ClosetGarment product={product} shape={shape} />
     </group>
   );
+}
+
+/**
+ * Soft, image-based studio lighting (three's built-in RoomEnvironment,
+ * prefiltered once) — gives fabric and metal the gentle, all-round
+ * reflections a plain set of point lights can't.
+ */
+function StudioEnvironment() {
+  const gl = useThree((s) => s.gl);
+  const environment = useMemo(() => {
+    const generator = new PMREMGenerator(gl);
+    const texture = generator.fromScene(new RoomEnvironment(), 0.04).texture;
+    generator.dispose();
+    return texture;
+  }, [gl]);
+  useEffect(() => () => environment.dispose(), [environment]);
+  return <primitive object={environment} attach="environment" />;
 }
 
 /**

@@ -1549,6 +1549,31 @@ Independent re-verification before integration surfaced one further gap in trigg
   - D-032's static campaign-image slot.
   - The hero entrance fade (`.esque-hero-reveal`) is kept.
 
+**Realism pass (project-owner request: "make the garments look more realistic on the rod"):** the owner chose solid fabric color over the photo-on-front placeholder. A full product photo printed on a garment shape (model's face, studio backdrop and all) was the main thing reading as fake.
+
+- **Fabric color**, in order of trust:
+  1. The merchant's own Shopify color swatch for the product's first color-option value. The closet query now reads `options { name optionValues { swatch { color } } }`, and only a `#rrggbb` value is accepted.
+  2. Otherwise, the dominant color of the product photo's center, from a 48×48 downscale (`lib/home/garment-color.ts`). It is backdrop-aware: the photo's outer frame is read as backdrop, and a substantial non-backdrop color in the center wins. Without that, a dark outfit on a pale studio sweep came out white in Demo Mode. A white tee on white still reads white.
+  3. Otherwise, neutral charcoal.
+
+  The photo itself still appears in the info panel's View Product destination, but is no longer drawn on the garment. Demo Mode fixtures all list "Black" first with no swatch, so Demo Mode uses photo colors.
+- **Cloth geometry** (`garment-geometry.ts`, pure math in `lib/home/garment-drape.ts`). Each placeholder is one closed, padded piece of cloth:
+  - front and back surfaces over a grid, cut to the silhouette by an alpha map
+  - thickness from a blurred rasterized silhouette, easing (sine profile) to a thin rim
+  - drape folds that deepen toward the hem, and a gentle front bow
+  - sleeves hanging against the body and trouser legs together, marked by soft creases rather than gaps (gaps showed as black slits)
+  - a mipmapped procedural weave normal map
+  - fabric `MeshPhysicalMaterial` with sheen, toned down on dark cloth so black doesn't wash out to grey
+- **Lighting:** three's built-in `RoomEnvironment` (prefiltered, no new dependency), a hemisphere fill, and a shadow-casting key light. Shadows run at 60% intensity and respect each garment's cut-out (custom depth material).
+- **Hangers and rail:** wooden hangers with metal hooks. Garments hang more side-on (yaw −0.95 rad) at tighter spacing (0.55), like a real rail, and the camera frames closer as a result.
+- **Bugs found and fixed while verifying (by headless screenshots of a Demo Mode production build, since the in-app browser pane was throttled while hidden):**
+  - z-fighting where front and back surfaces met at zero thickness: a minimum separation is now kept
+  - creases narrower than the mesh spacing rendering as jagged dark lines: creases widened, mesh densified
+- **Known limits:**
+  - A faint dark rim remains on the edge facing away from the lights.
+  - Every garment of a category shares one silhouette; the Velvet Evening Jacket reads as a boxy knit face-on. A real GLB per product (the owner workflow above) is the fix.
+- **Cost:** the 3D chunk grew from 260,287 to 263,047 bytes gzip. Closet ready-to-visible measured at about 2.2 s after navigation on a warm local production server (headless; the poster shows meanwhile).
+
 **Asset-origin allowlist (follow-up from an automated security review of this change):** three.js's `GLTFLoader`/`TextureLoader` fetch URLs directly, bypassing `next/image`'s `remotePatterns`. Both closet asset paths now fail closed through `lib/shopify/cdn.ts`'s `isShopifyCdnUrl`, which accepts only `https:` on exactly `cdn.shopify.com`, the same single host `next.config.ts` allows.
 - **Models:** `findGlbSourceUrl` ignores a GLB source on any other host and treats it as no model.
 - **Photos:** `getGarmentTextureUrl` returns `null` for anything that isn't a Shopify-CDN URL or a Demo Mode `/preview-demo/` fixture path. `null` renders the untextured placeholder.

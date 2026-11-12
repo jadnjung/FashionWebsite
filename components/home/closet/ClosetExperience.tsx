@@ -102,6 +102,7 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
       >
         <Canvas
           frameloop={visible ? 'always' : 'never'}
+          shadows
           dpr={[1, 2]}
           camera={{ position: [0, 0.2, 8], fov: CAMERA_FOV }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}

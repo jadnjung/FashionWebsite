@@ -277,6 +277,7 @@ describe('getClosetProducts', () => {
       productType: 'Hoodies',
       priceRange: { minVariantPrice: { amount: '120.00', currencyCode: 'USD' } },
       images: { edges: [] },
+      options: [] as unknown[],
       media: { edges: media.map((node) => ({ node })) },
     };
   }
@@ -318,8 +319,35 @@ describe('getClosetProducts', () => {
         minPrice: { amount: '120.00', currencyCode: 'USD' },
         image: null,
         modelUrl: 'https://cdn.shopify.com/item.glb',
+        fabricColor: null,
       },
     ]);
+  });
+
+  test("uses the swatch of the color option's first value as the fabric color", async () => {
+    const node = {
+      ...closetNode([]),
+      options: [
+        { name: 'Size', optionValues: [{ swatch: { color: '#ff0000' } }] },
+        {
+          name: 'Colour',
+          optionValues: [{ swatch: { color: '#1F3D2B' } }, { swatch: { color: '#000000' } }],
+        },
+      ],
+    };
+    mockClient({ data: { collection: { products: { edges: [{ node }] } } } });
+    const result = await getClosetProducts('collection-001');
+    expect(result?.[0]?.fabricColor).toBe('#1f3d2b');
+  });
+
+  test('ignores a missing or malformed swatch', async () => {
+    const node = {
+      ...closetNode([]),
+      options: [{ name: 'Color', optionValues: [{ swatch: { color: 'red; x' } }] }],
+    };
+    mockClient({ data: { collection: { products: { edges: [{ node }] } } } });
+    const result = await getClosetProducts('collection-001');
+    expect(result?.[0]?.fabricColor).toBeNull();
   });
 
   test('resolves modelUrl to null when the product has no 3D model', async () => {
@@ -567,7 +595,7 @@ describe('getClosetProducts — Demo Mode', () => {
     const result = await getClosetProducts('collection-001');
 
     expect(result).toHaveLength(6);
-    expect(result?.every((p) => p.modelUrl === null)).toBe(true);
+    expect(result?.every((p) => p.modelUrl === null && p.fabricColor === null)).toBe(true);
     expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
 

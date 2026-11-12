@@ -29,13 +29,13 @@ const GARMENT_TEXTURE_WIDTH = 768;
 const DEMO_FIXTURE_PREFIX = '/preview-demo/';
 
 /**
- * The URL the placeholder garment loads its front-face photo from, or null
- * when the image isn't from an allowed origin (the garment then renders
- * untextured). Fail-closed allowlist: Shopify's CDN — requested at a
- * texture-sized `width`, since a full-resolution product photo costs far
- * more bandwidth and GPU memory than a ~1-unit-wide garment ever displays —
- * or Demo Mode's local fixtures. three.js's TextureLoader fetches directly,
- * bypassing next/image's own remotePatterns check, so this is that check.
+ * The URL a placeholder garment loads its product photo from to pick its
+ * fabric color (when Shopify has no color swatch), or null when the image
+ * isn't from an allowed origin (the garment then uses neutral fabric).
+ * Fail-closed allowlist: Shopify's CDN — requested at a small `width`,
+ * since only a downscaled copy is ever sampled — or Demo Mode's local
+ * fixtures. three.js's ImageLoader fetches directly, bypassing
+ * next/image's own remotePatterns check, so this is that check.
  */
 export function getGarmentTextureUrl(url: string): string | null {
   if (url.startsWith(DEMO_FIXTURE_PREFIX) && !url.includes('..')) return url;

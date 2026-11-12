@@ -37,7 +37,7 @@ export function closetReducer(state: ClosetState, action: ClosetAction): ClosetS
 }
 
 /** Horizontal distance between neighbouring hangers, in scene units. */
-export const HANGER_SPACING = 0.85;
+export const HANGER_SPACING = 0.55;
 
 /** X position of the hanger at `index` in a rod of `count`, centered on 0. */
 export function getHangerX(index: number, count: number, spacing = HANGER_SPACING): number {

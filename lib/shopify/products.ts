@@ -269,6 +269,12 @@ export interface ClosetProduct {
   image: ProductImage | null;
   /** First GLB source among the product's Model3d media, or null when the product has no 3D model yet. */
   modelUrl: string | null;
+  /**
+   * The merchant's swatch color (`#rrggbb`) for the product's first color
+   * option value, or null when none is set — the placeholder garment then
+   * picks its fabric color from the product photo instead.
+   */
+  fabricColor: string | null;
 }
 
 /**
@@ -297,6 +303,9 @@ export async function getClosetProducts(
       minPrice: product.minPrice,
       image: product.image,
       modelUrl: null,
+      // Every fixture lists 'Black' first with no swatch, so Demo Mode
+      // garments take their color from their photos.
+      fabricColor: null,
     }));
   }
   const client = getStorefrontClient();
@@ -329,6 +338,7 @@ export async function getClosetProducts(
           }
         : null,
       modelUrl: findGlbSourceUrl(node.media.edges.map(({ node: media }) => media)),
+      fabricColor: findSwatchColor(node.options),
     };
   });
 }
@@ -351,6 +361,24 @@ function findGlbSourceUrl(
     if (glb) return glb.url;
   }
   return null;
+}
+
+const COLOR_OPTION_NAME = /^colou?r$/i;
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/**
+ * The swatch color of the first value of the product's color option (its
+ * default color), when the merchant has set one in Shopify admin.
+ */
+function findSwatchColor(
+  options: ReadonlyArray<{
+    name: string;
+    optionValues: ReadonlyArray<{ swatch?: { color?: string | null } | null }>;
+  }>,
+): string | null {
+  const colorOption = options.find((option) => COLOR_OPTION_NAME.test(option.name.trim()));
+  const color = colorOption?.optionValues[0]?.swatch?.color;
+  return color && HEX_COLOR.test(color) ? color.toLowerCase() : null;
 }
 
 export interface GetProductsOptions {

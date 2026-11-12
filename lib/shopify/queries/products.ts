@@ -102,7 +102,8 @@ export const GET_PRODUCTS_BY_COLLECTION_QUERY = `#graphql
 // than an extension of GET_PRODUCTS_BY_COLLECTION_QUERY so Archive's
 // consumer doesn't pay for the `media` connection. `media` is narrowed to
 // Model3d only — the closet hangs a product's real GLB when one exists and
-// falls back to a placeholder garment built from `images` otherwise.
+// falls back to a placeholder garment otherwise. `options` carries the
+// merchant's own color swatches, the placeholder's preferred fabric color.
 export const GET_CLOSET_PRODUCTS_QUERY = `#graphql
   query GetClosetProducts($handle: String!, $first: Int!) {
     collection(handle: $handle) {
@@ -127,6 +128,14 @@ export const GET_CLOSET_PRODUCTS_QUERY = `#graphql
                   altText
                   width
                   height
+                }
+              }
+            }
+            options(first: 5) {
+              name
+              optionValues {
+                swatch {
+                  color
                 }
               }
             }
