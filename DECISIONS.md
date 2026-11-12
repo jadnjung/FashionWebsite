@@ -1549,6 +1549,12 @@ Independent re-verification before integration surfaced one further gap in trigg
   - D-032's static campaign-image slot.
   - The hero entrance fade (`.esque-hero-reveal`) is kept.
 
+**Asset-origin allowlist (follow-up from an automated security review of this change):** three.js's `GLTFLoader`/`TextureLoader` fetch URLs directly, bypassing `next/image`'s `remotePatterns`. Both closet asset paths now fail closed through `lib/shopify/cdn.ts`'s `isShopifyCdnUrl`, which accepts only `https:` on exactly `cdn.shopify.com`, the same single host `next.config.ts` allows.
+- **Models:** `findGlbSourceUrl` ignores a GLB source on any other host and treats it as no model.
+- **Photos:** `getGarmentTextureUrl` returns `null` for anything that isn't a Shopify-CDN URL or a Demo Mode `/preview-demo/` fixture path. `null` renders the untextured placeholder.
+- **Risk:** low, since these URLs come only from the store's own Storefront API, never from visitor input. The check is cheap, and it keeps one origin policy for all product media.
+- **Not added:** a sitewide Content-Security-Policy (`img-src`/`connect-src`), which the review suggested as defence in depth. It affects every route plus GA4 and Klaviyo, so it belongs in its own reviewed change, not this feature.
+
 **Deliberate deviations:**
 
 1. **No `@react-three/drei`,** although the plan named it. Fiber's own `useLoader` with three's `GLTFLoader` and `TextureLoader` covers everything this feature uses, so drei's large transitive dependency tree is avoided (CLAUDE.md dependency policy). Added dependencies: `three@0.187.0`, `@react-three/fiber@9.8.2` (its React peer range is `>=19 <19.4`; the project runs 19.2.8), and dev-only `@types/three`.

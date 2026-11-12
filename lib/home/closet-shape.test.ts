@@ -27,8 +27,18 @@ describe('getGarmentTextureUrl', () => {
     );
   });
 
-  test('leaves non-Shopify and relative URLs unchanged', () => {
+  test('passes Demo Mode fixture paths through unchanged', () => {
     expect(getGarmentTextureUrl('/preview-demo/product-1.jpg')).toBe('/preview-demo/product-1.jpg');
-    expect(getGarmentTextureUrl('https://example.com/a.jpg')).toBe('https://example.com/a.jpg');
+  });
+
+  test.each([
+    ['https://example.com/a.jpg'],
+    ['http://cdn.shopify.com/a.jpg'],
+    ['https://cdn.shopify.com.evil.example/a.jpg'],
+    ['/preview-demo/../../etc/a.jpg'],
+    ['/other/a.jpg'],
+    ['not a url'],
+  ])('rejects %s (renders the untextured placeholder)', (url) => {
+    expect(getGarmentTextureUrl(url)).toBeNull();
   });
 });

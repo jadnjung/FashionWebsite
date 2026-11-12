@@ -1,3 +1,4 @@
+import { isShopifyCdnUrl } from '@/lib/shopify/cdn';
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
   GET_CLOSET_PRODUCTS_QUERY,
@@ -342,7 +343,11 @@ function findGlbSourceUrl(
   media: ReadonlyArray<{ sources?: ReadonlyArray<{ url: string; format: string }> }>,
 ): string | null {
   for (const node of media) {
-    const glb = (node.sources ?? []).find((source) => source.format.toLowerCase() === 'glb');
+    // Only a Shopify-CDN-hosted GLB is ever handed to the client's
+    // GLTFLoader (lib/shopify/cdn.ts) — anything else is treated as no model.
+    const glb = (node.sources ?? []).find(
+      (source) => source.format.toLowerCase() === 'glb' && isShopifyCdnUrl(source.url),
+    );
     if (glb) return glb.url;
   }
   return null;

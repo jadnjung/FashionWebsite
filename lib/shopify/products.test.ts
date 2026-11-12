@@ -281,7 +281,7 @@ describe('getClosetProducts', () => {
     };
   }
 
-  test('picks the first GLB source across Model3d media, ignoring non-model media and non-GLB sources', async () => {
+  test('picks the first Shopify-CDN GLB source across Model3d media, ignoring non-model media, non-GLB sources, and other hosts', async () => {
     mockClient({
       data: {
         collection: {
@@ -290,11 +290,12 @@ describe('getClosetProducts', () => {
               {
                 node: closetNode([
                   {},
-                  { sources: [{ url: 'https://cdn.example/item.usdz', format: 'usdz' }] },
+                  { sources: [{ url: 'https://cdn.shopify.com/item.usdz', format: 'usdz' }] },
+                  { sources: [{ url: 'https://evil.example/item.glb', format: 'glb' }] },
                   {
                     sources: [
-                      { url: 'https://cdn.example/item.usdz', format: 'usdz' },
-                      { url: 'https://cdn.example/item.glb', format: 'GLB' },
+                      { url: 'https://cdn.shopify.com/item.usdz', format: 'usdz' },
+                      { url: 'https://cdn.shopify.com/item.glb', format: 'GLB' },
                     ],
                   },
                 ]),
@@ -316,7 +317,7 @@ describe('getClosetProducts', () => {
         productType: 'Hoodies',
         minPrice: { amount: '120.00', currencyCode: 'USD' },
         image: null,
-        modelUrl: 'https://cdn.example/item.glb',
+        modelUrl: 'https://cdn.shopify.com/item.glb',
       },
     ]);
   });

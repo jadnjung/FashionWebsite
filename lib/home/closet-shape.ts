@@ -1,4 +1,5 @@
 import { getCategoryForProductType } from '@/lib/catalog/taxonomy';
+import { isShopifyCdnUrl } from '@/lib/shopify/cdn';
 
 export type PlaceholderShape = 'tee' | 'longsleeve' | 'pants' | 'generic';
 
@@ -24,21 +25,22 @@ export function getPlaceholderShape(productType: string): PlaceholderShape {
 
 const GARMENT_TEXTURE_WIDTH = 768;
 
+// Demo Mode's local fixture photos (lib/shopify/preview-demo-fixtures.ts).
+const DEMO_FIXTURE_PREFIX = '/preview-demo/';
+
 /**
- * Requests a texture-sized rendition of a Shopify CDN image for the
- * placeholder garment's front face — Shopify's image CDN resizes on its own
- * `width` parameter, and a full-resolution product photo would cost far
- * more bandwidth and GPU memory than a ~1-unit-wide garment ever displays.
- * Any other URL (Demo Mode's local fixtures) is returned unchanged.
+ * The URL the placeholder garment loads its front-face photo from, or null
+ * when the image isn't from an allowed origin (the garment then renders
+ * untextured). Fail-closed allowlist: Shopify's CDN — requested at a
+ * texture-sized `width`, since a full-resolution product photo costs far
+ * more bandwidth and GPU memory than a ~1-unit-wide garment ever displays —
+ * or Demo Mode's local fixtures. three.js's TextureLoader fetches directly,
+ * bypassing next/image's own remotePatterns check, so this is that check.
  */
-export function getGarmentTextureUrl(url: string): string {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return url;
-  }
-  if (parsed.hostname !== 'cdn.shopify.com') return url;
+export function getGarmentTextureUrl(url: string): string | null {
+  if (url.startsWith(DEMO_FIXTURE_PREFIX) && !url.includes('..')) return url;
+  if (!isShopifyCdnUrl(url)) return null;
+  const parsed = new URL(url);
   parsed.searchParams.set('width', String(GARMENT_TEXTURE_WIDTH));
   return parsed.toString();
 }
