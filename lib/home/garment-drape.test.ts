@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
-  blurField,
   clothHalfThickness,
   drapeOffset,
   isInsidePolygon,
-  rasterizePolygon,
-  sampleField,
   seedFromString,
+  signedDistanceToPolygon,
+  silhouetteMask,
   type Point,
 } from '@/lib/home/garment-drape';
 
@@ -25,58 +24,54 @@ describe('isInsidePolygon', () => {
   });
 });
 
-describe('rasterizePolygon', () => {
-  test('covers the polygon fully inside, not at all outside, with row 0 at the bottom', () => {
+describe('silhouetteMask', () => {
+  test('is opaque inside, transparent outside, with row 0 at the bottom', () => {
     const triangle: Point[] = [
       [-1, -1],
       [1, -1],
       [-1, 1],
     ];
-    const field = rasterizePolygon(triangle, BOUNDS, 8, 8);
-    expect(field[0]).toBe(1); // bottom-left
-    expect(field[7 * 8 + 7]).toBe(0); // top-right
+    const mask = silhouetteMask(triangle, BOUNDS, 8, 8, 0);
+    expect(mask[0]).toBe(1); // bottom-left
+    expect(mask[7 * 8 + 7]).toBe(0); // top-right
   });
 
-  test('gives fractional coverage on an edge crossing a pixel', () => {
-    const half: Point[] = [
-      [-1, -1],
-      [0.125, -1],
-      [0.125, 1],
-      [-1, 1],
-    ];
-    // Pixel 4 spans x 0..0.25; the edge at 0.125 halves it.
-    const field = rasterizePolygon(half, BOUNDS, 8, 1, 4);
-    expect(field[4]).toBeCloseTo(0.5);
+  test('places the half-opacity edge `inset` inside the true outline', () => {
+    // Square edge at x = 0.5; 40 texels across 2 units = 0.05 per texel.
+    // Texel 29's center is x = 0.475, i.e. 0.025 inside the edge.
+    expect(silhouetteMask(SQUARE, BOUNDS, 40, 1, 0)[29]).toBeCloseTo(1);
+    expect(silhouetteMask(SQUARE, BOUNDS, 40, 1, 0.025)[29]).toBeCloseTo(0.5);
   });
 });
 
-describe('blurField', () => {
-  test('preserves a uniform field and softens a hard edge to ~0.5', () => {
-    expect(Array.from(blurField(new Float32Array(16).fill(1), 4, 4, 1))).toEqual(
-      new Array(16).fill(1),
-    );
-    const step = new Float32Array(20).map((_, i) => (i % 20 >= 10 ? 1 : 0));
-    const blurred = blurField(step, 20, 1, 2);
-    expect(blurred[0]).toBeCloseTo(0);
-    expect(blurred[19]).toBeCloseTo(1);
-    expect((blurred[9]! + blurred[10]!) / 2).toBeCloseTo(0.5, 1);
+describe('signedDistanceToPolygon', () => {
+  test('is positive inside, negative outside, and zero on the edge', () => {
+    expect(signedDistanceToPolygon(0, 0, SQUARE)).toBeCloseTo(0.5);
+    expect(signedDistanceToPolygon(0.4, 0, SQUARE)).toBeCloseTo(0.1);
+    expect(signedDistanceToPolygon(0.8, 0, SQUARE)).toBeCloseTo(-0.3);
+    expect(signedDistanceToPolygon(0.5, 0.2, SQUARE)).toBeCloseTo(0);
   });
-});
 
-describe('sampleField', () => {
-  test('interpolates between texel centers', () => {
-    const field = Float32Array.from([0, 1]);
-    expect(sampleField(field, 2, 1, 0.5, 0.5)).toBeCloseTo(0.5);
-    expect(sampleField(field, 2, 1, 0, 0.5)).toBe(0);
+  test('measures to the nearest corner outside a convex corner', () => {
+    expect(signedDistanceToPolygon(0.8, 0.9, SQUARE)).toBeCloseTo(-0.5);
   });
 });
 
 describe('clothHalfThickness', () => {
-  test('is zero at the silhouette edge and full deep inside', () => {
-    expect(clothHalfThickness(0.5, 0.06)).toBe(0);
-    expect(clothHalfThickness(0.2, 0.06)).toBe(0);
-    expect(clothHalfThickness(1, 0.06)).toBe(0.06);
-    expect(clothHalfThickness(0.75, 0.06)).toBeGreaterThan(0.03);
+  test('is exactly zero on the outline, so front and back surfaces meet there', () => {
+    expect(clothHalfThickness(0, 0.05, 0.1)).toBe(0);
+  });
+
+  test('is positive everywhere inside, reaching full thickness at the ramp width', () => {
+    expect(clothHalfThickness(0.001, 0.05, 0.1)).toBeGreaterThan(0);
+    expect(clothHalfThickness(0.05, 0.05, 0.1)).toBeGreaterThan(0.03);
+    expect(clothHalfThickness(0.1, 0.05, 0.1)).toBe(0.05);
+    expect(clothHalfThickness(0.4, 0.05, 0.1)).toBe(0.05);
+  });
+
+  test('continues smoothly negative outside (surfaces cross at the edge, not before it)', () => {
+    const slope = clothHalfThickness(0.0001, 0.05, 0.1) / 0.0001;
+    expect(clothHalfThickness(-0.01, 0.05, 0.1)).toBeCloseTo(-0.01 * slope, 4);
   });
 });
 

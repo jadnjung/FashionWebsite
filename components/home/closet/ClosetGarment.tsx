@@ -5,6 +5,7 @@ import {
   Box3,
   CatmullRomCurve3,
   Color,
+  DoubleSide,
   Group,
   ImageLoader,
   MeshDepthMaterial,
@@ -246,6 +247,11 @@ function ClothGarment({
         alphaTest={0.5}
         // Smooths the cut-out silhouette edge using the canvas's MSAA.
         alphaToCoverage
+        // Double-sided: wherever the closed edge is thinner than a pixel
+        // (or seen exactly edge-on), a line of sight between the front and
+        // back surfaces lands on the inside of the fabric, like a real hem,
+        // instead of passing through to the background as a dark line.
+        side={DoubleSide}
         normalMap={getWeaveNormalMap()}
         normalScale={WEAVE_NORMAL_SCALE}
       />

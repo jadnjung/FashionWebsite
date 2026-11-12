@@ -1570,9 +1570,18 @@ Independent re-verification before integration surfaced one further gap in trigg
   - z-fighting where front and back surfaces met at zero thickness: a minimum separation is now kept
   - creases narrower than the mesh spacing rendering as jagged dark lines: creases widened, mesh densified
 - **Known limits:**
-  - A faint dark rim remains on the edge facing away from the lights.
+  - ~~A faint dark rim remains on the edge facing away from the lights.~~ Fixed in a follow-up (see below).
   - Every garment of a category shares one silhouette; the Velvet Evening Jacket reads as a boxy knit face-on. A real GLB per product (the owner workflow above) is the fix.
 - **Cost:** the 3D chunk grew from 260,287 to 263,047 bytes gzip. Closet ready-to-visible measured at about 2.2 s after navigation on a warm local production server (headless; the poster shows meanwhile).
+
+**Edge-line fix (project-owner request: "fix the dark line along the garment edges"):** diagnosed by rendering the closet against a temporary bright-red canvas background. The line turned red, so it was a see-through gap, not shading. There were three layered causes:
+1. **The seam was open.** The cloth's two surfaces were held a fixed 0.012 units apart all the way to the cut-out edge. That separation had been added to stop z-fighting, because the blurred-silhouette thickness approximation could hit zero inside narrow sleeves. Seen at an angle, it was an open seam.
+   - Thickness now comes from each point's true signed distance to the outline (`signedDistanceToPolygon`, `clothHalfThickness` in `lib/home/garment-drape.ts`). It is exactly zero on the outline, so the surfaces meet and the edge is closed, and positive everywhere inside, so they never coincide anywhere visible. It continues negative outside the outline, so the surfaces cross precisely at the edge.
+   - The blur-based helpers it replaces were removed.
+2. **The visible outline and the closed edge disagreed slightly.** The alpha mask was a separately rasterized coverage map, so in places it reached past the true edge into the region where the surfaces had already crossed. The mask is now built from the same signed distance (`silhouetteMask`), set a hair (0.0015 units) inside the edge.
+3. **A hairline seam can still be thinner than a pixel, or seen exactly edge-on.** The cloth material is now double-sided (`side={DoubleSide}`), so any line of sight between the two surfaces lands on the inside of the fabric, as with a real hem, never on the background.
+
+**Verified:** red-background close-ups showed no see-through anywhere after the fix (before, there were red lines along the near edges of the long-sleeve and trousers). Normal-background renders were taken on the rail and on a pulled-out garment drag-rotated near edge-on.
 
 **Real-model path verified, and a placement bug fixed:** no product has a GLB yet, so the model path was exercised with a throwaway sample. A coat authored in centimetres and deliberately off-center was generated locally with three's `GLTFExporter`, temporarily assigned to one Demo Mode product, with a deliberately missing `.glb` assigned to another. It was checked in a production build, then removed; none of it is committed.
 

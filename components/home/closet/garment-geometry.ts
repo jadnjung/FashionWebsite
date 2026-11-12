@@ -9,11 +9,10 @@ import {
 } from 'three';
 import type { PlaceholderShape } from '@/lib/home/closet-shape';
 import {
-  blurField,
   clothHalfThickness,
   drapeOffset,
-  rasterizePolygon,
-  sampleField,
+  signedDistanceToPolygon,
+  silhouetteMask,
   type Bounds,
   type Point,
 } from '@/lib/home/garment-drape';
@@ -134,10 +133,11 @@ const MASK_DENSITY = 140;
 const MESH_DENSITY = 0.55;
 const PADDING = 0.05;
 const MAX_HALF_THICKNESS = 0.05;
-const MIN_HALF_THICKNESS = 0.006;
-// Blur radius in texels — how far in from the edge the cloth reaches its
-// full thickness (about 0.1 units after three passes at MASK_DENSITY).
-const EDGE_SOFTNESS = 8;
+// How far in from the edge the cloth reaches its full thickness.
+const EDGE_RAMP = 0.1;
+// The visible cut-out sits this far inside the outline where front and back
+// meet — see silhouetteMask.
+const EDGE_INSET = 0.0015;
 
 export interface ClothGarment {
   geometry: BufferGeometry;
@@ -166,8 +166,7 @@ export function createClothGarment(kind: PlaceholderShape, seed: number): ClothG
   const maskW = Math.ceil(spanX * MASK_DENSITY);
   const maskH = Math.ceil(spanY * MASK_DENSITY);
 
-  const coverage = rasterizePolygon(polygon, bounds, maskW, maskH, 2);
-  const softened = blurField(coverage, maskW, maskH, EDGE_SOFTNESS);
+  const coverage = silhouetteMask(polygon, bounds, maskW, maskH, EDGE_INSET);
 
   const segX = Math.max(8, Math.round(maskW * MESH_DENSITY));
   const segY = Math.max(8, Math.round(maskH * MESH_DENSITY));
@@ -186,13 +185,13 @@ export function createClothGarment(kind: PlaceholderShape, seed: number): ClothG
       const x = bounds.minX + u * spanX;
       const y = bounds.minY + v * spanY;
       const depth = (shape.maxY - y) / garmentHeight;
-      // Never fully zero: front and back surfaces at the same depth z-fight,
-      // letting the darker back face flicker through at edges and creases.
-      const half = Math.max(
-        MIN_HALF_THICKNESS,
-        clothHalfThickness(sampleField(softened, maskW, maskH, u, v), MAX_HALF_THICKNESS) *
-          creaseFactor(kind, x, depth),
-      );
+      // Thickness from the true distance to the outline: zero exactly on
+      // it (front and back meet — a closed edge, no seam to see the
+      // background through) and positive everywhere inside, so the two
+      // surfaces never coincide and z-fight anywhere visible.
+      const half =
+        clothHalfThickness(signedDistanceToPolygon(x, y, polygon), MAX_HALF_THICKNESS, EDGE_RAMP) *
+        creaseFactor(kind, x, depth);
       const across = Math.max(-1, Math.min(1, x / halfWidth));
       const center = drapeOffset(x, depth, across, seed);
       const i = row * columns + col;

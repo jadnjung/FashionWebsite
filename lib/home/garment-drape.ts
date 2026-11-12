@@ -23,112 +23,76 @@ export function isInsidePolygon(x: number, y: number, polygon: readonly Point[])
 }
 
 /**
- * Rasterizes a closed polygon into a coverage field (0 outside, 1 inside,
- * fractional along the edge via `supersample`² samples per pixel) over
- * `bounds`. Row 0 is the bottom (minY), matching texture/UV orientation.
+ * Signed distance from (x, y) to the polygon's outline: positive inside,
+ * negative outside, zero exactly on the edge.
  */
-export function rasterizePolygon(
+export function signedDistanceToPolygon(x: number, y: number, polygon: readonly Point[]): number {
+  let nearest = Infinity;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [ax, ay] = polygon[j]!;
+    const [bx, by] = polygon[i]!;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSq = dx * dx + dy * dy;
+    const t =
+      lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / lengthSq));
+    nearest = Math.min(nearest, Math.hypot(x - (ax + t * dx), y - (ay + t * dy)));
+  }
+  return isInsidePolygon(x, y, polygon) ? nearest : -nearest;
+}
+
+/**
+ * The garment's cut-out mask, one value per texel over `bounds` (row 0 is
+ * the bottom, minY, matching texture/UV orientation): 1 inside, 0 outside,
+ * a one-texel antialiased ramp across the edge.
+ *
+ * Computed from the same signed distance as the cloth's thickness, so the
+ * visible outline and the closed edge where front and back surfaces meet
+ * always agree. The edge sits `inset` inside the true outline, so the cut
+ * never exposes the sliver just beyond it where the two surfaces have
+ * already crossed.
+ */
+export function silhouetteMask(
   polygon: readonly Point[],
   bounds: Bounds,
   width: number,
   height: number,
-  supersample = 2,
+  inset: number,
 ): Float32Array {
-  const field = new Float32Array(width * height);
+  const mask = new Float32Array(width * height);
   const cellW = (bounds.maxX - bounds.minX) / width;
   const cellH = (bounds.maxY - bounds.minY) / height;
-  const samples = supersample * supersample;
+  const texel = Math.min(cellW, cellH);
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
-      let hits = 0;
-      for (let sy = 0; sy < supersample; sy++) {
-        for (let sx = 0; sx < supersample; sx++) {
-          const x = bounds.minX + (col + (sx + 0.5) / supersample) * cellW;
-          const y = bounds.minY + (row + (sy + 0.5) / supersample) * cellH;
-          if (isInsidePolygon(x, y, polygon)) hits++;
-        }
-      }
-      field[row * width + col] = hits / samples;
+      const x = bounds.minX + (col + 0.5) * cellW;
+      const y = bounds.minY + (row + 0.5) * cellH;
+      const d = signedDistanceToPolygon(x, y, polygon);
+      mask[row * width + col] = Math.min(1, Math.max(0, (d - inset) / texel + 0.5));
     }
   }
-  return field;
+  return mask;
 }
 
 /**
- * Separable box blur, repeated `passes` times (three passes approximate a
- * Gaussian). Used to turn the hard silhouette into a soft "distance from
- * the edge" field, so the cloth swells smoothly from a thin edge to its
- * full thickness instead of having slab-like sides. Edges clamp.
+ * Half-thickness of the cloth at a point `signedDistance` in from its
+ * outline: exactly zero on the outline — so the front and back surfaces
+ * meet there and the edge is closed, with no seam to see through — rising
+ * along a sine ease to `maxHalfThickness` at `rampWidth` inside, for a
+ * rounded, padded edge with a finite slope. Outside the outline it keeps
+ * the same slope into negative values: the two surfaces cross exactly at
+ * the edge rather than flattening together before it, so wherever a mesh
+ * triangle straddles the edge, they still meet at the alpha cut-out.
  */
-export function blurField(
-  field: Float32Array,
-  width: number,
-  height: number,
-  radius: number,
-  passes = 3,
-): Float32Array {
-  let current = Float32Array.from(field);
-  const scratch = new Float32Array(field.length);
-  const span = radius * 2 + 1;
-  for (let pass = 0; pass < passes; pass++) {
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        let sum = 0;
-        for (let k = -radius; k <= radius; k++) {
-          const c = Math.min(width - 1, Math.max(0, col + k));
-          sum += current[row * width + c]!;
-        }
-        scratch[row * width + col] = sum / span;
-      }
-    }
-    const next = new Float32Array(field.length);
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        let sum = 0;
-        for (let k = -radius; k <= radius; k++) {
-          const r = Math.min(height - 1, Math.max(0, row + k));
-          sum += scratch[r * width + col]!;
-        }
-        next[row * width + col] = sum / span;
-      }
-    }
-    current = next;
-  }
-  return current;
-}
-
-/** Bilinear sample of a field at fractional texel coordinates (clamped). */
-export function sampleField(
-  field: Float32Array,
-  width: number,
-  height: number,
-  u: number,
-  v: number,
+export function clothHalfThickness(
+  signedDistance: number,
+  maxHalfThickness: number,
+  rampWidth: number,
 ): number {
-  const x = Math.min(width - 1, Math.max(0, u * width - 0.5));
-  const y = Math.min(height - 1, Math.max(0, v * height - 0.5));
-  const x0 = Math.floor(x);
-  const y0 = Math.floor(y);
-  const x1 = Math.min(width - 1, x0 + 1);
-  const y1 = Math.min(height - 1, y0 + 1);
-  const fx = x - x0;
-  const fy = y - y0;
-  const top = field[y0 * width + x0]! * (1 - fx) + field[y0 * width + x1]! * fx;
-  const bottom = field[y1 * width + x0]! * (1 - fx) + field[y1 * width + x1]! * fx;
-  return top * (1 - fy) + bottom * fy;
-}
-
-/**
- * Half-thickness of the cloth at a point, from the blurred silhouette
- * value there: zero at (and outside) the silhouette edge, where the
- * blurred field is ~0.5, rising smoothly to `maxHalfThickness` inside.
- */
-export function clothHalfThickness(blurred: number, maxHalfThickness: number): number {
-  const t = Math.min(1, Math.max(0, (blurred - 0.5) / 0.5));
-  // Sine ease: a rounded, padded edge rather than a wedge, but with a
-  // finite slope at the rim — a square-root profile's near-vertical edge
-  // turns into a hard, dark band on the side facing away from the light.
-  return maxHalfThickness * Math.sin((t * Math.PI) / 2);
+  if (signedDistance >= rampWidth) return maxHalfThickness;
+  if (signedDistance >= 0)
+    return maxHalfThickness * Math.sin((signedDistance / rampWidth) * (Math.PI / 2));
+  return maxHalfThickness * (Math.PI / 2) * (signedDistance / rampWidth);
 }
 
 /**
