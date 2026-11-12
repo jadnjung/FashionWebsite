@@ -102,7 +102,9 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
       >
         <Canvas
           frameloop={visible ? 'always' : 'never'}
-          shadows
+          // PCF shadows: three r187 removed PCFSoftShadowMap (R3F's
+          // `shadows` default) and falls back to this with a warning.
+          shadows="percentage"
           dpr={[1, 2]}
           camera={{ position: [0, 0.2, 8], fov: CAMERA_FOV }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}

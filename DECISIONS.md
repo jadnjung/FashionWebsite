@@ -1574,6 +1574,18 @@ Independent re-verification before integration surfaced one further gap in trigg
   - Every garment of a category shares one silhouette; the Velvet Evening Jacket reads as a boxy knit face-on. A real GLB per product (the owner workflow above) is the fix.
 - **Cost:** the 3D chunk grew from 260,287 to 263,047 bytes gzip. Closet ready-to-visible measured at about 2.2 s after navigation on a warm local production server (headless; the poster shows meanwhile).
 
+**Real-model path verified, and a placement bug fixed:** no product has a GLB yet, so the model path was exercised with a throwaway sample. A coat authored in centimetres and deliberately off-center was generated locally with three's `GLTFExporter`, temporarily assigned to one Demo Mode product, with a deliberately missing `.glb` assigned to another. It was checked in a production build, then removed; none of it is committed.
+
+- **Bug found:** a loaded model did not sit on its hanger. It floated far below it on the rail and was left behind when its hanger was pulled forward. `ModelGarment` measured the model's bounding box after it was mounted under its rail-positioned group, and `Box3.setFromObject` works in world space, so the rail's own transform leaked into the fit.
+- **Fix:** the fit is now computed once, on a fresh clone in its own coordinates, before mounting. The math is a pure, unit-tested `fitModelToHanger` (`lib/home/closet-model.ts`), applied through a wrapper group.
+- **Re-verified by screenshots:**
+  - on the rail, the coat hangs at hanger scale with its collar at the bar
+  - pulled out, it faces front beside the panel
+  - drag-rotated, it shows its back
+  - the missing model logged one `[home] Collection Closet: asset … failed` error and fell back to that product's cloth placeholder, with the rest of the closet unaffected
+- **Also fixed:** `<Canvas shadows>` requested `PCFSoftShadowMap`, which three r187 removed (with a console warning on every load). It is now `shadows="percentage"`, the PCF map three was already substituting.
+- **Known, not fixed:** a failed model load also surfaces once as an uncaught page error, from the rejected loader promise inside React Three Fiber's `useLoader`, even though the error boundary handles it. It is harmless to the visitor, but will show in any future error monitoring (ROADMAP V1.1).
+
 **Asset-origin allowlist (follow-up from an automated security review of this change):** three.js's `GLTFLoader`/`TextureLoader` fetch URLs directly, bypassing `next/image`'s `remotePatterns`. Both closet asset paths now fail closed through `lib/shopify/cdn.ts`'s `isShopifyCdnUrl`, which accepts only `https:` on exactly `cdn.shopify.com`, the same single host `next.config.ts` allows.
 - **Models:** `findGlbSourceUrl` ignores a GLB source on any other host and treats it as no model.
 - **Photos:** `getGarmentTextureUrl` returns `null` for anything that isn't a Shopify-CDN URL or a Demo Mode `/preview-demo/` fixture path. `null` renders the untextured placeholder.

@@ -1,11 +1,12 @@
 'use client';
 
 import { useLoader } from '@react-three/fiber';
-import { Component, Suspense, useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
+import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Box3,
   CatmullRomCurve3,
   Color,
+  Group,
   ImageLoader,
   MeshDepthMaterial,
   RGBADepthPacking,
@@ -22,6 +23,7 @@ import {
   getShapeBounds,
 } from '@/components/home/closet/garment-geometry';
 import { getGarmentTextureUrl, type PlaceholderShape } from '@/lib/home/closet-shape';
+import { fitModelToHanger } from '@/lib/home/closet-model';
 import { pickDominantColor, rgbToHex } from '@/lib/home/garment-color';
 import { seedFromString } from '@/lib/home/garment-drape';
 import type { ClosetProduct } from '@/lib/shopify/products';
@@ -83,27 +85,31 @@ export function ClosetGarment({ product, shape }: ClosetGarmentProps) {
 
 function ModelGarment({ url }: { url: string }) {
   const gltf = useLoader(GLTFLoader, url);
-  // useLoader caches by URL — clone so this instance's transform never
-  // mutates the shared cached scene.
-  const model = useMemo<Object3D>(() => gltf.scene.clone(true), [gltf]);
-
-  useLayoutEffect(() => {
-    model.position.set(0, 0, 0);
-    model.scale.setScalar(1);
-    model.updateMatrixWorld(true);
-    const size = new Box3().setFromObject(model).getSize(new Vector3());
-    const scale = Math.min(MODEL_MAX_WIDTH / (size.x || 1), MODEL_MAX_HEIGHT / (size.y || 1));
-    model.scale.setScalar(scale);
-    model.updateMatrixWorld(true);
-    const box = new Box3().setFromObject(model);
-    const center = box.getCenter(new Vector3());
-    // Top-center of the model meets the hanger bar.
-    model.position.set(-center.x, GARMENT_TOP_Y - box.max.y, -center.z);
-    model.traverse((node) => {
+  // Fitted once, on a fresh clone measured in its own coordinates — before
+  // it is mounted under the rail, whose transform would otherwise leak into
+  // the bounding box (useLoader also caches by URL, so the shared scene is
+  // never mutated).
+  const model = useMemo<Object3D>(() => {
+    const content = gltf.scene.clone(true);
+    content.updateMatrixWorld(true);
+    const box = new Box3().setFromObject(content);
+    const fit = fitModelToHanger(
+      box.min,
+      box.max,
+      MODEL_MAX_WIDTH,
+      MODEL_MAX_HEIGHT,
+      GARMENT_TOP_Y,
+    );
+    const wrapper = new Group();
+    wrapper.add(content);
+    wrapper.scale.setScalar(fit.scale);
+    wrapper.position.set(fit.offset.x, fit.offset.y, fit.offset.z);
+    wrapper.traverse((node) => {
       node.castShadow = true;
       node.receiveShadow = true;
     });
-  }, [model]);
+    return wrapper;
+  }, [gltf]);
 
   return <primitive object={model} />;
 }
