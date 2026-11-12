@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // SHOPIFY_STORE_DOMAIN/SHOPIFY_STOREFRONT_API_TOKEN are intentionally unset
 // in this E2E environment (playwright.config.ts's webServer.env) — Selected
-// Pieces' and the Interactive Model's fetches always fail here. This is
+// Pieces' and the Shop the Look ring's fetches always fail here. This is
 // deliberately the load-bearing case for this project's graceful-
 // degradation architecture (DECISIONS.md D-033/D-034): the other scenes
 // must still render correctly regardless, and a Shopify-dependent scene
@@ -29,9 +29,9 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
     await expect(page).toHaveURL(/\/new$/);
   });
 
-  test('the interactive model placeholder is present and honestly labeled', async ({ page }) => {
+  test('the Shop the Look placeholder is present and honestly labeled', async ({ page }) => {
     await page.goto('/');
-    const scene = page.getByRole('region', { name: 'Interactive Model' });
+    const scene = page.getByRole('region', { name: 'Shop the Look' });
     await expect(scene).toBeVisible();
     await expect(scene.getByText('LOOK 01')).toBeVisible();
     const modelPlaceholderLabel = scene.getByText('ESQUE PLACEHOLDER — MODEL, FULL BODY');
@@ -42,15 +42,13 @@ test.describe('homepage — renders real scene content even with Shopify unconfi
     await expect(scene.getByRole('heading', { name: 'ARRIVING SOON.' })).toBeVisible();
   });
 
-  test('the interactive model does not mount its real, interactive tree when Shopify is unconfigured', async ({
-    page,
-  }) => {
+  test('the looks ring does not mount when Shopify is unconfigured', async ({ page }) => {
     await page.goto('/');
-    // Proves InteractiveModel.tsx's both-or-placeholder gate (DECISIONS.md
-    // D-034) genuinely renders the placeholder branch — not just visually,
-    // but that the real client component (and its SHOP THE LOOK entry
-    // point) isn't mounted at all.
-    await expect(page.getByRole('button', { name: 'SHOP THE LOOK' })).toHaveCount(0);
+    // Proves LooksSection's no-looks branch (DECISIONS.md D-091) renders
+    // only the placeholder — none of the ring's real controls exist.
+    const scene = page.getByRole('region', { name: 'Shop the Look' });
+    await expect(scene.getByRole('button', { name: 'VIEW ALL LOOKS' })).toHaveCount(0);
+    await expect(scene.getByRole('group', { name: 'Looks' })).toHaveCount(0);
   });
 
   test('the collection statement renders its real copy', async ({ page }) => {
@@ -159,7 +157,7 @@ test.describe('homepage — structure and responsiveness', () => {
       .evaluateAll((elements) => elements.map((el) => el.getAttribute('aria-label')));
     expect(regionNames).toEqual([
       'Collection Hero',
-      'Interactive Model',
+      'Shop the Look',
       'Collection Statement',
       // Selected Pieces omitted — Shopify unconfigured in this environment.
       'Shop by Category',

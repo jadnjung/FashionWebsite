@@ -17,7 +17,7 @@ describe('isKnownAnalyticsEvent', () => {
       'add_to_wishlist',
       'category_nav_click',
       'search',
-      'hotspot_selected',
+      'look_select',
       'shop_the_look_open',
       'closet_item_select',
       'request_access_open',
@@ -170,14 +170,13 @@ describe('dispatchAnalyticsEvent', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sink = vi.fn();
     dispatchAnalyticsEvent(
-      'hotspot_selected',
+      'closet_item_select',
       // Cast used only to simulate a bypass of the type system (e.g. a
       // spread of a broader object) — real call sites can't construct this.
-      { region: 'top', item_id: 'hoodie-01', item_name: 'Hoodie 01', email: 'a@b.com' } as never,
+      { item_id: 'hoodie-01', item_name: 'Hoodie 01', email: 'a@b.com' } as never,
       sink,
     );
-    expect(sink).toHaveBeenCalledWith('hotspot_selected', {
-      region: 'top',
+    expect(sink).toHaveBeenCalledWith('closet_item_select', {
       item_id: 'hoodie-01',
       item_name: 'Hoodie 01',
     });

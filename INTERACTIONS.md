@@ -129,6 +129,16 @@ Source: [DESIGN_SYSTEM.md §27–28](./DESIGN_SYSTEM.md#27-homepage--scene-01-co
 
 ## 13. Interactive Model
 
+> **Superseded on the homepage by the "Shop the Look" ring ([DECISIONS.md D-091](./DECISIONS.md)):**
+> - **Ring:** up to 9 curated looks circle on a CSS 3D ring, tilted about 20° so it's seen from slightly above. Each look faces the viewer as it travels; the nearest is biggest, and the far ones are smaller and dimmed.
+> - **Auto-rotation:** about 6 s per look. It pauses on hover and resumes 2.5 s after the last interaction, and a visible PAUSE/PLAY control satisfies WCAG 2.2.2.
+> - **Manual control:** drag/swipe spins the ring and settles on the nearest look; PREV/NEXT step one look; focusing a look turns the ring to it.
+> - **Choosing a look** brings it forward and opens Shop the Look.
+> - **All looks:** VIEW ALL LOOKS toggles a 3×3 grid (2 columns on phones) with a 350 ms fade.
+> - **Reduced motion** starts on the grid, with no auto-rotation and instant ring moves.
+>
+> The hotspot behaviour below describes the retired single-look model.
+
 Hovering a garment: the garment remains normally exposed or slightly brightens; the surrounding outfit reduces toward approximately 35–50% visual emphasis; product name/category/sizes/colors may appear; `VIEW` / `QUICK ADD` become available.
 
 Highlight technique: masked luminance/exposure treatment, not an obvious glow or outline.

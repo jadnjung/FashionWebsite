@@ -145,7 +145,9 @@ Source: [DESIGN_SYSTEM.md §50](./DESIGN_SYSTEM.md#50-search)
 
 Reuse these established CTA phrases rather than inventing synonyms:
 
-`ENTER COLLECTION` · `SHOP THE LOOK` · `ADD LOOK` · `ADD TO BAG` · `VIEW PRODUCT` · `QUICK ADD` · `ENTER ARCHIVE` · `EXPLORE COLLECTION →`
+`ENTER COLLECTION` · `SHOP THE LOOK` · `ADD LOOK` · `ADD TO BAG` · `VIEW PRODUCT` · `QUICK ADD` · `ENTER ARCHIVE` · `EXPLORE COLLECTION →` · `VIEW ALL LOOKS` · `VIEW ROTATION`
+
+Carousel controls (homepage looks ring, DECISIONS.md D-091): `← PREV` · `NEXT →` · `PAUSE` / `PLAY`; look labels read `LOOK 03` with `3 PIECES`.
 
 Editorial CTAs are often text-based (`EXPLORE COLLECTION →`) rather than large filled buttons.
 

@@ -4,30 +4,30 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
-import type { InteractiveModelGarment } from '@/lib/interactive-model/look';
-import {
-  isLookAddValid,
-  type LookItemSelectionState,
-} from '@/lib/interactive-model/look-selection';
+import { isLookAddValid, type LookItemSelectionState } from '@/lib/looks/look-selection';
 import { formatPrice } from '@/lib/product/price';
 import {
   findMatchingVariant,
   getInitialSelections,
   isProductSoldOut,
 } from '@/lib/product/variants';
+import type { ProductDetail } from '@/lib/shopify/products';
 
 interface ShopTheLookPanelProps {
-  garments: InteractiveModelGarment[];
+  /** The look's pieces, in the order the merchant curated them. */
+  products: ProductDetail[];
+  /** Shown above the pieces, e.g. "LOOK 03". */
+  lookLabel: string;
   open: boolean;
   onClose: () => void;
 }
 
 type LookSelectionMap = Record<string, LookItemSelectionState>;
 
-function initialSelectionMap(garments: InteractiveModelGarment[]): LookSelectionMap {
+function initialSelectionMap(products: ProductDetail[]): LookSelectionMap {
   return Object.fromEntries(
-    garments.map((garment) => [
-      garment.region,
+    products.map((product) => [
+      product.handle,
       {
         // A sold-out garment starts (and, since its checkbox is disabled
         // below, stays) excluded — DECISIONS.md D-037: without this, a
@@ -35,16 +35,17 @@ function initialSelectionMap(garments: InteractiveModelGarment[]): LookSelection
         // auto-fills any single-value non-Size option) could auto-complete
         // its "selection" and pass isLookAddValid despite being entirely
         // unavailable, the one case it exists to prevent.
-        included: !isProductSoldOut(garment.product.variants),
-        options: garment.product.options,
-        selections: getInitialSelections(garment.product.options),
+        included: !isProductSoldOut(product.variants),
+        options: product.options,
+        selections: getInitialSelections(product.options),
       },
     ]),
   );
 }
 
 // DESIGN_SYSTEM.md §31 — "Shop the Look": a floating/side panel listing
-// every garment currently on the illustration, each with its own variant
+// every piece in the chosen look (homepage looks ring, DECISIONS.md D-091;
+// originally the Interactive Model's garments, D-034), each with its own variant
 // controls, gated by one final ADD LOOK action. Implemented as a native
 // <dialog> — the exact mechanism SizeGuidePanel already established
 // (DECISIONS.md D-027): showModal()/close() via a ref + effect, side panel
@@ -57,10 +58,12 @@ function initialSelectionMap(garments: InteractiveModelGarment[]): LookSelection
 // checked. No cart exists yet (DECISIONS.md D-016), so ADD LOOK is a real,
 // correctly-disabled-gated button whose onClick is a deliberate no-op,
 // matching D-029's established precedent exactly.
-export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelProps) {
+// Selection state is initialized once per mount — the parent remounts the
+// panel (keyed by look) when a different look is chosen.
+export function ShopTheLookPanel({ products, lookLabel, open, onClose }: ShopTheLookPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectionMap, setSelectionMap] = useState<LookSelectionMap>(() =>
-    initialSelectionMap(garments),
+    initialSelectionMap(products),
   );
 
   useEffect(() => {
@@ -73,36 +76,32 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
     }
   }, [open]);
 
-  function handleToggleIncluded(region: string) {
+  function handleToggleIncluded(handle: string) {
     setSelectionMap((prev) => ({
       ...prev,
-      [region]: { ...prev[region], included: !prev[region].included },
+      [handle]: { ...prev[handle], included: !prev[handle].included },
     }));
   }
 
-  function handleOptionChange(region: string, optionName: string, value: string) {
-    // Product Behavior: "variant selection" (PROJECT.md §82) — see
-    // InteractiveModelExperience.tsx's identical wiring for the PDP/hover-
-    // panel call sites; `context: 'shop_the_look'` distinguishes this one.
-    const garment = garments.find((g) => g.region === region);
-    if (garment) {
-      trackEvent('variant_selected', {
-        item_id: garment.product.handle,
-        option_name: optionName,
-        option_value: value,
-        context: 'shop_the_look',
-      });
-    }
+  function handleOptionChange(handle: string, optionName: string, value: string) {
+    // Product Behavior: "variant selection" (PROJECT.md §82);
+    // `context: 'shop_the_look'` distinguishes this call site.
+    trackEvent('variant_selected', {
+      item_id: handle,
+      option_name: optionName,
+      option_value: value,
+      context: 'shop_the_look',
+    });
     setSelectionMap((prev) => ({
       ...prev,
-      [region]: {
-        ...prev[region],
-        selections: { ...prev[region].selections, [optionName]: value },
+      [handle]: {
+        ...prev[handle],
+        selections: { ...prev[handle].selections, [optionName]: value },
       },
     }));
   }
 
-  const canAddLook = isLookAddValid(garments.map((garment) => selectionMap[garment.region]));
+  const canAddLook = isLookAddValid(products.map((product) => selectionMap[product.handle]));
 
   return (
     <dialog
@@ -118,21 +117,26 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
     >
       <div className="flex items-center justify-between pb-6">
-        <h2 className="font-display text-heading-3 uppercase tracking-display">Shop the Look</h2>
+        <div className="flex flex-col gap-1">
+          <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+            {lookLabel}
+          </p>
+          <h2 className="font-display text-heading-3 uppercase tracking-display">Shop the Look</h2>
+        </div>
         <Button variant="secondary" onClick={onClose}>
           CLOSE
         </Button>
       </div>
 
       <div className="flex flex-col gap-6">
-        {garments.map((garment, index) => {
-          const item = selectionMap[garment.region];
-          const soldOut = isProductSoldOut(garment.product.variants);
-          const matchedVariant = findMatchingVariant(garment.product.variants, item.selections);
-          const displayPrice = matchedVariant?.price ?? garment.product.minPrice;
+        {products.map((product, index) => {
+          const item = selectionMap[product.handle];
+          const soldOut = isProductSoldOut(product.variants);
+          const matchedVariant = findMatchingVariant(product.variants, item.selections);
+          const displayPrice = matchedVariant?.price ?? product.minPrice;
           return (
             <div
-              key={garment.region}
+              key={product.handle}
               className="flex flex-col gap-3 border-b border-esque-elevated pb-6"
             >
               <label className="flex cursor-pointer items-start gap-3">
@@ -140,19 +144,19 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
                   type="checkbox"
                   checked={item.included}
                   disabled={soldOut}
-                  onChange={() => handleToggleIncluded(garment.region)}
+                  onChange={() => handleToggleIncluded(product.handle)}
                   // aria-label wins over the <label>'s own (much longer,
                   // multi-line) computed accessible name — DECISIONS.md
                   // D-037 — while the <label> wrapper is kept for its larger
                   // click target.
-                  aria-label={`Include ${garment.product.title}`}
+                  aria-label={`Include ${product.title}`}
                   className="mt-1 h-4 w-4 accent-esque-forest disabled:cursor-not-allowed disabled:opacity-40"
                 />
                 <div className="flex flex-col gap-1">
                   <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-                    {String(index + 1).padStart(2, '0')} — {garment.regionLabel}
+                    {String(index + 1).padStart(2, '0')} — {product.productType}
                   </p>
-                  <p className="text-product-name text-esque-text">{garment.product.title}</p>
+                  <p className="text-product-name text-esque-text">{product.title}</p>
                   {/* Per-row aria-live — DECISIONS.md D-066, resolving D-051's
                       deferred finding: each garment's price can change
                       independently (its own VariantPicker selection, below),
@@ -183,12 +187,12 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
               ) : (
                 item.included && (
                   <VariantPicker
-                    namePrefix={`look-${garment.product.handle}`}
-                    options={garment.product.options}
-                    variants={garment.product.variants}
+                    namePrefix={`look-${product.handle}`}
+                    options={product.options}
+                    variants={product.variants}
                     selections={item.selections}
                     onChange={(optionName, value) =>
-                      handleOptionChange(garment.region, optionName, value)
+                      handleOptionChange(product.handle, optionName, value)
                     }
                   />
                 )
@@ -208,7 +212,7 @@ export function ShopTheLookPanel({ garments, open, onClose }: ShopTheLookPanelPr
           // of helper copy (both of this panel's own variants, not just
           // one).
           <p className="text-utility text-esque-text">
-            {garments.every((garment) => !selectionMap[garment.region].included)
+            {products.every((product) => !selectionMap[product.handle].included)
               ? 'Select at least one piece to continue.'
               : 'Select all options to continue.'}
           </p>

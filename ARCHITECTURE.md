@@ -64,7 +64,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── catalog/                # Category listing: product card, grid, filter bar
 │   ├── product/                 # PDP: gallery, purchase panel, size guide, recently viewed
 │   ├── home/                    # Homepage editorial scenes (Scene 01-06; Scene 07 omitted, see DECISIONS.md D-032); home/closet/ holds Scene 01's 3D Collection Closet (D-089)
-│   ├── interactive-model/      # Signature hotspot feature — hotspots, product info panel, Shop the Look (ROADMAP Phase 8; Stage 4-5 motion/refinement deferred, see DECISIONS.md D-034)
+│   ├── looks/                   # Homepage Scene 02 "Shop the Look" ring + grid, and the Shop the Look panel (DECISIONS.md D-091; replaced the hotspot Interactive Model, D-034)
 │   ├── legal/                    # Shared draft-notice/section markup for the six /legal/* pages and /contact — see DECISIONS.md D-054
 │   └── navigation/              # Header, full-screen menu, cursor
 ├── lib/
@@ -72,7 +72,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── catalog/                 # Pure logic for category listing: taxonomy, filters, grid layout
 │   ├── product/                  # Pure logic for the PDP: variant matching, scarcity, recently viewed
 │   ├── home/                    # Homepage's one Shopify dependency (Selected Pieces), isolated — see DECISIONS.md D-033
-│   ├── interactive-model/      # The Interactive Model's Shopify dependency (getInteractiveModelLook) plus pure Shop the Look validity logic, isolated the same way — see DECISIONS.md D-034
+│   ├── looks/                   # Homepage looks fetch (getHomepageLooks), pure ring geometry, Shop the Look validity logic — see DECISIONS.md D-091
 │   ├── motion/                 # Shared, DOM-injectable capability checks (reduced motion, fine-pointer-and-hover, low-performance heuristic) for the custom cursor and homepage parallax — see DECISIONS.md D-040/D-041
 │   ├── legal/                     # LEGAL_PAGES — single source of truth for the six /legal/* routes, read by Footer.tsx and app/sitemap.ts — see DECISIONS.md D-054
 │   ├── klaviyo/                # Email list + password delivery
@@ -115,7 +115,7 @@ Per [PROJECT.md §10](./PROJECT.md#10-collections-vs-categories), **Category** a
 - **Category** (Tops → Hoodies) → Shopify **product type** + **tags**, or a second collection dimension used purely for taxonomy, not commerce grouping.
 - Products carry both: their category taxonomy and their collection membership, queried independently.
 
-Custom editorial content that doesn't fit Shopify's native product/collection fields (campaign statements, interactive-model hotspot coordinates, homepage scene copy) should use **Shopify metaobjects/metafields** first, per [PROJECT.md §81](./PROJECT.md#81-cms-requirements). Only introduce a separate CMS if that becomes insufficient.
+Custom editorial content that doesn't fit Shopify's native product/collection fields (campaign statements, homepage scene copy, curated looks) should use **Shopify metaobjects/metafields** first — the homepage looks already do: a `look` metaobject (title, image, product list), DECISIONS.md D-091 — per [PROJECT.md §81](./PROJECT.md#81-cms-requirements). Only introduce a separate CMS if that becomes insufficient.
 
 ## 6. Access Gate Architecture
 
@@ -173,5 +173,5 @@ These remain open until resolved (see [PROJECT.md §101](./PROJECT.md#101-items-
 
 - Exact CSS approach (Tailwind vs CSS Modules vs vanilla-extract) — pick at scaffold time, whichever is fastest to keep consistent with the token system.
 - Whether cart state uses Shopify's Cart API directly or a thin wrapper/store (Zustand/Context) around it.
-- Whether the interactive-model hotspot coordinates are authored as SVG masks checked into the repo per product, or stored as metafield JSON per product (affects whether non-engineers can adjust hotspots without a deploy).
+- ~~Whether the interactive-model hotspot coordinates are authored as SVG masks checked into the repo per product, or stored as metafield JSON per product.~~ Moot: the hotspot model was retired for the curated looks ring (DECISIONS.md D-091), whose content non-engineers already manage in Shopify admin as `look` metaobjects.
 </content>

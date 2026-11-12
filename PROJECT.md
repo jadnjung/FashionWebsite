@@ -516,6 +516,8 @@ Motion should react subtly to cursor and scroll.
 
 Signature Esque interactive model section.
 
+> **Built as a rotating "Shop the Look" ring (project-owner decision, 2026-11-12 — [DECISIONS.md D-091](./DECISIONS.md)).** Up to 9 curated looks, managed in Shopify admin, slowly circle the section with the nearest look largest. Visitors can spin it, step through it, pause it, or view all looks in a grid; choosing a look opens Shop the Look for its pieces. This replaces the single-photo hotspot model.
+
 **03 — Collection Story**
 
 Short editorial storytelling.

@@ -50,9 +50,9 @@ const ANALYTICS_EVENT_NAMES = [
   'category_nav_click',
   'search',
   // Interactive Experience
-  'hotspot_selected',
   'shop_the_look_open',
   'closet_item_select',
+  'look_select',
   // Access Funnel
   'request_access_open',
   'request_access_attempt',
@@ -111,11 +111,11 @@ interface EventPropertiesMap {
     item_id: string;
     option_name: string;
     option_value: string;
-    // Same shared VariantPicker renders on four real, distinct surfaces
+    // Same shared VariantPicker renders on three real, distinct surfaces
     // (DECISIONS.md D-036/D-060) — this distinguishes which one a given
-    // selection happened on, since all four are genuine, live interactions
-    // today.
-    context: 'pdp' | 'interactive_model' | 'shop_the_look' | 'quick_add';
+    // selection happened on. ('interactive_model' was a fourth until the
+    // homepage looks ring replaced it, D-091.)
+    context: 'pdp' | 'shop_the_look' | 'quick_add';
   };
   category_nav_click: {
     category: string;
@@ -151,17 +151,18 @@ interface EventPropertiesMap {
     search_term: string;
     result_count: number;
   };
-  hotspot_selected: {
-    region: string;
-    item_id: string;
-    item_name: string;
-  };
   shop_the_look_open: NoProperties;
   // Homepage Collection Closet (DECISIONS.md D-089): a garment pulled off
   // the rod into the focused front view, by pointer or keyboard.
   closet_item_select: {
     item_id: string;
     item_name: string;
+  };
+  // Homepage "Shop the Look" ring (DECISIONS.md D-091): a look chosen
+  // from the ring or the all-looks grid, opening its Shop the Look panel.
+  // Replaces the retired Interactive Model's hotspot_selected (D-034).
+  look_select: {
+    look_handle: string;
   };
   request_access_open: NoProperties;
   request_access_attempt: NoProperties;

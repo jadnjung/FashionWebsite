@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  isLookAddValid,
-  type LookItemSelectionState,
-} from '@/lib/interactive-model/look-selection';
+import { isLookAddValid, type LookItemSelectionState } from '@/lib/looks/look-selection';
 import type { ProductOption } from '@/lib/shopify/products';
 
 const SIZE_OPTION: ProductOption[] = [{ id: 'opt1', name: 'Size', values: ['S', 'M', 'L'] }];

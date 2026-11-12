@@ -10,12 +10,13 @@ A quick orientation for a new session; the phase checklists below and [DECISIONS
 
 **Where things stand:**
 - **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. **No real Shopify store or Vercel project exists yet**, so cart, checkout, accounts and deployment remain blocked (D-016).
-- **Latest work:** the homepage hero is a **3D Collection Closet** (D-089), plus a CI fix (D-090).
+- **Latest work:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
 - **CI:** two Playwright suites (no-store and Demo Mode), plus format, lint, typecheck, unit tests and build. It was red from 2026-10-27 until D-090 fixed it.
 
 **Owner tasks (not code):**
 - Create the Shopify store and the Vercel project (Phase 0).
 - Upload a `.glb` 3D model as product media for each Collection 001 piece. The closet uses it automatically.
+- Create the "look" metaobject definition and up to 9 looks for the Shop the Look ring. Steps are in DECISIONS.md D-091; the definition needs Storefront API public-read access.
 - Optionally, set color swatches on each product's Color option, so placeholder fabric colors are exact rather than picked from photos.
 - Resolve the Open Product Decisions at the bottom of this file.
 
@@ -89,6 +90,8 @@ A quick orientation for a new session; the phase checklists below and [DECISIONS
 - [ ] Scene 07: Archive Preview (minimal/hidden until Collection 002 exists) — omitted this pass; no past collection exists yet to preview, `/archive` doesn't exist until Phase 11, and DESIGN_SYSTEM.md §58's own mobile homepage sequence already excludes it — matches this line's own "minimal/hidden" allowance — see DECISIONS.md D-032
 
 ## Phase 8 — Interactive Model (signature feature)
+
+**Superseded, 2026-11-12:** the homepage's Scene 02 is now a rotating ring of up to 9 curated looks, each opening Shop the Look (project-owner decision, [DECISIONS.md D-091](./DECISIONS.md)). The hotspot code below is retired; it stays in git history. The Shop the Look panel lives on in `components/looks/`. The checkboxes below are the historical record of what this phase built.
 
 - [x] Stage 1: hotspots work (silhouette-based hit regions, not rectangles) — two real `<button>` elements, percentage-based `clip-path: polygon()` (silhouette-shaped, not rectangular; hit-region and visible shape are identical at every viewport width), each bound to one real Shopify product via the existing product-type query mechanism (D-023); built against a hand-authored placeholder illustration — see DECISIONS.md D-034/D-035. D-035's "clicking toggles the panel" description was corrected by ROADMAP.md Phase 9's D-043 (a mouse click could never actually reach the toggle-closed branch — see below); D-039 additionally resolved D-034/D-035's own deferred click-vs-navigate question by wiring the panel's `VIEW PRODUCT` link to a shared-element transition rather than changing hotspot activation itself.
 - [x] Stage 2: product info panel works (name, category, price, colors, sizes, View/Quick Add) — real, live product data (`getProduct`), real variant selection (shared `VariantPicker`, D-036) with live availability gating, `VIEW PRODUCT` (real navigation, now shared-transition-enhanced per Phase 9's D-039) and `QUICK ADD` (real, disabled-until-complete, no-op `onClick` — no cart exists yet, D-016/D-029). An independent review pass found and this phase fixed a real keyboard-reachability defect and a Shop the Look sold-out gap before completion — see DECISIONS.md D-037

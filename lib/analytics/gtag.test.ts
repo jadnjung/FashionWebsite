@@ -81,11 +81,7 @@ describe('trackEvent', () => {
         context: 'pdp',
       });
       trackEvent('category_nav_click', { category: 'Tops', href: '/tops' });
-      trackEvent('hotspot_selected', {
-        region: 'top',
-        item_id: 'hoodie-01',
-        item_name: 'Hoodie 01',
-      });
+      trackEvent('look_select', { look_handle: 'look-01' });
       trackEvent('shop_the_look_open', {});
       trackEvent('request_access_open', {});
       trackEvent('request_access_attempt', {});

@@ -98,7 +98,52 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
 
   const product = data?.product;
   if (!product) return null;
+  return toProductDetail(product);
+}
 
+/**
+ * The product fields GET_PRODUCT_QUERY selects, as returned by any query
+ * that selects the same set (GET_LOOKS_QUERY's product references do).
+ */
+export interface ProductDetailNode {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  productType: string;
+  tags: string[];
+  priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
+  images: {
+    edges: ReadonlyArray<{
+      node: {
+        url: string;
+        altText?: string | null;
+        width?: number | null;
+        height?: number | null;
+      };
+    }>;
+  };
+  options: ReadonlyArray<{
+    id: string;
+    name: string;
+    optionValues: ReadonlyArray<{ id: string; name: string }>;
+  }>;
+  variants: {
+    edges: ReadonlyArray<{
+      node: {
+        id: string;
+        title: string;
+        availableForSale: boolean;
+        quantityAvailable?: number | null;
+        price: { amount: string; currencyCode: string };
+        selectedOptions: Array<{ name: string; value: string }>;
+      };
+    }>;
+  };
+}
+
+/** Maps a Storefront product node into this codebase's ProductDetail shape. */
+export function toProductDetail(product: ProductDetailNode): ProductDetail {
   return {
     id: product.id,
     handle: product.handle,

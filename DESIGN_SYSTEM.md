@@ -512,6 +512,8 @@ Total: approximately 600–900 ms. No multi-second splash screen.
 
 ## 29. Homepage — Scene 02: Interactive Model
 
+> **Built instead as the "Shop the Look" ring ([DECISIONS.md D-091](./DECISIONS.md)):** up to 9 curated looks (Shopify "look" metaobjects: photo + products) circle on a tilted ring, the nearest largest, with a 3×3 "all looks" grid; choosing a look opens §31's Shop the Look panel. §29–30's single photograph with hotspots is retired.
+
 One large still model photograph. Copy: `LOOK 01` or collection-specific equivalent.
 
 Hovering a garment (e.g. hoodie):

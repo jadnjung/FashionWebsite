@@ -1666,3 +1666,57 @@ Independent re-verification before integration surfaced one further gap in trigg
 - Main-suite search and catalog specs against a no-store production build: 130/130 across all four projects, plus search ×3 repeats on Chromium (45/45).
 - CI's own result on push is the final check.
 
+## D-091 — Homepage Scene 02 becomes a rotating ring of up to 9 curated looks ("Shop the Look"), replacing the single-look Interactive Model (D-034); looks are Shopify "look" metaobjects
+
+**Request** (project owner, decided through a Q&A on 2026-11-12):
+- **Nine looks, slowly circling,** to intrigue the visitor. The circle is seen from slightly above rather than from directly above, so it's clear there are more looks. The look nearest the viewer is biggest.
+- **A button to see all looks at once** instead of waiting for the rotation.
+
+Owner choices:
+- **Clicking a look opens the existing Shop the Look panel** with that look's pieces.
+- **Looks are curated in Shopify admin.**
+- **Drag/swipe plus arrow buttons,** alongside the auto-rotation.
+- **The all-looks view is a 3×3 grid.**
+- **The ring replaces the hotspot experience.**
+
+**Decision:**
+- **Data.** `GET_LOOKS_QUERY` (`lib/shopify/queries/looks.ts`) reads `metaobjects(type: "look", first: 9)` with `field(key:)` aliases:
+  - `title`
+  - `image`: file reference → `MediaImage.image`
+  - `products`: product-reference list, with the same product fields as `GET_PRODUCT_QUERY`, so the panel's variant pickers need no further requests
+
+  `getLooks` (`lib/shopify/looks.ts`) maps the result through `toProductDetail`, which was extracted from `getProduct` so both share one mapper. It drops unpublished product references and looks left with no products, and falls back to the first product's image when a look has no photo.
+
+  `getHomepageLooks` (`lib/looks/looks.ts`) isolates failures, as D-033 does (logged, resolves to `[]`). With no looks, `LooksPlaceholder` (the former Interactive Model placeholder, unchanged copy) shows instead.
+- **Owner setup.** In Shopify admin, open Content → Metaobjects → add a definition with type `look`:
+  - fields `title` (single line text), `image` (file) and `products` (product list)
+  - Storefront API access: public read
+
+  Then create up to 9 entries, which appear in Shopify's default (creation) order. Note that the metaobjects query needs that public-read access, or it returns nothing.
+- **Demo Mode:** nine fixture looks (`getPreviewLooks`), built only from the eight existing licensed preview photos (one reused) and the six Collection 001 fixtures. Nothing new was downloaded.
+- **Ring:** `components/looks/LooksExperience.tsx`, in **CSS 3D, not WebGL.** The looks are flat photographs, so `perspective` + `preserve-3d` gives real depth for no added JavaScript, unlike the closet's three.js (D-089), which isn't loaded here.
+  - The ring is tilted −20° (seen from slightly above). Each card is placed on the ring, then turned back to face the viewer, so every look stays readable as it circles and the far looks visibly ride small and dimmed behind.
+  - Scale and dimming come from closeness to the front (`lib/looks/ring.ts`, pure and unit-tested), on top of perspective.
+  - Stage height is computed from the perspective-projected extents of the front and back cards, so nothing is clipped and there's no dead band.
+  - A `requestAnimationFrame` loop writes transforms directly. React re-renders only when the front look changes. The loop stops while off-screen.
+  - **Auto-rotation:** about 6 s per look. It pauses on hover and resumes 2.5 s after the last interaction.
+  - **Drag/swipe** spins the ring and settles on the nearest look (`touch-action: pan-y`). **PREV/NEXT** step to the next look. Focusing a card turns the ring to it.
+  - Clicking a card (not a drag) brings it forward and opens Shop the Look.
+- **Accessibility:**
+  - A visible PAUSE/PLAY control (WCAG 2.2.2: content moving automatically for more than 5 s needs one).
+  - Every look is a real `<button>` labelled with its name and piece count.
+  - A polite live region announces the front look after PREV/NEXT.
+  - **Reduced motion** starts on the still grid, with no auto-rotation, and ring moves are instant.
+- **Grid:** "VIEW ALL LOOKS" / "VIEW ROTATION" toggles a 3×3 grid (2 columns below `md`), with a short fade (`.esque-looks-fade`). With fewer than 4 looks, only the grid shows, because a ring would read as broken.
+- **Panel.** `ShopTheLookPanel` moved to `components/looks/` and was generalized from hotspot regions to a look's products, keyed by product handle and labelled by product type, with the look's name above its title. It is remounted per look so selections reset. Native `<dialog>` behaviour, the variant pickers and the disabled-until-complete ADD LOOK (no cart yet, D-016) are unchanged. Closing keeps it mounted, so focus returns to the look that opened it.
+- **Analytics:** new `look_select` (`look_handle`); `shop_the_look_open` kept. `hotspot_selected` and `variant_selected`'s `'interactive_model'` context were removed, since both had lost their only source.
+- **Retired** (kept in git history): `InteractiveModel`, `InteractiveModelExperience`, `SilhouetteIllustration` (+ test), and `getInteractiveModelLook` (+ test). This supersedes ROADMAP Phase 8's hotspot stages and the deferred Stage 4/5 photographic treatments (D-034).
+
+**Verification:**
+- **Unit:** ring math (8), `getLooks` (5), `getHomepageLooks` (2), analytics; full suite 458/458.
+- **Demo suite:** new `tests/e2e-demo/looks.spec.ts`: 9 looks; PAUSE/PLAY; PREV/NEXT announcement; grid toggle; Look 04 opening Shop the Look with its 3 pieces and closing on Escape; reduced motion starting on the grid; no page errors. 30/30 with the existing tests.
+- **Main suite:** homepage tests updated (section name "Shop the Look", the ring not mounted without a store). 603 passed against a no-store production build; the only failures were the known production-only WebKit prefetch artifact in `legal.spec.ts`, which CI's dev server doesn't hit.
+- **Screenshots** of the ring (two moments, confirming rotation), the grid, the open panel, and a 375px phone (no horizontal overflow, labels on one line).
+
+**Not verified:** real curated looks from a store (none exists yet), physical devices and Safari, and real-device frame rate.
+

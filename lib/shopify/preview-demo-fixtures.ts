@@ -21,6 +21,7 @@
  * several of these photos.
  */
 import type { CollectionDetail, CollectionSummary } from '@/lib/shopify/collections';
+import type { Look } from '@/lib/shopify/looks';
 import type { ProductDetail, ProductListItem, ProductSummary } from '@/lib/shopify/products';
 
 const IMG = (file: string, w: number, h: number) => ({
@@ -368,4 +369,98 @@ export function getPreviewProductListItemsByCollection(handle: string): ProductL
   if (handle === 'collection-001') return PREVIEW_PRODUCTS;
   if (handle === 'collection-002') return PREVIEW_UPCOMING_PRODUCTS;
   return null;
+}
+
+// Nine sample looks for the homepage "Shop the Look" ring (DECISIONS.md
+// D-091), built only from assets and products already in this file: the
+// eight licensed preview photographs (one used twice) and the six
+// Collection 001 fixture products grouped into plausible outfits. Real
+// looks are curated in Shopify admin as "look" metaobjects.
+const PREVIEW_LOOK_DEFINITIONS: ReadonlyArray<{
+  image: string;
+  width: number;
+  height: number;
+  products: readonly string[];
+}> = [
+  {
+    image: 'model-full.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-fluid-knit-long-sleeve', 'preview-relaxed-linen-trouser'],
+  },
+  {
+    image: 'product-3.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-featherweight-crewneck', 'preview-tailored-trouser-set'],
+  },
+  {
+    image: 'product-6.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-silk-cami-layer', 'preview-relaxed-linen-trouser'],
+  },
+  {
+    image: 'product-2.jpg',
+    width: 900,
+    height: 1125,
+    products: [
+      'preview-velvet-evening-jacket',
+      'preview-silk-cami-layer',
+      'preview-tailored-trouser-set',
+    ],
+  },
+  {
+    image: 'product-5.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-fluid-knit-long-sleeve', 'preview-tailored-trouser-set'],
+  },
+  {
+    image: 'hero.jpg',
+    width: 1920,
+    height: 1080,
+    products: ['preview-velvet-evening-jacket', 'preview-relaxed-linen-trouser'],
+  },
+  {
+    image: 'product-4.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-tailored-trouser-set', 'preview-featherweight-crewneck'],
+  },
+  {
+    image: 'product-1.jpg',
+    width: 900,
+    height: 1125,
+    products: ['preview-relaxed-linen-trouser', 'preview-silk-cami-layer'],
+  },
+  {
+    image: 'model-full.jpg',
+    width: 900,
+    height: 1125,
+    products: [
+      'preview-featherweight-crewneck',
+      'preview-velvet-evening-jacket',
+      'preview-relaxed-linen-trouser',
+    ],
+  },
+];
+
+export function getPreviewLooks(): Look[] {
+  return PREVIEW_LOOK_DEFINITIONS.map((definition, index) => {
+    const number = String(index + 1).padStart(2, '0');
+    return {
+      handle: `preview-look-${number}`,
+      title: `Look ${number}`,
+      image: {
+        url: `/preview-demo/${definition.image}`,
+        altText: null,
+        width: definition.width,
+        height: definition.height,
+      },
+      products: definition.products
+        .map((handle) => getPreviewProductDetail(handle))
+        .filter((product): product is ProductDetail => product !== null),
+    };
+  });
 }
