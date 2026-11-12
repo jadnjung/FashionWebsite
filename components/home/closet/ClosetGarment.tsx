@@ -1,7 +1,6 @@
 'use client';
 
-import { useLoader } from '@react-three/fiber';
-import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
+import { Component, Suspense, use, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Box3,
   CatmullRomCurve3,
@@ -16,7 +15,7 @@ import {
   type DataTexture,
   type Object3D,
 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   createClothGarment,
   createWeaveNormalMap,
@@ -26,6 +25,7 @@ import { getGarmentTextureUrl, type PlaceholderShape } from '@/lib/home/closet-s
 import { fitModelToHanger } from '@/lib/home/closet-model';
 import { pickDominantColor, rgbToHex } from '@/lib/home/garment-color';
 import { seedFromString } from '@/lib/home/garment-drape';
+import { createSafeLoader } from '@/lib/home/safe-loader';
 import type { ClosetProduct } from '@/lib/shopify/products';
 
 // Where the garment's top edge sits below the rod (scene units) — the
@@ -39,6 +39,22 @@ const MODEL_MAX_HEIGHT = 1.2;
 const FALLBACK_FABRIC = '#3a3936';
 // Photos are downscaled to this many pixels square before color picking.
 const COLOR_SAMPLE_SIZE = 48;
+
+// An asset that fails to download or parse is an expected, handled case —
+// the garment falls back — so it's logged, never thrown into the canvas
+// (where React Three Fiber would report it as an uncaught error; see
+// lib/home/safe-loader.ts).
+function logAssetFailure(url: string, error: unknown) {
+  console.error(
+    `[home] Collection Closet: asset "${url}" failed to load, using a fallback.`,
+    error,
+  );
+}
+const loadModel = createSafeLoader<GLTF>((url) => new GLTFLoader().loadAsync(url), logAssetFailure);
+const loadPhoto = createSafeLoader<HTMLImageElement>(
+  (url) => new ImageLoader().loadAsync(url),
+  logAssetFailure,
+);
 
 const WEAVE_NORMAL_SCALE = new Vector2(0.25, 0.25);
 let sharedWeave: DataTexture | null = null;
@@ -73,7 +89,7 @@ export function ClosetGarment({ product, shape }: ClosetGarmentProps) {
       {product.modelUrl ? (
         <GarmentErrorBoundary fallback={placeholder} label={product.handle}>
           <Suspense fallback={null}>
-            <ModelGarment url={product.modelUrl} />
+            <ModelGarment url={product.modelUrl} fallback={placeholder} />
           </Suspense>
         </GarmentErrorBoundary>
       ) : (
@@ -83,13 +99,14 @@ export function ClosetGarment({ product, shape }: ClosetGarmentProps) {
   );
 }
 
-function ModelGarment({ url }: { url: string }) {
-  const gltf = useLoader(GLTFLoader, url);
+function ModelGarment({ url, fallback }: { url: string; fallback: ReactNode }) {
+  const gltf = use(loadModel(url));
   // Fitted once, on a fresh clone measured in its own coordinates — before
   // it is mounted under the rail, whose transform would otherwise leak into
-  // the bounding box (useLoader also caches by URL, so the shared scene is
-  // never mutated).
-  const model = useMemo<Object3D>(() => {
+  // the bounding box (the loaded scene is cached by URL, so the shared
+  // original is never mutated).
+  const model = useMemo<Object3D | null>(() => {
+    if (!gltf) return null;
     const content = gltf.scene.clone(true);
     content.updateMatrixWorld(true);
     const box = new Box3().setFromObject(content);
@@ -111,7 +128,7 @@ function ModelGarment({ url }: { url: string }) {
     return wrapper;
   }, [gltf]);
 
-  return <primitive object={model} />;
+  return model ? <primitive object={model} /> : fallback;
 }
 
 /**
@@ -126,10 +143,10 @@ function PlaceholderGarment({ product, shape }: ClosetGarmentProps) {
   const imageUrl = product.image ? getGarmentTextureUrl(product.image.url) : null;
   const neutral = <ClothGarment shape={shape} color={FALLBACK_FABRIC} seed={seed} />;
   if (!imageUrl) return neutral;
-  // A photo that fails to load degrades to the neutral fabric. No Suspense
-  // boundary of its own: photos suspend the closet's outer boundary, so the
-  // canvas fades in with every garment already in its color (a slow GLB,
-  // by contrast, pops in on its own).
+  // A photo that fails to load degrades to the neutral fabric (inside
+  // PhotoColoredGarment). No Suspense boundary of its own: photos suspend
+  // the closet's outer boundary, so the canvas fades in with every garment
+  // already in its color (a slow GLB, by contrast, pops in on its own).
   return (
     <GarmentErrorBoundary fallback={neutral} label={product.handle}>
       <PhotoColoredGarment imageUrl={imageUrl} shape={shape} seed={seed} />
@@ -146,8 +163,8 @@ function PhotoColoredGarment({
   shape: PlaceholderShape;
   seed: number;
 }) {
-  const image = useLoader(ImageLoader, imageUrl);
-  const color = useMemo(() => getPhotoFabricColor(image), [image]);
+  const image = use(loadPhoto(imageUrl));
+  const color = useMemo(() => (image ? getPhotoFabricColor(image) : FALLBACK_FABRIC), [image]);
   return <ClothGarment shape={shape} color={color} seed={seed} />;
 }
 
@@ -281,8 +298,13 @@ interface GarmentErrorBoundaryProps {
 }
 
 /**
- * A broken or unreachable GLB must never take the whole closet down — the
- * failing garment alone falls back to its placeholder.
+ * Last line of defence for an *unexpected* rendering error in one garment
+ * (a model that loads but breaks while being fitted, say): that garment
+ * alone falls back, instead of the whole closet going down. Expected
+ * failures — a model or photo that can't be fetched — never reach here;
+ * the safe loaders above resolve them to a fallback. Errors that do reach
+ * here are genuine bugs, so React Three Fiber reporting them as errors is
+ * the right outcome.
  */
 class GarmentErrorBoundary extends Component<GarmentErrorBoundaryProps, { failed: boolean }> {
   state = { failed: false };
@@ -293,7 +315,7 @@ class GarmentErrorBoundary extends Component<GarmentErrorBoundaryProps, { failed
 
   componentDidCatch(error: unknown) {
     console.error(
-      `[home] Collection Closet: asset for "${this.props.label}" failed to load, using a fallback.`,
+      `[home] Collection Closet: "${this.props.label}" failed to render, using a fallback.`,
       error,
     );
   }
