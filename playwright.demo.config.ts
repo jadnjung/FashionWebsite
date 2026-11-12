@@ -47,6 +47,11 @@ export default defineConfig({
       // real Klaviyo credentials turn a test run into real list signups.
       KLAVIYO_PRIVATE_API_KEY: '',
       KLAVIYO_LIST_ID: '',
+      // Pinned empty too: unlike the main suite (where drop routes hit the
+      // unconfigured-store error boundary first), Demo Mode renders a real
+      // upcoming-drop gate, so a developer's real early-access code must
+      // never be live during a test run.
+      ESQUE_DROP_ACCESS_CODE: '',
     },
   },
 });

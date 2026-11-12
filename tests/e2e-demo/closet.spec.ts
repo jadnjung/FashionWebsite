@@ -17,9 +17,12 @@ const PIECES = [
 async function gotoReadyCloset(page: Page) {
   await page.goto('/');
   const hero = page.getByRole('region', { name: 'Collection Hero' });
-  // The canvas fades in only once every garment has loaded — the closet's
-  // own "ready" signal (needs WebGL, which headless Chromium provides).
-  await expect(hero.locator('[data-closet] > [aria-hidden="true"]')).toHaveClass(/opacity-100/, {
+  // Waits for the closet to mount (it only does when WebGL is available),
+  // not for its canvas fade-in: on GPU-less CI runners everything is
+  // software-rendered and the first frame (shader compiles, environment
+  // lighting) can take well over 30s, while the closet's buttons, state and
+  // info panel — what these tests assert — work from the moment it mounts.
+  await expect(hero.locator('[data-closet] li button')).toHaveCount(PIECES.length, {
     timeout: 30_000,
   });
   return hero;

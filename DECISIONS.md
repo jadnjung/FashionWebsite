@@ -1657,6 +1657,8 @@ Independent re-verification before integration surfaced one further gap in trigg
   - zero uncaught page errors
 - **Flaky search tests:** the failing attempt's log showed `locator.fill` timing out waiting for the searchbox. SEARCH had been clicked before hydration attached its handler, so the dialog never opened (the same race class as D-076). An `openSearch` helper in `tests/e2e/search.spec.ts` clicks and retries until the dialog is visible. Retrying stops the moment it opens, so no click is ever repeated on an open dialog. All 16 trigger clicks use it.
 
+**Follow-up, after the first CI run:** the main suite went green, but all 10 closet tests failed on CI only. The closet mounted (its canvas was created), but never reached its canvas fade-in within 30 s: GPU-less CI runners software-render everything, and the first frame's shader compiles and environment-lighting prefilter are very slow there. The tests now wait for the closet to mount (its six piece buttons) rather than for the fade-in. Everything they assert (buttons, selection state, info panel, focus, page errors) works from mount, independent of render speed. Visual rendering itself stays verified by screenshots, not by CI. Also pinned `ESQUE_DROP_ACCESS_CODE: ''` in the Demo suite's server env (automated security review): unlike the no-store suite, Demo Mode renders a real upcoming-drop gate, so a developer's real code must never be live during a test run.
+
 **Local caveat:** `reuseExistingServer` reuses whatever dev server is on :3000. The Demo suite expects it to be running Demo Mode; the main suite expects it not to be. Stop the dev server, or match its mode, before running either locally.
 
 **Verification:**
