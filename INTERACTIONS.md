@@ -115,8 +115,8 @@ Subtle mouse movement creates depth between typography, model, and background on
 
 **Scene 01 — 3D Collection Closet** ([DECISIONS.md D-089](./DECISIONS.md)). The current collection hangs on a 3D clothes rail (three.js + React Three Fiber; `components/home/closet/`):
 
-- **On the rail:** pieces hang mostly side-on (yaw about −0.95 rad), closely spaced, with a gentle per-piece sway.
-- **Hover:** the piece eases to scale **1.06** and turns partly toward the viewer; the cursor label is `VIEW`. This is a deliberate, owner-requested exception to §8's 1.01–1.03 hover-scale guidance: at 1.03, a garment about 90px wide grows under 3px, too little to read as interactive.
+- **On the rail:** pieces hang mostly side-on (yaw about −0.95 rad), closely spaced, with a gentle per-piece sway (about ±1.4°).
+- **Hover:** the piece eases to scale **1.06**, turns partly toward the viewer, and swings livelier, as if brushed by a hand (about ±5°, roughly twice as fast, eased in and out so it never jumps); the cursor label is `VIEW`. This is a deliberate, owner-requested exception to §8's 1.01–1.03 hover-scale guidance: at 1.03, a garment about 90px wide grows under 3px, too little to read as interactive.
 - **Click / tap / Enter:** the piece leaves the rail to a front-center view (left of center beside the info panel at `lg`+, above a bottom panel below `lg`). A dark scrim dims the rail, and the headline steps aside.
 - **Rotation:** auto-rotates at about 0.45 rad/s. Dragging rotates it by hand (cursor label `DRAG`); auto-rotate resumes about 2 s after the last drag.
 - **Dismiss:** click empty space, the dimmed rail, anywhere outside the closet, CLOSE, or Escape (focus returns to that piece's button).

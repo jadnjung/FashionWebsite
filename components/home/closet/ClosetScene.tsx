@@ -31,6 +31,14 @@ const RECEDED_Z = -1.4;
 const ROD_YAW = -0.95;
 const HOVER_YAW = -0.5;
 const HOVER_SCALE = 1.06;
+// Resting sway on the rail, and the livelier swing a hovered garment eases
+// into — as if brushed by a hand. Amplitude in radians, speed in rad/s.
+const SWAY_AMPLITUDE = 0.025;
+const SWAY_SPEED = 0.8;
+const HOVER_SWAY_AMPLITUDE = 0.09;
+const HOVER_SWAY_SPEED = 1.7;
+// How quickly sway strength changes between the two (lower = gentler).
+const SWAY_EASE = 3;
 const DRAG_THRESHOLD_PX = 6;
 // Damping rate for every eased transition (higher = faster).
 const EASE = 6;
@@ -168,6 +176,10 @@ function ClosetItem({
   onDismiss,
 }: ClosetItemProps) {
   const group = useRef<Group>(null);
+  // Accumulated sway phase and current strength, eased between the resting
+  // and hovered values so the swing never jumps when the cursor arrives or
+  // leaves (recomputing from the clock at a new speed would).
+  const sway = useRef({ phase: index * 1.7, amplitude: SWAY_AMPLITUDE, speed: SWAY_SPEED });
   const shape = useMemo(() => getPlaceholderShape(product.productType), [product.productType]);
   const garmentHeight = getGarmentHeight(product, shape);
   const { wide, aspect, rodY } = layout;
@@ -176,7 +188,7 @@ function ClosetItem({
   const anySelected = state.selected !== null;
   const isHovered = state.hovered === product.handle && !anySelected;
 
-  useFrame(({ camera, clock }, delta) => {
+  useFrame(({ camera }, delta) => {
     const node = group.current;
     if (!node) return;
     const damp = (from: number, to: number) =>
@@ -223,8 +235,22 @@ function ClosetItem({
       const baseYaw = isHovered ? HOVER_YAW : ROD_YAW;
       const turns = Math.round((node.rotation.y - baseYaw) / (Math.PI * 2));
       node.rotation.y = damp(node.rotation.y, baseYaw + turns * Math.PI * 2);
-      const sway = reducedMotion ? 0 : Math.sin(clock.elapsedTime * 0.8 + index * 1.7) * 0.025;
-      node.rotation.z = damp(node.rotation.z, sway);
+      const swing = sway.current;
+      swing.amplitude = MathUtils.damp(
+        swing.amplitude,
+        isHovered ? HOVER_SWAY_AMPLITUDE : SWAY_AMPLITUDE,
+        SWAY_EASE,
+        delta,
+      );
+      swing.speed = MathUtils.damp(
+        swing.speed,
+        isHovered ? HOVER_SWAY_SPEED : SWAY_SPEED,
+        SWAY_EASE,
+        delta,
+      );
+      swing.phase += swing.speed * delta;
+      const tilt = reducedMotion ? 0 : Math.sin(swing.phase) * swing.amplitude;
+      node.rotation.z = damp(node.rotation.z, tilt);
     }
   });
 
