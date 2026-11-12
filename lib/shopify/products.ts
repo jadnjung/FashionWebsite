@@ -1,5 +1,6 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import {
+  GET_CLOSET_PRODUCTS_QUERY,
   GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY,
   GET_PREDICTIVE_SEARCH_QUERY,
   GET_PRODUCT_QUERY,
@@ -255,6 +256,96 @@ export async function getProductListItemsByCollection(
     hasNextPage: collection.products.pageInfo.hasNextPage,
     endCursor: collection.products.pageInfo.endCursor ?? null,
   };
+}
+
+export interface ClosetProduct {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  productType: string;
+  minPrice: { amount: string; currencyCode: string };
+  image: ProductImage | null;
+  /** First GLB source among the product's Model3d media, or null when the product has no 3D model yet. */
+  modelUrl: string | null;
+}
+
+/**
+ * Fetches a collection's products for the homepage Collection Closet
+ * (DECISIONS.md D-089): the ProductSummary-style fields the closet's info
+ * panel needs plus the product's first GLB model URL, if Shopify has one.
+ * Same null-on-missing-collection / throw-on-real-error contract as
+ * getProductsByCollection.
+ */
+export async function getClosetProducts(
+  handle: string,
+  first = 24,
+): Promise<ClosetProduct[] | null> {
+  // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
+  // No fixture has a 3D model, so every Demo Mode piece renders as a
+  // placeholder garment.
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const products = getPreviewProductsByCollection(handle);
+    if (!products) return null;
+    return products.map((product) => ({
+      id: product.id,
+      handle: product.handle,
+      title: product.title,
+      description: product.description,
+      productType: product.productType,
+      minPrice: product.minPrice,
+      image: product.image,
+      modelUrl: null,
+    }));
+  }
+  const client = getStorefrontClient();
+  const { data, errors } = await client.request(GET_CLOSET_PRODUCTS_QUERY, {
+    variables: { handle, first },
+  });
+
+  if (errors) {
+    throw toRequestError(errors);
+  }
+
+  const collection = data?.collection;
+  if (!collection) return null;
+
+  return collection.products.edges.map(({ node }) => {
+    const image = node.images.edges[0]?.node;
+    return {
+      id: node.id,
+      handle: node.handle,
+      title: node.title,
+      description: node.description,
+      productType: node.productType,
+      minPrice: node.priceRange.minVariantPrice,
+      image: image
+        ? {
+            url: image.url,
+            altText: image.altText ?? null,
+            width: image.width ?? null,
+            height: image.height ?? null,
+          }
+        : null,
+      modelUrl: findGlbSourceUrl(node.media.edges.map(({ node: media }) => media)),
+    };
+  });
+}
+
+/**
+ * `media` is a union (MediaImage | Video | ExternalVideo | Model3d); the
+ * query's `... on Model3d` fragment means every non-model node arrives as
+ * an empty object at runtime, even though the generated type declares
+ * `sources` unconditionally — hence the defensive `?? []`.
+ */
+function findGlbSourceUrl(
+  media: ReadonlyArray<{ sources?: ReadonlyArray<{ url: string; format: string }> }>,
+): string | null {
+  for (const node of media) {
+    const glb = (node.sources ?? []).find((source) => source.format.toLowerCase() === 'glb');
+    if (glb) return glb.url;
+  }
+  return null;
 }
 
 export interface GetProductsOptions {

@@ -1496,3 +1496,85 @@ Independent re-verification before integration surfaced one further gap in trigg
 **Reason:** the single-product case is a real, reachable state (D-033: Selected Pieces renders whatever Shopify has, including fewer than 3 products) with no spec basis for leaving a quarter of the row empty; the `sizes` correction and the `aria-labelledby` cleanup are both small, low-risk, same-file companions bundled into the one edit rather than deferred, per the task's own instruction.
 
 ---
+
+## D-089 — Homepage Scene 01 becomes a 3D Collection Closet (three.js + React Three Fiber); real garments come from Shopify Model3d (GLB) media, with photo-faced placeholder garments until those exist
+
+**Request** (project owner, confirmed through a Q&A before implementation): replace the hero's large campaign image with a 3D closet rod holding every piece of the current collection. Hovering a garment makes it slightly bigger. Clicking pulls it off the rod into a front view, beside an info panel (name, price, short description, View Product). The piece slowly auto-rotates and can be dragged to rotate. Clicking outside returns it to the rod. Garments must be 3D both on the rod and when shown. Owner choices:
+- **3D source:** real GLB models.
+- **Placeholders:** generic 3D garment shapes with the product photo on the front, until models exist.
+- **Engine:** three.js + React Three Fiber.
+- **Phones:** swipe along the rod.
+- **Rod contents:** the whole current collection.
+- **Hero copy:** keep the headline and ENTER COLLECTION link over the closet.
+
+**Decision:**
+
+- **Data.** `GET_CLOSET_PRODUCTS_QUERY` / `getClosetProducts` (`lib/shopify/`) read the collection's products plus `media { ... on Model3d { sources { url format } } }`. The first `glb` source becomes `modelUrl`.
+  - It is a separate query, so Archive's `getProductsByCollection` doesn't pay for `media`.
+  - `lib/home/closet.ts`'s `getClosetCollection` picks the first collection `getDropPhase` (D-064) classifies as `current`. The closet can therefore never show an upcoming drop's withheld pieces early.
+  - It follows `getSelectedPieces`'s isolation contract (D-033): any failure is logged and resolves to `null`.
+  - Demo Mode returns the six Collection 001 fixtures with `modelUrl: null`.
+- **Owner workflow for real models.** Upload a `.glb` file as a 3D model in the product's Media in Shopify admin. The closet uses it automatically, with no code change or deploy.
+  - Models are normalized to a fixed bounding box under the hanger, so their authored scale doesn't matter.
+  - A model that fails to load falls back to that product's placeholder, via a per-garment error boundary.
+- **Placeholders** (`components/home/closet/garment-geometry.ts`):
+  - A tee, long-sleeve, pants or generic silhouette, chosen from product type via the existing taxonomy (`lib/home/closet-shape.ts`, D-023).
+  - Extruded and bevelled so it has real thickness from every angle.
+  - The product photo is cover-fit onto a front face. The sides and back use the photo's average color.
+  - Shopify CDN photos are requested at `width=768`.
+- **Rendering and fallback.** `CollectionCloset` (server) renders the former hero's poster, headline and CTA.
+  - `ClosetLoader` mounts the closet only when WebGL exists and `isLowPerformanceDevice` (D-040) is false. It uses `next/dynamic` with `ssr: false`, so three.js is never in the homepage's initial JS.
+  - The canvas fades in over the poster once every photo has loaded.
+  - With no current collection, no WebGL, or a weak device, the poster is the complete experience. That is the same hero as before, minus parallax.
+  - The canvas stops rendering while scrolled off-screen (IntersectionObserver → `frameloop="never"`). Device pixel ratio is capped at 2.
+- **Interaction:**
+  - Garments hang turned about 40° (as in a real closet, which is also what makes "front view" meaningful).
+  - Hover scales a garment to 1.06 and turns it partly toward the viewer.
+  - Click eases it to front-center, sized from the visible frame. On `lg` and up it sits left of center with the panel on the right; on narrower screens it sits above a bottom panel.
+  - Auto-rotate runs at about 0.45 rad/s. Dragging rotates by hand and pauses auto-rotate for 2 s.
+  - A dark scrim (ignored by raycasting) dims the receded rod.
+  - Clicking empty canvas, the dimmed rod, anywhere outside the closet, CLOSE, or pressing Escape returns the garment.
+  - On narrow screens a horizontal swipe pans the camera along the rod, clamped to its ends (`clampRodPan`). `touch-action: pan-y` keeps vertical page scroll native.
+  - A drag never counts as a click: the distance is settled on pointer-up too.
+  - The headline column becomes `invisible` (removed from the tab order, not just transparent) while a garment is out.
+- **Accessibility.**
+  - The canvas is `aria-hidden`.
+  - Each garment has a real `<button aria-pressed>` labelled with its name and price. The buttons are visually hidden until focused, then shown as a row.
+  - Focus previews a garment; Enter or Space pulls it out; Escape returns it and gives focus back to its button.
+  - The info panel is a polite live region (D-049's pattern).
+  - Under reduced motion there is no sway or auto-rotate and every transition is instant; manual drag remains.
+- **Analytics.** New `closet_item_select` event (`item_id`, `item_name`).
+- **Supersedes:**
+  - D-041's hero parallax: `HeroParallax.tsx` and the `.esque-parallax-layer` CSS are deleted. Depth now comes from the 3D scene itself.
+  - D-032's static campaign-image slot.
+  - The hero entrance fade (`.esque-hero-reveal`) is kept.
+
+**Deliberate deviations:**
+
+1. **No `@react-three/drei`,** although the plan named it. Fiber's own `useLoader` with three's `GLTFLoader` and `TextureLoader` covers everything this feature uses, so drei's large transitive dependency tree is avoided (CLAUDE.md dependency policy). Added dependencies: `three@0.187.0`, `@react-three/fiber@9.8.2` (its React peer range is `>=19 <19.4`; the project runs 19.2.8), and dev-only `@types/three`.
+2. **Hover scale is 1.06,** above INTERACTIONS.md's suggested 1.01–1.03. The owner explicitly asked for a hover that visibly enlarges the item. At 1.03, a garment roughly 90px wide on the rod grows by under 3px, too little to read as interactive.
+3. **Gesture state is a small class (`closet-gesture.ts`) with mutating methods, not a ref passed as a prop.** React Compiler's `react-hooks/immutability` lint rejects writing to a prop's `.current`. The values change every pointer move and frame, so React state would re-render the scene at 60 fps.
+
+**Measured:**
+- The 3D code is one lazily loaded chunk: 984,119 bytes raw, 260,287 bytes gzip.
+  - That is larger than the 150–200 KB gzip estimated during planning, because Fiber's catalogue pulls in most of three.js.
+  - It is fetched only after hydration and only on capable devices. A production build confirms none of the homepage's 13 initial script chunks contains three.js.
+  - The poster, not the canvas, remains the LCP candidate.
+- Lighthouse was not re-run for this change (not available offline in this environment). The D-071 lab baseline for `/` predates it.
+
+**Verification:**
+- **Unit tests (vitest, 418/418):**
+  - `closet-shape` (type → silhouette mapping, CDN texture URL)
+  - `closet-state` (reducer, hanger layout, pan clamping)
+  - `closet.ts` (current-collection choice, skips upcoming and archived, `null` on failure)
+  - `getClosetProducts` (GLB picked across Model3d media; non-model media and USDZ ignored; Demo Mode)
+- **E2E:** with Shopify unconfigured, the hero renders its poster with no `[data-closet]` and no `<canvas>`. The two parallax suites are replaced by this test. Scene order and the hero/CTA assertions are unchanged and pass in all four projects.
+- **Live, in Demo Mode, in the in-app browser:**
+  - Desktop (1024px): hover; click to pull out; drag to rotate; click outside; keyboard (Tab to a piece button, Enter, Escape with focus restored, live-region text).
+  - Mobile (375px): swipe along the rod, tap to pull out, panel below the piece, no horizontal overflow.
+- **Not verified:**
+  - A real GLB, since no product has one yet. The load path and fallback are covered by code and the error boundary, not by a live model.
+  - Reduced motion visually; it is covered by code path only.
+  - Physical devices.
+
+---

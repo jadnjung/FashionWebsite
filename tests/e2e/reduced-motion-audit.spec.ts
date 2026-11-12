@@ -69,26 +69,6 @@ test.describe('reduced-motion audit — this phase’s new surfaces', () => {
     // audit's cross-reference confirmation, not a duplicate suite.
   });
 
-  test('homepage hero parallax applies no offset under reduced motion', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
-    for (let i = 0; i < 5; i++) {
-      await page.mouse.move(200 + i, 200 + i);
-      await page.waitForTimeout(100);
-    }
-    const props = await page.locator('[data-hero-parallax]').evaluate((el) => {
-      const style = getComputedStyle(el);
-      return {
-        x: style.getPropertyValue('--parallax-x').trim(),
-        y: style.getPropertyValue('--parallax-y').trim(),
-      };
-    });
-    expect(props.x).toBe('');
-    expect(props.y).toBe('');
-    // Full behavioral coverage lives in homepage.spec.ts's own parallax
-    // describe block — this is the audit's cross-reference confirmation.
-  });
-
   test('the ::view-transition-* reduced-motion rule exists and targets the right selectors', async ({
     page,
   }) => {

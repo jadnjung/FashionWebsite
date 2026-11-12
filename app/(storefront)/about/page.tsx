@@ -20,7 +20,7 @@ import { buildBreadcrumbJsonLd } from '@/lib/seo/structured-data';
 // editorial" (the full brand story, campaign content) as intentionally
 // deferred to V2+. That is the same kind of gap DESIGN_SYSTEM.md §65's
 // placeholder convention already covers elsewhere — a creative asset or
-// editorial decision that doesn't exist yet (CollectionHero's campaign
+// editorial decision that doesn't exist yet (CollectionCloset's campaign
 // imagery/statement, the full Interactive Model experience) — so this page
 // follows that convention instead: real foundational content where real,
 // decided content exists (PROJECT.md §1's brand definition, lightly

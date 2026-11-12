@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import {
+  getClosetProducts,
   getProduct,
   getProducts,
   getProductsByCollection,
@@ -266,6 +267,80 @@ describe('getProductsByCollection', () => {
   });
 });
 
+describe('getClosetProducts', () => {
+  function closetNode(media: unknown[]) {
+    return {
+      id: 'gid://shopify/Product/1',
+      handle: 'item-one',
+      title: 'Item One',
+      description: 'A description.',
+      productType: 'Hoodies',
+      priceRange: { minVariantPrice: { amount: '120.00', currencyCode: 'USD' } },
+      images: { edges: [] },
+      media: { edges: media.map((node) => ({ node })) },
+    };
+  }
+
+  test('picks the first GLB source across Model3d media, ignoring non-model media and non-GLB sources', async () => {
+    mockClient({
+      data: {
+        collection: {
+          products: {
+            edges: [
+              {
+                node: closetNode([
+                  {},
+                  { sources: [{ url: 'https://cdn.example/item.usdz', format: 'usdz' }] },
+                  {
+                    sources: [
+                      { url: 'https://cdn.example/item.usdz', format: 'usdz' },
+                      { url: 'https://cdn.example/item.glb', format: 'GLB' },
+                    ],
+                  },
+                ]),
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const result = await getClosetProducts('collection-001');
+
+    expect(result).toEqual([
+      {
+        id: 'gid://shopify/Product/1',
+        handle: 'item-one',
+        title: 'Item One',
+        description: 'A description.',
+        productType: 'Hoodies',
+        minPrice: { amount: '120.00', currencyCode: 'USD' },
+        image: null,
+        modelUrl: 'https://cdn.example/item.glb',
+      },
+    ]);
+  });
+
+  test('resolves modelUrl to null when the product has no 3D model', async () => {
+    mockClient({ data: { collection: { products: { edges: [{ node: closetNode([{}]) }] } } } });
+    const result = await getClosetProducts('collection-001');
+    expect(result?.[0]?.modelUrl).toBeNull();
+  });
+
+  test('returns null when the collection handle does not exist', async () => {
+    mockClient({ data: { collection: null } });
+    await expect(getClosetProducts('does-not-exist')).resolves.toBeNull();
+  });
+
+  test('throws when the response includes errors', async () => {
+    mockClient({
+      data: undefined,
+      errors: { message: 'Throttled by Shopify', networkStatusCode: 429 },
+    });
+    await expect(getClosetProducts('collection-001')).rejects.toThrow('Throttled by Shopify');
+  });
+});
+
 describe('getProducts', () => {
   test('maps a page of products, including availableForSale and up to two images', async () => {
     mockClient({
@@ -479,6 +554,25 @@ describe('getProductsByCollection — Demo Mode', () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getProductsByCollection('does-not-exist');
     expect(result).toBeNull();
+  });
+});
+
+describe('getClosetProducts — Demo Mode', () => {
+  test('short-circuits to fixture data with no 3D models and never touches the Storefront client', async () => {
+    const getStorefrontClient = vi.spyOn(clientModule, 'getStorefrontClient');
+    const callsBefore = getStorefrontClient.mock.calls.length;
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+
+    const result = await getClosetProducts('collection-001');
+
+    expect(result).toHaveLength(6);
+    expect(result?.every((p) => p.modelUrl === null)).toBe(true);
+    expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
+  });
+
+  test('returns null for a handle with no matching fixture', async () => {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    await expect(getClosetProducts('does-not-exist')).resolves.toBeNull();
   });
 });
 

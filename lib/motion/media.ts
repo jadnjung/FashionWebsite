@@ -6,7 +6,9 @@
 // lib/product/variants.ts's header comment). Mirrors the injected-interface
 // pattern lib/product/recently-viewed.ts already established for
 // localStorage. Two real, concurrent consumers this same phase
-// (CustomCursor, HeroParallax) justify extracting this now — not a
+// (CustomCursor, HeroParallax — the latter since replaced by the 3D
+// Collection Closet, D-089, which still uses isLowPerformanceDevice and
+// prefersReducedMotion) justify extracting this now — not a
 // speculative abstraction. See DECISIONS.md D-040/D-041.
 
 type MatchMediaFn = (query: string) => { matches: boolean };

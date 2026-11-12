@@ -23,7 +23,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 | Data fetching | Shopify Storefront API (GraphQL) | Product/collection/cart reads, cart mutations |
 | Checkout | Shopify Checkout | Hosted checkout, no custom payment handling |
 | Styling | CSS with design tokens (see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)) + Tailwind or CSS Modules (TBD at scaffold time) | Token-driven to keep color/spacing/type consistent across experimental layouts |
-| Motion | Native CSS transitions/transforms + View Transitions + Motion (Framer Motion) for component/layout motion; GSAP only for complex sequences; Three.js only for isolated high-impact features | Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack) — do not stack multiple animation systems for the same job |
+| Motion | Native CSS transitions/transforms + View Transitions + Motion (Framer Motion) for component/layout motion; GSAP only for complex sequences; Three.js only for isolated high-impact features — first and only use: the homepage 3D Collection Closet (`three` + `@react-three/fiber`, lazily loaded, DECISIONS.md D-089) | Per [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motion-stack) — do not stack multiple animation systems for the same job |
 | Hosting/deploy | Vercel | Edge rendering, image optimization, preview deployments |
 | Email | Klaviyo (free tier at launch) | Access password email, welcome, collection announcements, abandoned cart, back-in-stock |
 | Analytics | Shopify Analytics + Google Analytics 4 + Google Search Console | Add Meta/TikTok pixels, Clarity, etc. only when a real marketing need exists |
@@ -63,7 +63,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 │   ├── ui/                    # Buttons, inputs, primitives from DESIGN_SYSTEM.md
 │   ├── catalog/                # Category listing: product card, grid, filter bar
 │   ├── product/                 # PDP: gallery, purchase panel, size guide, recently viewed
-│   ├── home/                    # Homepage editorial scenes (Scene 01-06; Scene 07 omitted, see DECISIONS.md D-032)
+│   ├── home/                    # Homepage editorial scenes (Scene 01-06; Scene 07 omitted, see DECISIONS.md D-032); home/closet/ holds Scene 01's 3D Collection Closet (D-089)
 │   ├── interactive-model/      # Signature hotspot feature — hotspots, product info panel, Shop the Look (ROADMAP Phase 8; Stage 4-5 motion/refinement deferred, see DECISIONS.md D-034)
 │   ├── legal/                    # Shared draft-notice/section markup for the six /legal/* pages and /contact — see DECISIONS.md D-054
 │   └── navigation/              # Header, full-screen menu, cursor

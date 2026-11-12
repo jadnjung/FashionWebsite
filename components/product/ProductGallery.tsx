@@ -60,7 +60,7 @@ export function ProductGallery({ images, productTitle, handle }: ProductGalleryP
           </ViewTransition>
         ) : (
           // `contents` (zero layout-box impact, same technique as
-          // HeroParallax.tsx) exists purely to carry `key` — `media` itself
+          // the former HeroParallax.tsx) exists purely to carry `key` — `media` itself
           // isn't a standalone element instance here, so `key` can't be
           // spliced onto it directly without this wrapper or a
           // cloneElement call.

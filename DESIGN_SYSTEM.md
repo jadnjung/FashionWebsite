@@ -496,6 +496,8 @@ Large ESQUE typography may exist partially outside the viewport.
 
 Subtle mouse movement creates depth between typography, model, and background. Movement should stay within a few pixels.
 
+**Implemented as the 3D Collection Closet** ([DECISIONS.md D-089](./DECISIONS.md)): the "collection imagery" is the current collection itself, hanging on a 3D rod — hover enlarges a piece, click brings it to a rotating front view beside its details. Depth comes from the 3D scene, replacing the pointer parallax described above. The headline, campaign statement, and ENTER COLLECTION stay over the closet and step aside while a piece is out. Without a current collection or WebGL, the static campaign poster is shown instead.
+
 ## 28. Hero First Load
 
 Recommended sequence:

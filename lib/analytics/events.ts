@@ -52,6 +52,7 @@ const ANALYTICS_EVENT_NAMES = [
   // Interactive Experience
   'hotspot_selected',
   'shop_the_look_open',
+  'closet_item_select',
   // Access Funnel
   'request_access_open',
   'request_access_attempt',
@@ -156,6 +157,12 @@ interface EventPropertiesMap {
     item_name: string;
   };
   shop_the_look_open: NoProperties;
+  // Homepage Collection Closet (DECISIONS.md D-089): a garment pulled off
+  // the rod into the focused front view, by pointer or keyboard.
+  closet_item_select: {
+    item_id: string;
+    item_name: string;
+  };
   request_access_open: NoProperties;
   request_access_attempt: NoProperties;
   // Fires once per mount of CollectionTeaser (the locked, upcoming-drop

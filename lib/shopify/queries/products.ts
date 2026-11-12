@@ -98,6 +98,57 @@ export const GET_PRODUCTS_BY_COLLECTION_QUERY = `#graphql
   }
 `;
 
+// Homepage Collection Closet (DECISIONS.md D-089). A separate query rather
+// than an extension of GET_PRODUCTS_BY_COLLECTION_QUERY so Archive's
+// consumer doesn't pay for the `media` connection. `media` is narrowed to
+// Model3d only — the closet hangs a product's real GLB when one exists and
+// falls back to a placeholder garment built from `images` otherwise.
+export const GET_CLOSET_PRODUCTS_QUERY = `#graphql
+  query GetClosetProducts($handle: String!, $first: Int!) {
+    collection(handle: $handle) {
+      products(first: $first) {
+        edges {
+          node {
+            id
+            handle
+            title
+            description
+            productType
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            images(first: 1) {
+              edges {
+                node {
+                  url
+                  altText
+                  width
+                  height
+                }
+              }
+            }
+            media(first: 10) {
+              edges {
+                node {
+                  ... on Model3d {
+                    sources {
+                      url
+                      format
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Collection-scoped products connection, shaped to match ProductListItem
 // (availableForSale + up to 2 images), not ProductSummary — a sibling of
 // GET_PRODUCTS_BY_COLLECTION_QUERY above, not a replacement for it.

@@ -19,6 +19,7 @@ describe('isKnownAnalyticsEvent', () => {
       'search',
       'hotspot_selected',
       'shop_the_look_open',
+      'closet_item_select',
       'request_access_open',
       'request_access_attempt',
       'drop_teaser_view',
