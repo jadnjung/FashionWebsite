@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { VariantPicker } from '@/components/product/VariantPicker';
@@ -11,13 +12,18 @@ import {
   getInitialSelections,
   isProductSoldOut,
 } from '@/lib/product/variants';
-import type { ProductDetail } from '@/lib/shopify/products';
+import type { ProductDetail, ProductImage } from '@/lib/shopify/products';
 
 interface ShopTheLookPanelProps {
   /** The look's pieces, in the order the merchant curated them. */
   products: ProductDetail[];
   /** Shown above the pieces, e.g. "LOOK 03". */
   lookLabel: string;
+  /**
+   * The look's photograph, shown large beside the panel (above it on
+   * phones) so the chosen look comes forward while its pieces are shopped.
+   */
+  lookImage?: ProductImage | null;
   open: boolean;
   onClose: () => void;
 }
@@ -60,7 +66,13 @@ function initialSelectionMap(products: ProductDetail[]): LookSelectionMap {
 // matching D-029's established precedent exactly.
 // Selection state is initialized once per mount — the parent remounts the
 // panel (keyed by look) when a different look is chosen.
-export function ShopTheLookPanel({ products, lookLabel, open, onClose }: ShopTheLookPanelProps) {
+export function ShopTheLookPanel({
+  products,
+  lookLabel,
+  lookImage = null,
+  open,
+  onClose,
+}: ShopTheLookPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectionMap, setSelectionMap] = useState<LookSelectionMap>(() =>
     initialSelectionMap(products),
@@ -114,50 +126,79 @@ export function ShopTheLookPanel({ products, lookLabel, open, onClose }: ShopThe
       // dead gap below it, instead of the "bottom sheet" DESIGN_SYSTEM.md
       // §46/D-027 always intended). See SizeGuidePanel.tsx's own comment
       // for the full mechanism.
-      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
+      //
+      // md+: full-viewport and transparent, so the chosen look's photograph
+      // can stand large on the left (over the darkened page) with the
+      // details panel on the right. Below md: the bottom sheet, with the
+      // photograph at its top. D-091.
+      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[92vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-0 text-esque-text backdrop:bg-esque-black/80 md:inset-0 md:h-full md:max-h-full md:overflow-hidden md:bg-transparent"
     >
-      <div className="flex items-center justify-between pb-6">
-        <div className="flex flex-col gap-1">
-          <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-            {lookLabel}
-          </p>
-          <h2 className="font-display text-heading-3 uppercase tracking-display">Shop the Look</h2>
+      <div className="md:grid md:h-full md:grid-cols-[minmax(0,1fr)_28rem]">
+        {/* Clicking the empty space around the photograph closes the
+            panel, like clicking outside it. */}
+        <div
+          className="flex items-center justify-center p-4 pt-6 md:p-12"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) onClose();
+          }}
+        >
+          {lookImage && (
+            <div className="esque-look-spotlight relative aspect-[4/5] h-[36vh] max-w-full md:h-[min(84vh,960px)]">
+              <Image
+                src={lookImage.url}
+                alt={lookImage.altText ?? ''}
+                fill
+                sizes="(min-width: 768px) 50vw, 60vw"
+                className="object-cover"
+              />
+            </div>
+          )}
         </div>
-        <Button variant="secondary" onClick={onClose}>
-          CLOSE
-        </Button>
-      </div>
+        <div className="bg-esque-surface p-6 md:h-full md:overflow-y-auto">
+          <div className="flex items-center justify-between pb-6">
+            <div className="flex flex-col gap-1">
+              <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                {lookLabel}
+              </p>
+              <h2 className="font-display text-heading-3 uppercase tracking-display">
+                Shop the Look
+              </h2>
+            </div>
+            <Button variant="secondary" onClick={onClose}>
+              CLOSE
+            </Button>
+          </div>
 
-      <div className="flex flex-col gap-6">
-        {products.map((product, index) => {
-          const item = selectionMap[product.handle];
-          const soldOut = isProductSoldOut(product.variants);
-          const matchedVariant = findMatchingVariant(product.variants, item.selections);
-          const displayPrice = matchedVariant?.price ?? product.minPrice;
-          return (
-            <div
-              key={product.handle}
-              className="flex flex-col gap-3 border-b border-esque-elevated pb-6"
-            >
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={item.included}
-                  disabled={soldOut}
-                  onChange={() => handleToggleIncluded(product.handle)}
-                  // aria-label wins over the <label>'s own (much longer,
-                  // multi-line) computed accessible name — DECISIONS.md
-                  // D-037 — while the <label> wrapper is kept for its larger
-                  // click target.
-                  aria-label={`Include ${product.title}`}
-                  className="mt-1 h-4 w-4 accent-esque-forest disabled:cursor-not-allowed disabled:opacity-40"
-                />
-                <div className="flex flex-col gap-1">
-                  <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-                    {String(index + 1).padStart(2, '0')} — {product.productType}
-                  </p>
-                  <p className="text-product-name text-esque-text">{product.title}</p>
-                  {/* Per-row aria-live — DECISIONS.md D-066, resolving D-051's
+          <div className="flex flex-col gap-6">
+            {products.map((product, index) => {
+              const item = selectionMap[product.handle];
+              const soldOut = isProductSoldOut(product.variants);
+              const matchedVariant = findMatchingVariant(product.variants, item.selections);
+              const displayPrice = matchedVariant?.price ?? product.minPrice;
+              return (
+                <div
+                  key={product.handle}
+                  className="flex flex-col gap-3 border-b border-esque-elevated pb-6"
+                >
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={item.included}
+                      disabled={soldOut}
+                      onChange={() => handleToggleIncluded(product.handle)}
+                      // aria-label wins over the <label>'s own (much longer,
+                      // multi-line) computed accessible name — DECISIONS.md
+                      // D-037 — while the <label> wrapper is kept for its larger
+                      // click target.
+                      aria-label={`Include ${product.title}`}
+                      className="mt-1 h-4 w-4 accent-esque-forest disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                        {String(index + 1).padStart(2, '0')} — {product.productType}
+                      </p>
+                      <p className="text-product-name text-esque-text">{product.title}</p>
+                      {/* Per-row aria-live — DECISIONS.md D-066, resolving D-051's
                       deferred finding: each garment's price can change
                       independently (its own VariantPicker selection, below),
                       and a single panel-wide live region would re-announce
@@ -173,50 +214,52 @@ export function ShopTheLookPanel({ products, lookLabel, open, onClose }: ShopThe
                       derived from `soldOut`, which reflects the garment's own
                       fixed availability data, not the user's selection, so
                       it never actually changes while this panel is open. */}
-                  <div aria-live="polite" aria-atomic="true">
-                    <p className="text-body text-esque-text-secondary">
-                      {formatPrice(displayPrice)}
+                      <div aria-live="polite" aria-atomic="true">
+                        <p className="text-body text-esque-text-secondary">
+                          {formatPrice(displayPrice)}
+                        </p>
+                      </div>
+                    </div>
+                  </label>
+                  {soldOut ? (
+                    <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+                      NO LONGER AVAILABLE.
                     </p>
-                  </div>
+                  ) : (
+                    item.included && (
+                      <VariantPicker
+                        namePrefix={`look-${product.handle}`}
+                        options={product.options}
+                        variants={product.variants}
+                        selections={item.selections}
+                        onChange={(optionName, value) =>
+                          handleOptionChange(product.handle, optionName, value)
+                        }
+                      />
+                    )
+                  )}
                 </div>
-              </label>
-              {soldOut ? (
-                <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-                  NO LONGER AVAILABLE.
-                </p>
-              ) : (
-                item.included && (
-                  <VariantPicker
-                    namePrefix={`look-${product.handle}`}
-                    options={product.options}
-                    variants={product.variants}
-                    selections={item.selections}
-                    onChange={(optionName, value) =>
-                      handleOptionChange(product.handle, optionName, value)
-                    }
-                  />
-                )
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
 
-      <div className="flex flex-col gap-2 pt-6">
-        <Button type="button" variant="primary" disabled={!canAddLook} onClick={() => {}}>
-          ADD LOOK
-        </Button>
-        {!canAddLook && (
-          // text-esque-text, not -secondary — see
-          // ProductPurchasePanel.tsx's identical comment on this same class
-          // of helper copy (both of this panel's own variants, not just
-          // one).
-          <p className="text-utility text-esque-text">
-            {products.every((product) => !selectionMap[product.handle].included)
-              ? 'Select at least one piece to continue.'
-              : 'Select all options to continue.'}
-          </p>
-        )}
+          <div className="flex flex-col gap-2 pt-6">
+            <Button type="button" variant="primary" disabled={!canAddLook} onClick={() => {}}>
+              ADD LOOK
+            </Button>
+            {!canAddLook && (
+              // text-esque-text, not -secondary — see
+              // ProductPurchasePanel.tsx's identical comment on this same class
+              // of helper copy (both of this panel's own variants, not just
+              // one).
+              <p className="text-utility text-esque-text">
+                {products.every((product) => !selectionMap[product.handle].included)
+                  ? 'Select at least one piece to continue.'
+                  : 'Select all options to continue.'}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </dialog>
   );

@@ -9,6 +9,11 @@ import {
 
 const CURSOR_ATTR = 'data-cursor';
 const FORM_FIELD_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
+// An open native <dialog> (Size Guide, Quick Add, Shop the Look) renders in
+// the browser's top layer, above every ordinary element however high its
+// z-index — including this cursor dot. Over one, the OS cursor is shown
+// instead (globals.css) and the dot steps aside, exactly like form fields.
+const NATIVE_CURSOR_SELECTOR = `${FORM_FIELD_SELECTOR}, dialog[open]`;
 const ACTIVE_CLASS = 'esque-cursor-none';
 
 // DESIGN_SYSTEM.md §22-23, INTERACTIONS.md §7 — desktop-only custom cursor
@@ -68,7 +73,7 @@ export function CustomCursor() {
         setLabel(nextLabel);
       }
 
-      const nextOverFormField = target?.closest(FORM_FIELD_SELECTOR) != null;
+      const nextOverFormField = target?.closest(NATIVE_CURSOR_SELECTOR) != null;
       if (nextOverFormField !== overFormFieldRef.current) {
         overFormFieldRef.current = nextOverFormField;
         setOverFormField(nextOverFormField);

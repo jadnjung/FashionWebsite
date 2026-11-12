@@ -275,6 +275,23 @@ button:focus-visible {
   animation: esque-looks-fade 350ms var(--ease-esque) backwards;
 }
 
+/* The chosen look's photograph comes forward beside its Shop the Look
+   panel. */
+@keyframes esque-look-spotlight {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.esque-look-spotlight {
+  animation: esque-look-spotlight 450ms var(--ease-esque) backwards;
+}
+
 /* Custom cursor — DESIGN_SYSTEM.md §22-23, INTERACTIONS.md §7.
    `esque-cursor-none` is only ever added by CustomCursor.tsx after a real
    pointermove has been observed (never on initial/server render), so the
@@ -296,6 +313,17 @@ button:focus-visible {
 .esque-cursor-none select,
 .esque-cursor-none [contenteditable='true'] {
   cursor: auto;
+}
+/* Open dialogs render in the browser's top layer, above the custom cursor
+   dot (CustomCursor.tsx steps the dot aside there), so they get the OS
+   cursor back — including a pointer over their controls, since the
+   universal rule above would otherwise leave no cursor at all. */
+.esque-cursor-none dialog[open],
+.esque-cursor-none dialog[open] * {
+  cursor: auto;
+}
+.esque-cursor-none dialog[open] :is(button, a[href], label, summary):not(:disabled) {
+  cursor: pointer;
 }
 
 .esque-custom-cursor {

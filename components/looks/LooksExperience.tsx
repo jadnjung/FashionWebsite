@@ -22,7 +22,9 @@ const MIN_RING_LOOKS = 4;
 const TILT_DEGREES = -20;
 // One look every ~6 seconds.
 const SECONDS_PER_LOOK = 6;
-// Auto-rotation waits this long after the visitor's last interaction.
+// After a drag, an arrow press or keyboard focus, auto-rotation waits this
+// long before resuming. It stops outright only for PAUSE or while a chosen
+// look's panel is open — never merely because the cursor is over the ring.
 const RESUME_AFTER_MS = 2500;
 const DRAG_THRESHOLD_PX = 6;
 const DRAG_DEGREES_PER_PX = 0.3;
@@ -121,6 +123,11 @@ export function LooksExperience({ looks }: LooksExperienceProps) {
           looks={looks}
           reducedMotion={reducedMotion}
           playing={playing && !reducedMotion}
+          // A chosen look holds the ring still while its panel is open;
+          // closing it resumes rotation (unless the visitor paused). Kept
+          // apart from `playing` so the PAUSE/PLAY control keeps showing
+          // the visitor's own choice.
+          held={Boolean(panel?.open)}
           onTogglePlaying={() => setPlaying((value) => !value)}
           front={front}
           onFrontChange={setFront}
@@ -149,6 +156,7 @@ export function LooksExperience({ looks }: LooksExperienceProps) {
           key={panelLook.handle}
           products={panelLook.products}
           lookLabel={lookLabel(panelLook, panel.index)}
+          lookImage={panelLook.image}
           open={panel.open}
           // Closing keeps the panel mounted (just closed), so the native
           // <dialog> returns focus to the look that opened it.
@@ -209,7 +217,10 @@ function LookCard({ look, index, sizes, compact = false, onSelect, onFocus, ref 
 interface LookRingProps {
   looks: Look[];
   reducedMotion: boolean;
+  /** The visitor's play/pause choice (false under reduced motion). */
   playing: boolean;
+  /** Temporarily stops rotation without changing the visitor's choice. */
+  held: boolean;
   onTogglePlaying: () => void;
   front: number;
   onFrontChange: (index: number) => void;
@@ -220,6 +231,7 @@ function LookRing({
   looks,
   reducedMotion,
   playing,
+  held,
   onTogglePlaying,
   front,
   onFrontChange,
@@ -235,7 +247,6 @@ function LookRing({
     rotation: 0,
     target: null as number | null,
     lastInteraction: 0,
-    hovering: false,
     dragging: false,
     dragged: false,
     front: 0,
@@ -315,7 +326,7 @@ function LookRing({
             state.rotation = state.target;
             state.target = null;
           }
-        } else if (playing && !state.hovering && now - state.lastInteraction > RESUME_AFTER_MS) {
+        } else if (playing && !held && now - state.lastInteraction > RESUME_AFTER_MS) {
           state.rotation -= degreesPerSecond * delta;
         }
       }
@@ -345,7 +356,7 @@ function LookRing({
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [count, radius, playing, reducedMotion, onFrontChange]);
+  }, [count, radius, playing, held, reducedMotion, onFrontChange]);
 
   // Drag / swipe to spin; releasing settles on the nearest look.
   useEffect(() => {
@@ -425,13 +436,6 @@ function LookRing({
         role="group"
         aria-roledescription="carousel"
         aria-label="Looks"
-        onPointerEnter={() => {
-          motion.current.hovering = true;
-        }}
-        onPointerLeave={() => {
-          motion.current.hovering = false;
-          interact();
-        }}
         onFocusCapture={interact}
         className="relative w-full overflow-hidden [touch-action:pan-y]"
         style={{

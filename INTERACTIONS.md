@@ -131,9 +131,10 @@ Source: [DESIGN_SYSTEM.md §27–28](./DESIGN_SYSTEM.md#27-homepage--scene-01-co
 
 > **Superseded on the homepage by the "Shop the Look" ring ([DECISIONS.md D-091](./DECISIONS.md)):**
 > - **Ring:** up to 9 curated looks circle on a CSS 3D ring, tilted about 20° so it's seen from slightly above. Each look faces the viewer as it travels; the nearest is biggest, and the far ones are smaller and dimmed.
-> - **Auto-rotation:** about 6 s per look. It pauses on hover and resumes 2.5 s after the last interaction, and a visible PAUSE/PLAY control satisfies WCAG 2.2.2.
+> - **Auto-rotation:** about 6 s per look. It does **not** stop for hover. It stops only for PAUSE (a visible PAUSE/PLAY control, as WCAG 2.2.2 requires) or while a chosen look's panel is open, and briefly (2.5 s) after a drag, PREV/NEXT or keyboard focus.
 > - **Manual control:** drag/swipe spins the ring and settles on the nearest look; PREV/NEXT step one look; focusing a look turns the ring to it.
-> - **Choosing a look** brings it forward and opens Shop the Look.
+> - **Choosing a look** brings it forward on the ring and opens Shop the Look as a full-screen view: on desktop, the look's photograph comes forward large on the left (a 450 ms scale-in) beside the details panel on the right, and clicking the space around the photo closes it; on phones the photo sits at the top of the bottom sheet.
+> - **Cursor over dialogs:** an open native dialog renders above the custom cursor dot, so over any open dialog the OS cursor returns (a pointer over its controls) and the dot hides.
 > - **All looks:** VIEW ALL LOOKS toggles a 3×3 grid (2 columns on phones) with a 350 ms fade.
 > - **Reduced motion** starts on the grid, with no auto-rotation and instant ring moves.
 >

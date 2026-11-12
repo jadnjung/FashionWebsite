@@ -3,6 +3,22 @@ import { test, expect, type Page } from '@playwright/test';
 // Homepage "Shop the Look" ring (DECISIONS.md D-091) against Demo Mode's
 // nine fixture looks.
 
+/** aria-label of the look currently drawn largest (nearest the front). */
+function frontLook(page: Page) {
+  return page.evaluate(() => {
+    let best: string | null = null;
+    let width = 0;
+    for (const card of document.querySelectorAll('[role="group"][aria-label="Looks"] button')) {
+      const rect = card.getBoundingClientRect();
+      if (rect.width > width) {
+        width = rect.width;
+        best = card.getAttribute('aria-label');
+      }
+    }
+    return best;
+  });
+}
+
 async function gotoLooks(page: Page) {
   await page.goto('/');
   const section = page.getByRole('region', { name: 'Shop the Look' });
@@ -71,6 +87,43 @@ test.describe('Shop the Look ring (Demo Mode)', () => {
     const section = await gotoLooks(page);
     await expect(section.getByRole('list', { name: 'All looks' })).toBeVisible();
     await expect(section.getByRole('button', { name: 'VIEW ROTATION' })).toBeVisible();
+  });
+
+  test('keeps rotating while the cursor rests on the ring', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'hover is a desktop concern');
+    test.slow();
+    const section = await gotoLooks(page);
+    const stage = section.getByRole('group', { name: 'Looks' });
+    await stage.hover();
+    const before = await frontLook(page);
+    // About 6 s per look; allow a little over one step.
+    await expect.poll(() => frontLook(page), { timeout: 15_000 }).not.toBe(before);
+  });
+
+  test("the chosen look's photograph comes forward inside its panel", async ({ page }) => {
+    const section = await gotoLooks(page);
+    await section.getByRole('button', { name: 'VIEW ALL LOOKS' }).click();
+    await section.getByRole('button', { name: /^LOOK 02,/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Shop the Look' });
+    await expect(dialog.locator('img')).toHaveCount(1);
+    await expect(dialog.locator('img')).toBeVisible();
+  });
+
+  test('the cursor stays visible over the Shop the Look panel', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'the custom cursor is desktop-only');
+    const section = await gotoLooks(page);
+    // The custom cursor only takes over after a real pointer move.
+    for (let i = 0; i < 4; i++) await page.mouse.move(40 + i, 40 + i);
+    await section.getByRole('button', { name: 'VIEW ALL LOOKS' }).click();
+    await section.getByRole('button', { name: /^LOOK 02,/ }).click();
+    const close = page.getByRole('dialog', { name: 'Shop the Look' }).getByRole('button', {
+      name: 'CLOSE',
+    });
+    await close.hover();
+    // The OS cursor is back over the dialog (pointer over controls), and
+    // the custom dot — drawn beneath the dialog's top layer — steps aside.
+    await expect(close).toHaveCSS('cursor', 'pointer');
+    await expect(page.locator('.esque-custom-cursor')).toHaveAttribute('data-hidden', 'true');
   });
 
   test('loads with no uncaught page errors', async ({ page }) => {

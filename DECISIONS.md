@@ -1720,3 +1720,14 @@ Owner choices:
 
 **Not verified:** real curated looks from a store (none exists yet), physical devices and Safari, and real-device frame rate.
 
+**Follow-up, after owner review (2026-11-12):**
+1. **Rotation no longer stops on hover.** Per the owner, it stops only for PAUSE or a chosen look. While a look's panel is open the ring is held still; closing the panel resumes rotation. The hold is kept separate from the visitor's PAUSE/PLAY choice, so the control never claims "PLAY" when the visitor didn't pause. A drag, PREV/NEXT or keyboard focus still delays rotation by 2.5 s, so it doesn't fight the visitor's own movement.
+2. **The cursor vanished over the Shop the Look panel, and over every native dialog sitewide** (Size Guide and Quick Add included). Native modal dialogs render in the browser's top layer, above the custom cursor dot whatever its z-index, while `.esque-cursor-none *` had hidden the OS cursor everywhere.
+   - **Fix:** over `dialog[open]`, the OS cursor returns (`cursor: auto`, and `pointer` on its buttons, links and labels; `globals.css`), and `CustomCursor` hides its dot there, as it already did for form fields (D-040).
+3. **The chosen look now comes forward large beside its details.** The panel became a full-viewport, transparent dialog on `md`+: the look's photograph sits large on the left (a scale-in, `.esque-look-spotlight`) with the details column on the right, and clicking the space around the photo closes it, like clicking outside. Below `md` it stays the bottom sheet, with the photograph at the top.
+
+**Verified:**
+- Headless checks against Demo Mode: the front look changed while the cursor rested on the ring; the ring held still with a panel open and resumed after closing; over CLOSE the computed cursor is `pointer` and the custom dot is hidden; screenshots on desktop and phone.
+- New Demo-suite regressions for all three: 34 passed, 2 correctly skipped on the phone profile.
+- Main-suite cursor, homepage and reduced-motion specs: 86 passed. Unit tests: 458 passed.
+
