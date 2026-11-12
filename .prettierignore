@@ -25,3 +25,8 @@ docs/
 # unrelated PR.
 lib/shopify/storefront.types.d.ts
 lib/shopify/storefront.generated.d.ts
+
+# Verbatim backups of user-level Claude Code files (setup/claude/README.md)
+# — kept byte-identical to the originals in ~/.claude/, so never reformatted.
+setup/claude/global-CLAUDE.md
+setup/claude/skills/

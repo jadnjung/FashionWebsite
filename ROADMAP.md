@@ -6,7 +6,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Current Status (updated 2026-11-11)
 
-A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail.
+A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail. Setting up on a new computer? See [README.md → New machine setup](./README.md#new-machine-setup).
 
 **Where things stand:**
 - **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. **No real Shopify store or Vercel project exists yet**, so cart, checkout, accounts and deployment remain blocked (D-016).

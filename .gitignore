@@ -61,6 +61,3 @@ lib/shopify/storefront-*.schema.json
 
 # Claude Code — local/personal, not shared project config
 .claude/settings.local.json
-
-# Claude Code — installed skill content, reproducible from skills-lock.json
-.claude/skills/
