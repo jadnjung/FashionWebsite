@@ -4,6 +4,27 @@ Tracks Collection 001 / V1 build order, near-term follow-ups (V1.1), and deferre
 
 Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
+## Current Status (updated 2026-11-11)
+
+A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail.
+
+**Where things stand:**
+- **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. **No real Shopify store or Vercel project exists yet**, so cart, checkout, accounts and deployment remain blocked (D-016).
+- **Latest work:** the homepage hero is a **3D Collection Closet** (D-089), plus a CI fix (D-090).
+- **CI:** two Playwright suites (no-store and Demo Mode), plus format, lint, typecheck, unit tests and build. It was red from 2026-10-27 until D-090 fixed it.
+
+**Owner tasks (not code):**
+- Create the Shopify store and the Vercel project (Phase 0).
+- Upload a `.glb` 3D model as product media for each Collection 001 piece. The closet uses it automatically.
+- Optionally, set color swatches on each product's Color option, so placeholder fabric colors are exact rather than picked from photos.
+- Resolve the Open Product Decisions at the bottom of this file.
+
+**Open engineering items from the closet work (D-089):**
+- **Not yet verified:** real iPhone/iPad Safari, physical devices, and a post-closet Lighthouse run. Lab baseline: D-071; the 3D chunk is about 263 KB gzip, lazily loaded.
+- **Known visual limit:** every garment in a category shares one placeholder silhouette, so the Velvet Evening Jacket reads as a boxy knit until a real model exists.
+- **Lingering placeholder:** the hero's campaign statement is still labelled `ESQUE PLACEHOLDER` outside Demo Mode.
+- **Considered, not built:** a sitewide Content-Security-Policy, deferred to its own reviewed change (D-089, asset-allowlist section).
+
 ## Phase 0 — Project Foundation
 
 - [ ] Create Shopify development store — blocked on the project owner's Shopify account setup; not an implementation task

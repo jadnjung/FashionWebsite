@@ -111,9 +111,21 @@ Source: [PROJECT.md §14](./PROJECT.md#14-access-gate-motion-concept), [DESIGN_S
 
 Hero first load: (1) black screen already present, (2) main campaign image reveals using mask, (3) collection identifier appears, (4) ESQUE typography resolves, (5) navigation fades in. Total approximately 600–900 ms — no multi-second splash screen.
 
-Subtle mouse movement creates depth between typography, model, and background on the hero (Scene 01); movement should stay within a few pixels.
+Subtle mouse movement creates depth between typography, model, and background on the hero (Scene 01); movement should stay within a few pixels. **Superseded for Scene 01** by the 3D Collection Closet below, whose depth comes from the 3D scene itself; the pointer parallax (`HeroParallax`) is deleted. The hero headline's quick entrance fade (`.esque-hero-reveal`) remains.
 
-Source: [DESIGN_SYSTEM.md §27–28](./DESIGN_SYSTEM.md#27-homepage--scene-01-collection-hero)
+**Scene 01 — 3D Collection Closet** ([DECISIONS.md D-089](./DECISIONS.md)). The current collection hangs on a 3D clothes rail (three.js + React Three Fiber; `components/home/closet/`):
+
+- **On the rail:** pieces hang mostly side-on (yaw about −0.95 rad), closely spaced, with a gentle per-piece sway.
+- **Hover:** the piece eases to scale **1.06** and turns partly toward the viewer; the cursor label is `VIEW`. This is a deliberate, owner-requested exception to §8's 1.01–1.03 hover-scale guidance: at 1.03, a garment about 90px wide grows under 3px, too little to read as interactive.
+- **Click / tap / Enter:** the piece leaves the rail to a front-center view (left of center beside the info panel at `lg`+, above a bottom panel below `lg`). A dark scrim dims the rail, and the headline steps aside.
+- **Rotation:** auto-rotates at about 0.45 rad/s. Dragging rotates it by hand (cursor label `DRAG`); auto-rotate resumes about 2 s after the last drag.
+- **Dismiss:** click empty space, the dimmed rail, anywhere outside the closet, CLOSE, or Escape (focus returns to that piece's button).
+- **Mobile:** a horizontal swipe pans along the rail, clamped to its ends; vertical scrolling stays native (`touch-action: pan-y`). A tap selects.
+- **Easing:** every transition is a damped interpolation (`MathUtils.damp`, rate 6) inside the render loop, with no animation library.
+- **Reduced motion:** no sway, no auto-rotate, and every move is instant. Manual drag still works.
+- **Keyboard / screen reader:** the canvas is `aria-hidden`. A row of real buttons (one per piece, visually hidden until focused) drives the same states, and the info panel is a polite live region.
+
+Source: [DESIGN_SYSTEM.md §27–28](./DESIGN_SYSTEM.md#27-homepage--scene-01-collection-hero), [DECISIONS.md D-089](./DECISIONS.md)
 
 ## 13. Interactive Model
 

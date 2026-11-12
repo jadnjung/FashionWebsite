@@ -510,6 +510,8 @@ Full-screen editorial presentation of the current collection. Contains:
 
 Motion should react subtly to cursor and scroll.
 
+> **Built as the 3D Collection Closet (project-owner decision, 2026-11-11 — [DECISIONS.md D-089](./DECISIONS.md)).** The "collection imagery" is the current collection itself: every piece hangs on a 3D clothes rail. Hover enlarges a piece; clicking pulls it into an auto-rotating, drag-to-rotate front view beside its name, price, description and View Product link; clicking outside returns it. Phones swipe along the rail. The collection name and ENTER COLLECTION stay over the closet. Each piece uses its product's real 3D model (`.glb`, uploaded as product media in Shopify admin) when one exists, otherwise a 3D cloth placeholder in the product's color (its Shopify color swatch, else picked from its photo).
+
 **02 — Interactive Look**
 
 Signature Esque interactive model section.
