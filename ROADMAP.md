@@ -10,7 +10,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [x] Scaffold Next.js (App Router, TypeScript) app on pnpm
 - [ ] Connect Vercel project + preview deployments — blocked on the project owner's Vercel account setup; not an implementation task
 - [x] Set up environment variable scaffolding (see [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-environment-variables-draft--fill-in-once-the-shopify-store-exists))
-- [x] Wire up CI (lint, typecheck, Playwright) — plus format:check and build; no deploy step yet (no Vercel project)
+- [x] Wire up CI (lint, typecheck, Playwright) — plus format:check and build; no deploy step yet (no Vercel project); plus a second, Demo Mode Playwright suite for populated-catalog tests including the 3D Collection Closet (`pnpm test:e2e:demo`, DECISIONS.md D-090)
 
 ## Phase 1 — Design System / Tokens
 

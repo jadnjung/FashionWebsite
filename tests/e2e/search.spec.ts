@@ -1,4 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+// Clicks SEARCH until the dialog is actually open. The button is in the
+// server-rendered HTML before hydration attaches its click handler, so on a
+// slow machine (CI) a click right after goto() can land on an inert button
+// and be lost — the test then times out waiting for the searchbox. Same
+// hydration-race class as DECISIONS.md D-076 and custom-cursor.spec.ts.
+// Retrying stops as soon as the dialog is visible, so a click that opens
+// it is never repeated.
+async function openSearch(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await expect(async () => {
+    if (!(await dialog.isVisible())) await page.getByRole('button', { name: 'SEARCH' }).click();
+    await expect(dialog).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+}
 
 // ROADMAP.md Phase 4 — full-screen predictive search overlay, resolving
 // DECISIONS.md D-025's deferral (and, for the COLLECTIONS result group,
@@ -22,7 +37,7 @@ test.describe('search overlay', () => {
     const dialog = page.getByRole('dialog', { name: 'Search' });
     await expect(dialog).toBeHidden();
 
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('searchbox')).toBeFocused();
   });
@@ -30,7 +45,7 @@ test.describe('search overlay', () => {
   test('Escape closes the overlay and returns focus to the SEARCH trigger', async ({ page }) => {
     await page.goto('/');
     const searchTrigger = page.getByRole('button', { name: 'SEARCH' });
-    await searchTrigger.click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
     await expect(dialog).toBeVisible();
 
@@ -44,7 +59,7 @@ test.describe('search overlay', () => {
   }) => {
     await page.goto('/');
     const searchTrigger = page.getByRole('button', { name: 'SEARCH' });
-    await searchTrigger.click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
     await expect(dialog).toBeVisible();
 
@@ -62,7 +77,7 @@ test.describe('search overlay', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
 
     const menuButton = page.getByRole('button', { name: 'MENU' });
@@ -75,7 +90,7 @@ test.describe('search overlay', () => {
 
   test('a single-character query shows neither CATEGORIES nor PRODUCTS', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
 
     await dialog.getByRole('searchbox').fill('h');
@@ -95,7 +110,7 @@ test.describe('search overlay', () => {
       page,
     }) => {
       await page.goto('/');
-      await page.getByRole('button', { name: 'SEARCH' }).click();
+      await openSearch(page);
       const dialog = page.getByRole('dialog', { name: 'Search' });
 
       await dialog.getByRole('searchbox').fill('h');
@@ -110,7 +125,7 @@ test.describe('search overlay', () => {
       page,
     }) => {
       await page.goto('/');
-      await page.getByRole('button', { name: 'SEARCH' }).click();
+      await openSearch(page);
       const dialog = page.getByRole('dialog', { name: 'Search' });
       const searchbox = dialog.getByRole('searchbox');
 
@@ -125,7 +140,7 @@ test.describe('search overlay', () => {
 
     test('deleting back to 1 character brings the hint back', async ({ page }) => {
       await page.goto('/');
-      await page.getByRole('button', { name: 'SEARCH' }).click();
+      await openSearch(page);
       const dialog = page.getByRole('dialog', { name: 'Search' });
       const searchbox = dialog.getByRole('searchbox');
 
@@ -140,7 +155,7 @@ test.describe('search overlay', () => {
       page,
     }) => {
       await page.goto('/');
-      await page.getByRole('button', { name: 'SEARCH' }).click();
+      await openSearch(page);
       const dialog = page.getByRole('dialog', { name: 'Search' });
       const searchbox = dialog.getByRole('searchbox');
 
@@ -159,7 +174,7 @@ test.describe('search overlay', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
 
     await dialog.getByRole('searchbox').fill('hoodie');
@@ -180,7 +195,7 @@ test.describe('search overlay', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
 
     await dialog.getByRole('searchbox').fill('hoodie');
@@ -228,7 +243,7 @@ test.describe('search overlay', () => {
       route.fulfill({ json: { products: [], collections: [] } }),
     );
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
 
     // Matches no local category either, so every result group is
@@ -275,7 +290,7 @@ test.describe('search overlay', () => {
     );
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
     const input = dialog.getByRole('searchbox');
     // The cancel button only renders once the field has a value.
@@ -293,7 +308,7 @@ test.describe('search overlay', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
     const input = dialog.getByRole('searchbox');
     const closeButton = dialog.getByRole('button', { name: 'CLOSE' });
@@ -343,7 +358,7 @@ test.describe('search overlay', () => {
       expect(parseFloat(value)).toBeLessThan(0.05);
     }
 
-    await page.getByRole('button', { name: 'SEARCH' }).click();
+    await openSearch(page);
     const dialog = page.getByRole('dialog', { name: 'Search' });
     const duration = await dialog.evaluate((el) => getComputedStyle(el).transitionDuration);
     expect(duration === '0s' || parseFloat(duration) < 0.05).toBe(true);

@@ -37,9 +37,18 @@ jobs:
 
       - run: pnpm test:e2e
 
+      # Demo Mode suite (playwright.demo.config.ts): populated-catalog tests,
+      # including the 3D Collection Closet. Runs after the main suite, whose
+      # dev server has exited — Next 16 allows one `next dev` per directory.
+      # `!cancelled()` so a main-suite failure still reports this suite too.
+      - run: pnpm test:e2e:demo
+        if: ${{ !cancelled() }}
+
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            playwright-report-demo/
           retention-days: 7

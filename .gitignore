@@ -14,7 +14,9 @@ dist/
 
 # Testing
 test-results/
+test-results-demo/
 playwright-report/
+playwright-report-demo/
 playwright/.cache/
 blob-report/
 coverage/

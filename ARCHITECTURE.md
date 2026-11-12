@@ -27,7 +27,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 | Hosting/deploy | Vercel | Edge rendering, image optimization, preview deployments |
 | Email | Klaviyo (free tier at launch) | Access password email, welcome, collection announcements, abandoned cart, back-in-stock |
 | Analytics | Shopify Analytics + Google Analytics 4 + Google Search Console | Add Meta/TikTok pixels, Clarity, etc. only when a real marketing need exists |
-| Testing | Playwright (already scaffolded) for E2E; add unit/component tests as the codebase grows | `pnpm test:e2e` is already wired up |
+| Testing | Playwright for E2E (two suites: `pnpm test:e2e` with no store, proving graceful degradation; `pnpm test:e2e:demo` against Demo Mode fixtures — DECISIONS.md D-090) + Vitest unit tests | Both suites run in CI |
 | Package manager | pnpm | Already the project's lockfile; do not introduce a second package manager |
 | Node version | 22 (per `.nvmrc`) | |
 

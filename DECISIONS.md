@@ -1634,3 +1634,33 @@ Independent re-verification before integration surfaced one further gap in trigg
   - Physical devices.
 
 ---
+
+## D-090 — CI gets a second, Demo Mode Playwright suite (`playwright.demo.config.ts`, `tests/e2e-demo/`); the FilterBar max-price tests move there; search tests become hydration-safe
+
+**Finding** (surfaced once the GitHub CLI was connected, 2026-11-11): CI on `main` had failed on every push since 2026-10-27.
+- **The failures:** the same 16 failures each run, the four "FilterBar — dropped max-price feedback" tests in `tests/e2e/catalog.spec.ts` on each of four projects.
+- **Their cause:** they were written against Demo Mode fixtures through a throwaway, never-committed `playwright.worktree.config.ts`, but committed into the main suite. That suite deliberately runs with no store (the graceful-degradation contract of D-033/D-034), so FilterBar never renders there.
+- **Separately,** two search-overlay tests were intermittently flaky in CI.
+
+**Decision:**
+- **Demo Mode suite.** `playwright.demo.config.ts` runs `tests/e2e-demo/` against a dev server with `PREVIEW_DEMO_MODE=1` (Klaviyo pinned empty, as in the main config). It uses Chromium-engine projects only (desktop, plus a Pixel 7 touch profile): the closet needs WebGL, which headless Chromium provides (software-rendered on CI runners) and headless Linux WebKit doesn't reliably.
+  - `workers: 2`: with more concurrent software-rendered canvases, browser sessions crashed mid-test locally, while each test passed alone.
+  - Its reports go to `playwright-report-demo/` and `test-results-demo/` (gitignored).
+- **Script and CI step.** `pnpm test:e2e:demo`. CI runs it as its own step after the main suite, with `if: !cancelled()` so a main-suite failure still reports this one. Two separate runs are required because Next 16 allows one `next dev` per project directory (confirmed: a second instance exits with "Another next dev server is already running"), and the two suites need opposite server environments.
+- **Moved, not rewritten:** the four FilterBar tests now live in `tests/e2e-demo/catalog-filters.spec.ts`.
+- **New: the first automated coverage of the populated 3D Collection Closet** (`tests/e2e-demo/closet.spec.ts`, D-089), asserting on DOM state rather than pixels:
+  - all six pieces render with accessible buttons
+  - keyboard Enter pulls a piece out (selected state, `aria-pressed`, panel heading, VIEW PRODUCT href, headline hidden)
+  - Escape returns it and restores focus
+  - the live panel announces, and CLOSE dismisses
+  - reduced motion works
+  - zero uncaught page errors
+- **Flaky search tests:** the failing attempt's log showed `locator.fill` timing out waiting for the searchbox. SEARCH had been clicked before hydration attached its handler, so the dialog never opened (the same race class as D-076). An `openSearch` helper in `tests/e2e/search.spec.ts` clicks and retries until the dialog is visible. Retrying stops the moment it opens, so no click is ever repeated on an open dialog. All 16 trigger clicks use it.
+
+**Local caveat:** `reuseExistingServer` reuses whatever dev server is on :3000. The Demo suite expects it to be running Demo Mode; the main suite expects it not to be. Stop the dev server, or match its mode, before running either locally.
+
+**Verification:**
+- Demo suite: 18/18, twice locally.
+- Main-suite search and catalog specs against a no-store production build: 130/130 across all four projects, plus search ×3 repeats on Chromium (45/45).
+- CI's own result on push is the final check.
+
