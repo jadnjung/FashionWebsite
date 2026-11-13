@@ -77,7 +77,7 @@ Review specialists may include:
 
 Standard path for non-trivial work:
 
-> You → Engineering Lead → specialist agent(s) → specialist self-check → Engineering Lead integration & review → automated validation → commit when authorized
+> You → Engineering Lead → specialist agent(s) → specialist self-check → Engineering Lead integration & review → automated validation → commit and push to `surfacebook`
 
 Engineering Lead is a **router, architect, and reviewer** — not a mandatory extra step that duplicates work on every task. Its full routing responsibilities are defined in `.codex/agents/engineering-lead.toml`; the rules below are the policy every agent (including the top-level session) should follow.
 
@@ -371,8 +371,9 @@ Never use a bare push, `--all`, `--mirror`, force push, or a destination other t
 agents, skills, and migration tools; they supersede historical no-push notes.
 
 Keep `.claude/`, CLAUDE.md, and `.mcp.json` intact for Claude compatibility.
-This migration task may change only Codex artifacts and migration tooling/reports,
-not application source. Never put credentials in configuration, logs, or commits.
+The original migration covered Codex artifacts and migration tooling. Follow the
+requested scope for subsequent work. Never put credentials in configuration, logs,
+or commits.
 Existing host permissions remain authoritative. Claude's pnpm/git/gh allow rules
 are inventoried in `.codex/migration-inventory.json`, not blanket Codex grants.
 Before completing security-sensitive changes, perform the security-guidance review;

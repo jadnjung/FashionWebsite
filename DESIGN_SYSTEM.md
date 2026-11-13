@@ -4,6 +4,12 @@ Brand: Esque
 Version: 0.1
 Purpose: Define the visual language, interaction system, page behavior, motion rules, responsive behavior, and implementation constraints for the Esque storefront.
 
+The access-gate designs below record the original whole-site entrance. D-063
+retired that entrance, and D-064 applies code entry only to upcoming collections.
+The current homepage uses the 3D Collection Closet in D-089 and the curated looks
+ring in D-091. Their later decisions take precedence where the original designs
+differ. [DECISIONS.md](./DECISIONS.md), [INTERACTIONS.md](./INTERACTIONS.md)
+
 ## 1. Design Philosophy
 
 Esque should feel like:
@@ -1151,4 +1157,3 @@ The final experience should feel as if: **a fashion editorial became an interact
 The visitor should notice the experience. The customer should not notice the complexity required to make it work.
 
 That is the standard for Esque.
-</content>

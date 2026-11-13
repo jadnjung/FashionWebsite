@@ -101,6 +101,10 @@ Source: [PROJECT.md §69](./PROJECT.md#69-page-transitions)
 
 ## 11. Access Gate Motion
 
+The whole-site entrance sequence below is historical. It was retired by D-063.
+The upcoming-collection code form retains the brief incorrect-code motion, while
+ordinary browsing remains public. [DECISIONS.md D-063/D-064](./DECISIONS.md)
+
 Sequence: (1) black screen, (2) ESQUE typography enters, (3) garment image crosses behind the typography, (4) additional garments move at different depths, (5) user cursor subtly affects their movement, (6) access interface resolves into view. Motion must remain quick — never an obstacle for returning users.
 
 **Incorrect password:** text briefly splits horizontally, field shifts approximately 3–5px, message appears. Avoid aggressive shaking.
@@ -200,4 +204,3 @@ Source: [DESIGN_SYSTEM.md §62](./DESIGN_SYSTEM.md#62-recommended-frontend-motio
 Every large effect should justify its cost. Before adding WebGL, a large animation library, 3D, video, or a custom shader, ask: **does this create meaningful Esque value?** If not, do not ship it.
 
 Source: [DESIGN_SYSTEM.md §61](./DESIGN_SYSTEM.md#61-performance-budget-philosophy)
-</content>

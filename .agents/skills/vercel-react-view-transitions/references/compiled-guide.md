@@ -79,8 +79,8 @@ Reserve directional slides for hierarchical navigation (list → detail) and ord
 
 ## Availability
 
-- **Next.js:** Do **not** install `react@canary` — the App Router already bundles React canary internally. `ViewTransition` works out of the box. `npm ls react` may show a stable-looking version; this is expected.
-- **Without Next.js:** Install `react@canary react-dom@canary` (`ViewTransition` is not in stable React).
+- Check the installed React and Next.js versions before applying these examples. This repository declares React 19.2.8 and Next.js 16.3.1 in `package.json`.
+- The current Next.js guide describes React 19.3 with built-in `ViewTransition` and `addTransitionType`. Verify exports and supported configuration for the installed versions, and keep upgrades within the requested scope. [Next.js guide](https://nextjs.org/docs/app/guides/view-transitions)
 - Browser support: Chromium 111+, Firefox 144+, Safari 18.2+. Graceful degradation.
 
 ---
@@ -867,11 +867,11 @@ Avoids raster scaling artifacts on text by hiding the old snapshot and showing t
 experimental: { viewTransition: true }
 ```
 
-Wraps every `<Link>` navigation in `document.startViewTransition`. Use `default="none"` to prevent competing animations. Do **not** install `react@canary` — the App Router already bundles it.
+This flag example comes from an earlier framework configuration. Check the installed Next.js version before applying it. The current guide uses React 19.3 through the App Router without additional configuration. [Next.js guide](https://nextjs.org/docs/app/guides/view-transitions)
 
 ## Next.js Implementation Additions
 
-**After Step 2:** Enable the experimental flag.
+**After Step 2:** Verify whether the installed Next.js version requires a configuration flag.
 
 **Step 4:** Use `transitionTypes` on `<Link>` (if available — see availability note below):
 ```tsx
@@ -892,7 +892,7 @@ Works in Server Components, no wrapper needed:
 <Link href="/products/1" transitionTypes={['nav-forward']}>View</Link>
 ```
 
-**Availability:** Requires `experimental.viewTransition: true`. Available in Next.js 15+ canary builds and Next.js 16+. If unavailable, use `startTransition` + `addTransitionType` + `router.push()`. To check: `grep -r "transitionTypes" node_modules/next/dist/`. Reserve manual `startTransition` for non-link interactions.
+**Availability:** Check `transitionTypes` and any framework flags against the installed Next.js version. Only use APIs supported by that installation. Reserve manual `startTransition` for non-link interactions.
 
 ## `loading.tsx` as Suspense Boundary
 

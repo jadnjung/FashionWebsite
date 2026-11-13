@@ -33,7 +33,7 @@ violate or infringe third parties' rights, such as ... individuals
 depicted in the images, and obtain any necessary permissions from these
 third parties," and a model release exists specifically to permit "the
 use of [a person's] likeness for commercial purposes (to sell, promote, or
-endorse a product)." **Six of these eight files show a clearly
+endorse a product)." **Five of these eight files show a clearly
 identifiable human face** (see table below, confirmed by viewing each
 file directly, not assumed from filenames). Using a person's likeness to
 dress up a commerce-adjacent site's imagery sits close to the "promote a

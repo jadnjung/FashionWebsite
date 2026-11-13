@@ -7,8 +7,10 @@ Earlier no-push statements describe the initial migration and are superseded.
 
 **Follow-up:** Superpowers is now installed and enabled, a TypeScript LSP MCP
 adapter is installed and tested, and native automatic-review hooks are implemented.
-See [AUTOMATION_SETUP.md](AUTOMATION_SETUP.md) for current status and the remaining
-Codex hook trust activation requirement. The original findings below are historical.
+See [AUTOMATION_SETUP.md](AUTOMATION_SETUP.md) for the installed tooling and how to
+check local hook trust. The original findings below record the initial migration.
+
+## Initial migration snapshot
 
 Completed local migration on `surfacebook`, 2026-11-12. No push, merge, commit,
 or application source changes were made. Claude compatibility is preserved.

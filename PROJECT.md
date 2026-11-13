@@ -9,6 +9,15 @@ Initial Catalog: 6 products
 Primary Experience: Desktop + mobile web
 Future: Mobile application, expanded exclusivity system, Lookbook/editorial ecosystem
 
+Later decisions update parts of this original product definition. The whole-site
+password gate described in §§12–15 and §18 was retired in D-063. Browsing is public,
+while §16's early access applies to individual upcoming collections under D-064.
+Request Access currently subscribes visitors to the mailing list. Code delivery
+depends on the owner's Klaviyo setup. The homepage's original hotspot model was
+replaced by the curated looks ring in D-091. Consult the current roadmap and the
+corresponding decision before implementing the original descriptions below.
+[ROADMAP.md](./ROADMAP.md), [DECISIONS.md](./DECISIONS.md)
+
 ## 1. Product Vision
 
 Esque is a niche, experimental fashion house built around limited clothing drops rather than a permanent traditional catalog.
@@ -1846,4 +1855,3 @@ That contrast is important:
 > Experimental while exploring. Effortless while buying.
 
 That should become the defining UX philosophy of Esque.
-</content>

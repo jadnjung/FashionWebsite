@@ -23,13 +23,12 @@ To do this, follow these steps precisely:
 
 1. Launch a session-model Codex agent to check if any of the following are true:
    - The pull request is closed
-   - The pull request is a draft
-   - The pull request does not need code review (e.g. automated PR, trivial change that is obviously correct)
-   - Claude has already commented on this PR (check `gh pr view <PR> --comments` for comments left by claude)
+   - The pull request is a draft and the user did not request a draft review
+   - The latest revision already received the requested review and the user did not request a fresh pass
 
    If any condition is true, stop and do not proceed.
 
-Note: Still review Claude generated PR's.
+Review requested changes regardless of their author. Check existing comments to avoid duplicate findings, and account for new commits since the previous review.
 
 2. Launch a session-model Codex agent to return a list of file paths (not their contents) for all relevant AGENTS.md files including:
    - The root AGENTS.md file, if it exists
@@ -37,7 +36,7 @@ Note: Still review Claude generated PR's.
 
 3. Launch a session-model Codex agent to view the pull request and return a summary of the changes
 
-4. Launch 4 agents in parallel to independently review the changes. Each agent should return the list of issues, where each issue includes a description and the reason it was flagged (e.g. "AGENTS.md adherence", "bug"). The agents should do the following:
+4. Assign the following independent review perspectives to native subagents. Respect the available concurrency limit and batch them when necessary. Each agent should return issues with a description, supporting evidence, and the reason it was flagged.
 
    Agents 1 + 2: AGENTS.md compliance session-model Codex agents
    Audit changes for AGENTS.md compliance in parallel. Note: When evaluating AGENTS.md compliance for a file, you should only consider AGENTS.md files that share a file path with the file or parents.
@@ -78,7 +77,7 @@ Note: Still review Claude generated PR's.
 
 8. Create a list of all comments that you plan on leaving. This is only for you to make sure you are comfortable with the comments. Do not post this list anywhere.
 
-9. Post inline comments for each issue using `an available GitHub review API (or gh api when explicitly authorized)` with `confirmed: true`. For each comment:
+9. When posting was explicitly requested, use an available GitHub review API or `gh api` with that tool's documented arguments. For each comment:
    - Provide a brief description of the issue
    - For small, self-contained fixes, include a committable suggestion block
    - For larger fixes (6+ lines, structural changes, or changes spanning multiple locations), describe the issue and suggested fix without a suggestion block

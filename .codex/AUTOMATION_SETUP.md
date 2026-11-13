@@ -2,8 +2,8 @@
 
 Status: implemented and tested on `surfacebook`; no application or Claude source
 files changed. The user authorizes commits and pushes for this migration and
-future work only to `surfacebook`, never `main`. Codex hook lifecycle activation still requires
-the host's project-hook trust decision. That trust gate was not bypassed.
+future work only to `surfacebook`, never `main`. Hook execution depends on the
+local Codex installation's trust state for each current hook definition.
 
 ## Automatic security review
 
@@ -27,12 +27,12 @@ agent must report actual findings and validation, and review any remediation.
 Missing baseline or detector failure produces an explicit warning and requires
 the same review through the native instruction fallback.
 
-Codex discovery reports all three project hook handlers enabled but **untrusted**.
-They will not execute as lifecycle hooks until approved through Codex's normal
-hook trust controls. No supported non-interactive trust API is exposed by this
-installation. AGENTS.md requires automatic review directly as a fallback, so
-sessions following the project instructions still perform review without asking
-for routine permission. Hook activation is the remaining host-controlled step.
+The initial discovery snapshot recorded three enabled hook handlers awaiting
+trust. Inspect `/hooks` in Codex CLI or Settings > Hooks in the desktop app for
+the current local state. The snapshot in `.migration-tools/runtime-results.json`
+records the installation check and does not refresh automatically. Changed hook
+definitions require a new local trust decision. AGENTS.md requires automatic
+review directly whenever lifecycle hooks are unavailable.
 
 ## Superpowers
 

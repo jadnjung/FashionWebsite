@@ -58,8 +58,8 @@ Run a comprehensive pull request review using multiple specialized agents, each 
    - Each report is complete before next
    - Good for interactive review
 
-   **Parallel approach** (user can request):
-   - Launch all agents simultaneously
+   **Parallel approach** for independent review scopes
+   - Launch relevant agents within the host concurrency limit and batch additional reviews
    - Faster for comprehensive review
    - Results come back together
 
@@ -100,24 +100,24 @@ Run a comprehensive pull request review using multiple specialized agents, each 
 
 **Full review (default):**
 ```
-/pr-review-toolkit:review-pr
+$review-pr
 ```
 
 **Specific aspects:**
 ```
-/pr-review-toolkit:review-pr tests errors
+$review-pr tests errors
 # Reviews only test coverage and error handling
 
-/pr-review-toolkit:review-pr comments
+$review-pr comments
 # Reviews only code comments
 
-/pr-review-toolkit:review-pr simplify
+$review-pr simplify
 # Simplifies code after passing review
 ```
 
 **Parallel review:**
 ```
-/pr-review-toolkit:review-pr all parallel
+$review-pr all parallel
 # Launches all agents in parallel
 ```
 
@@ -167,7 +167,7 @@ Run a comprehensive pull request review using multiple specialized agents, each 
 **Before committing:**
 ```
 1. Write code
-2. Run: /pr-review-toolkit:review-pr code errors
+2. Run: $review-pr code errors
 3. Fix any critical issues
 4. Commit
 ```
@@ -175,7 +175,7 @@ Run a comprehensive pull request review using multiple specialized agents, each 
 **Before creating PR:**
 ```
 1. Stage all changes
-2. Run: /pr-review-toolkit:review-pr all
+2. Run: $review-pr all
 3. Address all critical and important issues
 4. Run specific reviews again to verify
 5. Create PR

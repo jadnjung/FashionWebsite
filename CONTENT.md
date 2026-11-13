@@ -44,6 +44,11 @@ Source: [DESIGN_SYSTEM.md §12](./DESIGN_SYSTEM.md#12-case)
 
 ## 3. Access Gate Copy
 
+The entry layout below is historical. D-063 retired the whole-site gate. The
+current upcoming-collection form uses `EARLY ACCESS CODE`, `ENTER`, and a
+`REQUEST ACCESS` link. The incorrect-code vocabulary in §5 remains applicable.
+[DECISIONS.md D-063/D-064](./DECISIONS.md)
+
 Entry:
 
 ```
@@ -65,6 +70,11 @@ Consent checkbox: "I agree to receive Esque emails, including access and collect
 CTA: `REQUEST ACCESS`
 
 Confirmation: `ACCESS SENT.` Secondary: `CHECK YOUR EMAIL.`
+
+These labels describe the current UI. The implementation subscribes the visitor
+to Klaviyo's list. Sending an access-code email requires the owner's Klaviyo flow
+or manual delivery, as recorded in D-020 and D-064. The confirmation alone does
+not verify delivery. [DECISIONS.md](./DECISIONS.md)
 
 Access email structure — minimal, no generic newsletter aesthetic:
 
@@ -161,4 +171,3 @@ Source: [DESIGN_SYSTEM.md §17](./DESIGN_SYSTEM.md#17-buttons), scattered scene/
 - **Cursor/UI states:** short, uppercase verbs (`VIEW`, `SHOP`, `DRAG`, `OPEN`, `NEXT`).
 
 Source: [PROJECT.md §8–9](./PROJECT.md#8-launch-collection)
-</content>

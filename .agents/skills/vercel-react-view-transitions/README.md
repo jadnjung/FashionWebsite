@@ -17,9 +17,9 @@ An agent skill for implementing smooth, native-feeling animations using React's 
 
 ```
 react-view-transitions/
-├── SKILL.md                      # Core skill (always loaded)
-├── AGENTS.md                     # Full compiled document (all references expanded)
+├── SKILL.md                      # Loaded when the skill is selected
 └── references/
+    ├── compiled-guide.md         # Full compiled document (all references expanded)
     ├── implementation.md         # Step-by-step implementation workflow
     ├── patterns.md               # Real-world patterns, events API, troubleshooting
     ├── nextjs.md                 # Next.js-specific patterns
@@ -39,5 +39,4 @@ npx skills add https://github.com/vercel-labs/agent-skills --skill vercel-react-
 - [React `<ViewTransition>` docs](https://react.dev/reference/react/ViewTransition)
 - [React `addTransitionType` docs](https://react.dev/reference/react/addTransitionType)
 - [Next.js View Transitions guide](https://nextjs.org/docs/app/guides/view-transitions)
-- [Next.js `viewTransition` config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition)
 - [Next.js App Router Playground (view transitions)](https://github.com/vercel/next-app-router-playground/tree/main/app/view-transitions) — Vercel's reference implementation

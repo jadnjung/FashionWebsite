@@ -14,17 +14,18 @@ Everything needed to continue this project is in this repository except
 secrets and a few per-machine tools. On a new computer:
 
 1. **Tools.** Install Node 22 (`nvm install && nvm use` reads `.nvmrc`), then enable pnpm through Corepack (`corepack enable` — `package.json` pins pnpm 11.22.0).
-2. **GitHub.** Add an SSH key to your GitHub account, then sign in to the CLI with `gh auth login` (lets Claude open PRs and read CI).
+2. **GitHub.** Add an SSH key to your GitHub account, then sign in to the CLI with `gh auth login` for repository and CI access. Continue on `surfacebook`. The standing publication instructions are in [AGENTS.md](./AGENTS.md#branch-and-migration-safeguards).
 3. **Dependencies.** `pnpm install`, then `pnpm exec playwright install --with-deps chromium webkit` for the browser tests.
 4. **Secrets.** `cp .env.local.example .env.local` and fill in the values from your password manager — the Klaviyo private key and list ID, the drop-access code, and `PREVIEW_DEMO_MODE=1` for the sample catalog. Never commit `.env.local`; this repository is public.
-5. **Claude Code — project setup (automatic).** Open this folder in Claude Code and approve what it asks for: the plugins listed in `.claude/settings.json` (superpowers, feature-dev, code-review, pr-review-toolkit, code-simplifier, security-guidance, frontend-design, typescript-lsp) and the context7 docs server in `.mcp.json`. The project's agents (`.claude/agents/`) and skills (`.claude/skills/`) load automatically.
-6. **Claude Code — your global setup (copy once).** Restore the user-level files backed up in [`setup/claude/`](./setup/claude/README.md):
+5. **Codex.** Open this folder in Codex. The repository contains its instructions (`AGENTS.md`), agents (`.codex/agents/`), skills (`.agents/skills/`), MCP configuration, and review hooks. Install the isolated TypeScript tooling with `npm ci --prefix .codex/tools/typescript-runtime --ignore-scripts --no-audit --no-fund`, then install Superpowers with `codex plugin add superpowers@openai-curated-remote`. Review the project hooks in Codex's hook controls. Per-machine setup and validation commands are in [AUTOMATION_SETUP.md](./.codex/AUTOMATION_SETUP.md).
+6. **Claude Code — project setup (automatic).** Open this folder in Claude Code and approve what it asks for: the plugins listed in `.claude/settings.json` (superpowers, feature-dev, code-review, pr-review-toolkit, code-simplifier, security-guidance, frontend-design, typescript-lsp) and the context7 docs server in `.mcp.json`. The project's agents (`.claude/agents/`) and skills (`.claude/skills/`) load automatically.
+7. **Claude Code — your global setup (copy once).** Restore the user-level files backed up in [`setup/claude/`](./setup/claude/README.md):
    ```bash
    mkdir -p ~/.claude/skills && cp setup/claude/global-CLAUDE.md ~/.claude/CLAUDE.md && cp -R setup/claude/skills/find-skills ~/.claude/skills/
    ```
    (Check first that the new machine has no `~/.claude/CLAUDE.md` of its own you'd overwrite.)
-7. **Check it works.** `pnpm typecheck && pnpm test:unit`, then `pnpm dev`.
-8. **Pick up where you left off.** Read [ROADMAP.md](./ROADMAP.md) → **Current Status**, then the latest entries at the end of [DECISIONS.md](./DECISIONS.md).
+8. **Check it works.** `pnpm typecheck && pnpm test:unit`, then `pnpm dev`.
+9. **Pick up where you left off.** Read [ROADMAP.md](./ROADMAP.md) → **Current Status**, then the latest entries at the end of [DECISIONS.md](./DECISIONS.md).
 
 ## Development
 

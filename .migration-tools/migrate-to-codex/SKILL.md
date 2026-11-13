@@ -81,10 +81,10 @@ Do not edit source Claude Code files, unrelated project code, secrets, or anothe
 
 ## Commands
 
-Choose the migrator command.
+This repository keeps the official skill under `.migration-tools/migrate-to-codex/`. Run the following command from the repository root. This installation-specific path adapts the upstream example.
 
    ```bash
-   MIGRATE_TO_CODEX='python3 .codex/skills/migrate-to-codex/scripts/migrate-to-codex.py'
+   MIGRATE_TO_CODEX='python -X utf8 .migration-tools/migrate-to-codex/scripts/migrate-to-codex.py'
    ```
 
 Inspect the migration before writing.

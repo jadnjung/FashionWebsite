@@ -2,10 +2,10 @@
 
 ## Setup
 
-`<ViewTransition>` works out of the box — the bundled React canary ships it, and every `<Link>` navigation runs inside `React.startTransition`, so react-dom starts a view transition whenever affected `<ViewTransition>` components exist. Set the documented flag:
+Check `package.json` and the documentation matching the installed framework before applying the examples. The current Next.js guide uses React 19.3 with view transitions enabled through the App Router. This repository declares React 19.2.8 and Next.js 16.3.1, so verify the available exports and configuration against those versions. [Current Next.js guide](https://nextjs.org/docs/app/guides/view-transitions)
 
 ```js
-// next.config.js
+// Historical configuration example. Verify support in the installed NextConfig.
 const nextConfig = {
   experimental: { viewTransition: true },
 };
@@ -16,7 +16,7 @@ module.exports = nextConfig;
 
 Because every link click is a transition, any VT with `default="auto"` fires on **every** navigation — use `default="none"` to prevent competing animations.
 
-Do **not** install `react@canary` — see [Availability](../SKILL.md#availability) for details.
+Check [Availability](../SKILL.md#availability) before changing React dependencies or framework flags.
 
 ---
 
@@ -24,7 +24,7 @@ Do **not** install `react@canary` — see [Availability](../SKILL.md#availabilit
 
 When following [implementation.md](implementation.md), apply these additions:
 
-**After Step 2:** Enable the experimental flag above.
+**After Step 2:** Verify whether the installed Next.js version requires a configuration flag.
 
 **Step 4:** Use `transitionTypes` on `<Link>` — see [The `transitionTypes` Prop](#the-transitiontypes-prop-on-nextlink). If the animation depends on dynamic destination content, also see [When Content Must Be Ready](#when-content-must-be-ready).
 
