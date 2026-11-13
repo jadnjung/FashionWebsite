@@ -1,0 +1,4 @@
+{
+  "source_frontmatter": "name: vercel-composition-patterns\ndescription:\n  React composition patterns that scale. Use when refactoring components with\n  boolean prop proliferation, building flexible component libraries, or\n  designing reusable APIs. Triggers on tasks involving compound components,\n  render props, context providers, or component architecture. Includes React 19\n  API changes.\nlicense: MIT\nmetadata:\n  author: vercel\n  version: '1.0.0'",
+  "note": "Original metadata retained for attribution; Codex routing uses SKILL.md."
+}

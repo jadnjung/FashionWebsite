@@ -1,0 +1,38 @@
+{
+  "description": "Native Codex security review: per-turn change baseline and one automatic review continuation.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import json; print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': 'Load AGENTS.md. Automatic security review snapshots edits at prompt submission and requests a read-only security-engineer review before final completion. Review fixes again before finishing; never expose secrets. The user authorizes validated commits and pushes only to surfacebook, never main; follow AGENTS.md publication safeguards.'}}))\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"from pathlib import Path; import runpy; p=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'.codex/hooks/automatic_review.py').is_file()); runpy.run_path(str(p/'.codex/hooks/automatic_review.py'),run_name='__main__')\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"from pathlib import Path; import runpy; p=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'.codex/hooks/automatic_review.py').is_file()); runpy.run_path(str(p/'.codex/hooks/automatic_review.py'),run_name='__main__')\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

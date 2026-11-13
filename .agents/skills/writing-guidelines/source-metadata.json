@@ -1,0 +1,4 @@
+{
+  "source_frontmatter": "name: writing-guidelines\ndescription: Review docs/prose for Writing Guidelines compliance. Use when asked to \"review my docs\", \"check writing style\", \"audit prose\", \"review docs voice and tone\", or \"check this page against the writing handbook\".\nmetadata:\n  author: vercel\n  version: \"1.0.0\"\n  argument-hint: <file-or-pattern>",
+  "note": "Original metadata retained for attribution; Codex routing uses SKILL.md."
+}

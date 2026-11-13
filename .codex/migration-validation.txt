@@ -1,0 +1,43 @@
+Validation report:
+  ok: .codex/config.toml - valid TOML.
+  ok: .codex/config.toml - MCP server `context7` command `npx` is on PATH.
+  ok: .agents/skills/code-review/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/feature-dev/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/frontend-design/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/gen-test/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/review-pr/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/security-guidance/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/vercel-composition-patterns/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/vercel-react-best-practices/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/vercel-react-view-transitions/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/web-design-guidelines/SKILL.md - skill frontmatter has name and description.
+  ok: .agents/skills/writing-guidelines/SKILL.md - skill frontmatter has name and description.
+  ok: .codex/agents/architecture-reviewer.toml - agent TOML has required fields.
+  ok: .codex/agents/backend-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/code-simplifier-code-simplifier.toml - agent TOML has required fields.
+  ok: .codex/agents/data-analytics-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/devops-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/engineering-lead.toml - agent TOML has required fields.
+  ok: .codex/agents/feature-dev-code-architect.toml - agent TOML has required fields.
+  ok: .codex/agents/feature-dev-code-explorer.toml - agent TOML has required fields.
+  ok: .codex/agents/feature-dev-code-reviewer.toml - agent TOML has required fields.
+  ok: .codex/agents/frontend-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/fullstack-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-code-reviewer.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-code-simplifier.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-comment-analyzer.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-pr-test-analyzer.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-silent-failure-hunter.toml - agent TOML has required fields.
+  ok: .codex/agents/pr-review-toolkit-type-design-analyzer.toml - agent TOML has required fields.
+  ok: .codex/agents/product-manager.toml - agent TOML has required fields.
+  ok: .codex/agents/qa-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/security-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/seo-performance-engineer.toml - agent TOML has required fields.
+  ok: .codex/agents/test-reviewer.toml - agent TOML has required fields.
+  ok: .codex/agents/ui-reviewer.toml - agent TOML has required fields.
+  ok: .codex/agents/ui-ux-designer.toml - agent TOML has required fields.
+  ok: .agents/skills/vercel-composition-patterns/AGENTS.md - 23.0KB is under the 32KB review threshold.
+  ok: .claude/skills/vercel-composition-patterns/AGENTS.md - 23.0KB is under the 32KB review threshold.
+  warning: .claude/skills/vercel-react-best-practices/AGENTS.md - 109.4KB exceeds the 32KB review threshold.
+  warning: .claude/skills/vercel-react-view-transitions/AGENTS.md - 32.5KB exceeds the 32KB review threshold.
+  ok: AGENTS.md - 10.5KB is under the 32KB review threshold.

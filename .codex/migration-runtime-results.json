@@ -1,0 +1,72 @@
+{
+  "initialize": "passed",
+  "skills": [
+    {
+      "name": "code-review",
+      "enabled": true,
+      "description": "Code review a pull request"
+    },
+    {
+      "name": "feature-dev",
+      "enabled": true,
+      "description": "Guided feature development with codebase understanding and architecture focus"
+    },
+    {
+      "name": "frontend-design",
+      "enabled": true,
+      "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults."
+    },
+    {
+      "name": "gen-test",
+      "enabled": true,
+      "description": "Generate high-quality tests for application behavior, including unit, integration, component, and end-to-end testing."
+    },
+    {
+      "name": "review-pr",
+      "enabled": true,
+      "description": "Comprehensive PR review using specialized agents"
+    },
+    {
+      "name": "security-guidance",
+      "enabled": true,
+      "description": "Review changed code for security risks before completing security-sensitive work; replaces the manual portion of the Claude security-guidance plugin."
+    },
+    {
+      "name": "vercel-composition-patterns",
+      "enabled": true,
+      "description": "React composition patterns that scale. Use when refactoring components with boolean prop proliferation, building flexible component libraries, or designing reusable APIs. Triggers on tasks involving compound components, render props, context providers, or component architecture. Includes React 19 API changes."
+    },
+    {
+      "name": "vercel-react-best-practices",
+      "enabled": true,
+      "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements."
+    },
+    {
+      "name": "vercel-react-view-transitions",
+      "enabled": true,
+      "description": "Guide for implementing smooth, native-feeling animations using React's View Transition API (`<ViewTransition>` component, `addTransitionType`, and CSS view transition pseudo-elements). Use this skill whenever the user wants to add page transitions, animate route changes, create shared element animations, animate enter/exit of components, animate list reorder, implement directional (forward/back) navigation animations, or integrate view transitions in Next.js. Also use when the user mentions view transitions, `startViewTransition`, `ViewTransition`, transition types, or asks about animating between UI states in React without third-party animation libraries."
+    },
+    {
+      "name": "web-design-guidelines",
+      "enabled": true,
+      "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\"."
+    },
+    {
+      "name": "writing-guidelines",
+      "enabled": true,
+      "description": "Review docs/prose for Writing Guidelines compliance. Use when asked to \"review my docs\", \"check writing style\", \"audit prose\", \"review docs voice and tone\", or \"check this page against the writing handbook\"."
+    }
+  ],
+  "skill_errors": [],
+  "thread_started": true,
+  "context7": [
+    {
+      "name": "context7",
+      "authStatus": "unsupported",
+      "tools": [
+        "resolve-library-id",
+        "query-docs"
+      ]
+    }
+  ]
+}

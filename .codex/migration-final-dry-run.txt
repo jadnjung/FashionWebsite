@@ -1,0 +1,106 @@
+Migration summary (dry-run):
+  deploy mode: merge
+  instructions: 1
+  skills: 6
+  subagents: 14
+  mcp servers: 1
+  orphaned skills: 5
+  orphaned subagents: 10
+
+Migration inventory:
+  active: instruction files - 2 found
+    - CLAUDE.md
+    - AGENTS.md
+  active: skills - 6 found
+    - gen-test
+    - vercel-composition-patterns
+    - vercel-react-best-practices
+    - vercel-react-view-transitions
+    - web-design-guidelines
+    - writing-guidelines
+  inactive: command sources - none found
+  active: subagents - 14 found
+    - architecture-reviewer
+    - backend-engineer
+    - data-analytics-engineer
+    - devops-engineer
+    - engineering-lead
+    - frontend-engineer
+    - fullstack-engineer
+    - product-manager
+    - qa-engineer
+    - security-engineer
+    - seo-performance-engineer
+    - test-reviewer
+    - ui-reviewer
+    - ui-ux-designer
+
+Migration surfaces:
+  active: AGENTS.md - 1 instruction file(s) found.
+  active: skills - 6 skill(s) converted.
+  active: MCP config - 1 MCP server(s) converted into config.toml.
+  active: subagents - 14 subagent(s) converted.
+
+Migration report:
+  manual_fix_required: AGENTS.md - Generated copy contains Claude-only instruction semantics.
+  rewritten: .agents/skills/gen-test/SKILL.md - Converted Claude skill.
+  manual_fix_required: .agents/skills/vercel-composition-patterns/SKILL.md - Manual review required for Claude skill fields: `author`, `license`, `metadata`, `version`.
+  manual_fix_required: .agents/skills/vercel-react-best-practices/SKILL.md - Manual review required for Claude skill fields: `author`, `license`, `metadata`, `version`.
+  manual_fix_required: .agents/skills/vercel-react-view-transitions/SKILL.md - Manual review required for Claude skill fields: `author`, `license`, `metadata`, `version`.
+  manual_fix_required: .agents/skills/web-design-guidelines/SKILL.md - Manual review required for Claude skill fields: `argument-hint`, `author`, `metadata`, `version`.
+  manual_fix_required: .agents/skills/writing-guidelines/SKILL.md - Manual review required for Claude skill fields: `argument-hint`, `author`, `metadata`, `version`.
+  rewritten: .codex/config.toml - Converted 1 MCP server entries.
+  manual_fix_required: .codex/agents/architecture-reviewer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/backend-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/data-analytics-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/devops-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/engineering-lead.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/frontend-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/fullstack-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/product-manager.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/qa-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/security-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/seo-performance-engineer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/test-reviewer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/ui-reviewer.toml - Manual review required for Claude subagent fields: `skills`.
+  manual_fix_required: .codex/agents/ui-ux-designer.toml - Manual review required for Claude subagent fields: `skills`.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/web-design-guidelines - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/gen-test - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/vercel-react-view-transitions - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/writing-guidelines - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/vercel-composition-patterns - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.agents/skills/vercel-react-best-practices - Existing Codex skill will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/frontend-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/product-manager.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/qa-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/test-reviewer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/engineering-lead.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/ui-reviewer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/security-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/data-analytics-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/fullstack-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/backend-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/ui-ux-designer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/architecture-reviewer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/devops-engineer.toml - Existing Codex subagent will be replaced.
+  overwritten: C:/Users/jaden/Desktop/FashionWebsite/.codex/agents/seo-performance-engineer.toml - Existing Codex subagent will be replaced.
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\web-design-guidelines
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\gen-test
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\vercel-react-view-transitions
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\writing-guidelines
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\vercel-composition-patterns
+warning: overwriting existing Codex skill at C:\Users\jaden\Desktop\FashionWebsite\.agents\skills\vercel-react-best-practices
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\frontend-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\product-manager.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\qa-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\test-reviewer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\engineering-lead.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\ui-reviewer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\security-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\data-analytics-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\fullstack-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\backend-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\ui-ux-designer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\architecture-reviewer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\devops-engineer.toml
+warning: overwriting existing Codex subagent at C:\Users\jaden\Desktop\FashionWebsite\.codex\agents\seo-performance-engineer.toml

@@ -1,0 +1,155 @@
+{
+  "initialize": "passed",
+  "skills": [
+    {
+      "name": "code-review",
+      "enabled": true,
+      "description": "Code review a pull request"
+    },
+    {
+      "name": "feature-dev",
+      "enabled": true,
+      "description": "Guided feature development with codebase understanding and architecture focus"
+    },
+    {
+      "name": "frontend-design",
+      "enabled": true,
+      "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults."
+    },
+    {
+      "name": "gen-test",
+      "enabled": true,
+      "description": "Generate high-quality tests for application behavior, including unit, integration, component, and end-to-end testing."
+    },
+    {
+      "name": "review-pr",
+      "enabled": true,
+      "description": "Comprehensive PR review using specialized agents"
+    },
+    {
+      "name": "security-guidance",
+      "enabled": true,
+      "description": "Review changed code for security risks before completing security-sensitive work; replaces the manual portion of the Claude security-guidance plugin."
+    },
+    {
+      "name": "vercel-composition-patterns",
+      "enabled": true,
+      "description": "React composition patterns that scale. Use when refactoring components with boolean prop proliferation, building flexible component libraries, or designing reusable APIs. Triggers on tasks involving compound components, render props, context providers, or component architecture. Includes React 19 API changes."
+    },
+    {
+      "name": "vercel-react-best-practices",
+      "enabled": true,
+      "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements."
+    },
+    {
+      "name": "vercel-react-view-transitions",
+      "enabled": true,
+      "description": "Guide for implementing smooth, native-feeling animations using React's View Transition API (`<ViewTransition>` component, `addTransitionType`, and CSS view transition pseudo-elements). Use this skill whenever the user wants to add page transitions, animate route changes, create shared element animations, animate enter/exit of components, animate list reorder, implement directional (forward/back) navigation animations, or integrate view transitions in Next.js. Also use when the user mentions view transitions, `startViewTransition`, `ViewTransition`, transition types, or asks about animating between UI states in React without third-party animation libraries."
+    },
+    {
+      "name": "web-design-guidelines",
+      "enabled": true,
+      "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\"."
+    },
+    {
+      "name": "writing-guidelines",
+      "enabled": true,
+      "description": "Review docs/prose for Writing Guidelines compliance. Use when asked to \"review my docs\", \"check writing style\", \"audit prose\", \"review docs voice and tone\", or \"check this page against the writing handbook\"."
+    }
+  ],
+  "skill_errors": [],
+  "thread_started": true,
+  "context7": [
+    {
+      "name": "context7",
+      "authStatus": "unsupported",
+      "tools": [
+        "query-docs",
+        "resolve-library-id"
+      ]
+    }
+  ],
+  "typescript_lsp": [
+    {
+      "name": "typescript_lsp",
+      "tools": [
+        "typescript_hover",
+        "typescript_definition",
+        "typescript_references",
+        "typescript_symbols",
+        "typescript_diagnostics"
+      ]
+    }
+  ],
+  "hooks": {
+    "data": [
+      {
+        "cwd": "C:\\Users\\jaden\\Desktop\\FashionWebsite",
+        "hooks": [
+          {
+            "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:session_start:0:0",
+            "eventName": "sessionStart",
+            "handlerType": "command",
+            "command": "python -c \"import json; print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': 'Load AGENTS.md. Automatic security review snapshots edits at prompt submission and requests a read-only security-engineer review before final completion. Review fixes again before finishing; never expose secrets or push this migration.'}}))\"",
+            "async": false,
+            "matcher": null,
+            "timeoutSec": 10,
+            "statusMessage": null,
+            "additionalContextLimit": null,
+            "sourcePath": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json",
+            "source": "project",
+            "pluginId": null,
+            "environmentId": null,
+            "displayOrder": 0,
+            "enabled": true,
+            "isManaged": false,
+            "currentHash": "sha256:3db65058de975857be29f6089100d7d1e89996951b596bcf3361c8fd12d56274",
+            "trustStatus": "untrusted"
+          },
+          {
+            "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:user_prompt_submit:0:0",
+            "eventName": "userPromptSubmit",
+            "handlerType": "command",
+            "command": "python -c \"from pathlib import Path; import runpy; p=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'.codex/hooks/automatic_review.py').is_file()); runpy.run_path(str(p/'.codex/hooks/automatic_review.py'),run_name='__main__')\"",
+            "async": false,
+            "matcher": null,
+            "timeoutSec": 30,
+            "statusMessage": null,
+            "additionalContextLimit": null,
+            "sourcePath": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json",
+            "source": "project",
+            "pluginId": null,
+            "environmentId": null,
+            "displayOrder": 1,
+            "enabled": true,
+            "isManaged": false,
+            "currentHash": "sha256:43feb17dac15e5e019d3739f2c1125b8fa3c3a276abf7e7b1cbb5adff2ce2d23",
+            "trustStatus": "untrusted"
+          },
+          {
+            "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:stop:0:0",
+            "eventName": "stop",
+            "handlerType": "command",
+            "command": "python -c \"from pathlib import Path; import runpy; p=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'.codex/hooks/automatic_review.py').is_file()); runpy.run_path(str(p/'.codex/hooks/automatic_review.py'),run_name='__main__')\"",
+            "async": false,
+            "matcher": null,
+            "timeoutSec": 30,
+            "statusMessage": null,
+            "additionalContextLimit": null,
+            "sourcePath": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json",
+            "source": "project",
+            "pluginId": null,
+            "environmentId": null,
+            "displayOrder": 2,
+            "enabled": true,
+            "isManaged": false,
+            "currentHash": "sha256:e947259ed7d9e3df21723f33455e55a5d0292d9250ed3ea5abe5364df4614ac4",
+            "trustStatus": "untrusted"
+          }
+        ],
+        "warnings": [],
+        "errors": []
+      }
+    ]
+  }
+}

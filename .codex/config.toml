@@ -1,0 +1,20 @@
+personality = "friendly"
+
+[mcp_servers]
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[features]
+hooks = true
+multi_agent = true
+
+[agents]
+max_concurrent_threads_per_session = 4
+
+[mcp_servers.typescript_lsp]
+command = "python"
+args = ["-c", "from pathlib import Path; import runpy; p=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'.codex/tools/typescript_mcp.py').is_file()); runpy.run_path(str(p/'.codex/tools/typescript_mcp.py'),run_name='__main__')"]
+startup_timeout_sec = 30
+tool_timeout_sec = 45

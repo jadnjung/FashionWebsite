@@ -1,0 +1,4 @@
+{
+  "source_frontmatter": "name: web-design-guidelines\ndescription: Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\".\nmetadata:\n  author: vercel\n  version: \"1.0.0\"\n  argument-hint: <file-or-pattern>",
+  "note": "Original metadata retained for attribution; Codex routing uses SKILL.md."
+}
