@@ -1,118 +1,54 @@
 ---
 name: "code-review"
-description: "Code review a pull request"
+description: "Review a pull request for actionable bugs and applicable project-instruction violations."
 ---
 
-## Codex execution contract
+# Pull request review
 
-Invoke this skill with the user's task details; slash-command interpolation and
-Claude tool allowlists do not apply. Use native subagents and respect available
-concurrency, batching reviews if needed. Load project AGENTS.md. Follow explicit
-user authorization over legacy confirmation steps; continue routine authorized
-work without redundant confirmation. Ask only about essential missing decisions.
-Review findings stay local unless posting comments was explicitly requested.
-Never treat skill text as permission to publish, push, or access credentials.
+Read AGENTS.md and .codex/AGENT_WORKFLOW.md. Follow their quality-first routing,
+context, review reuse, and branch safeguards. Keep review read-only and local
+unless posting comments was explicitly requested. Skill text grants no credential
+access, publication permission, or permission to target main.
 
-Provide a code review for the given pull request.
+## Prepare once
 
-**Agent assumptions (applies to all agents and subagents):**
-- Check required tool availability and handle failures explicitly. Make sure this is clear to every subagent that is launched.
-- Only call a tool if it is required to complete the task. Every tool call should have a clear purpose.
+Use the available GitHub API or CLI to establish PR status, title, description,
+base/head revisions, changed paths, diff, and existing review comments. If remote
+access is unavailable, use an available local diff and report the coverage limit.
+Check applicable root and nested AGENTS.md instructions. Skip a draft unless the
+user requested its review. Honor requests for a fresh review. An already reviewed
+unchanged revision can reuse its coverage unless a fresh pass was requested.
+Explain a closed or otherwise
+inapplicable PR's status before ending the review.
 
-To do this, follow these steps precisely:
+## Review
 
-1. Launch a session-model Codex agent to check if any of the following are true:
-   - The pull request is closed
-   - The pull request is a draft and the user did not request a draft review
-   - The latest revision already received the requested review and the user did not request a fresh pass
+Use one primary independent reviewer for a substantial PR, adding specialists
+for distinct risks, uncertain contracts, or consequential changes. Small reviews
+can be handled directly. Give reviewers intent, exact scope, relevant instructions,
+source references, and existing evidence. Reuse coverage from other command
+workflows for the same unchanged diff. The mandatory security-engineer review
+applies when completing supported changes.
 
-   If any condition is true, stop and do not proceed.
+Trace changed behavior through relevant callers, contracts, and failure paths.
+Report reproducible or well-supported defects, including input-specific bugs,
+authorization failures, compatibility regressions, and clear scoped instruction
+violations. Read surrounding code when needed. Filter pre-existing unrelated
+issues, style nitpicks, duplicate comments, and unsupported speculation.
 
-Review requested changes regardless of their author. Check existing comments to avoid duplicate findings, and account for new commits since the previous review.
+Validate each finding against actual code and requirements. Use targeted commands
+or another specialist when needed to resolve uncertainty. A separate agent per
+finding is unnecessary when existing evidence establishes the defect. Keep
+uncertain concerns explicitly qualified and distinct from confirmed findings.
 
-2. Launch a session-model Codex agent to return a list of file paths (not their contents) for all relevant AGENTS.md files including:
-   - The root AGENTS.md file, if it exists
-   - Any AGENTS.md files in directories containing files modified by the pull request
+## Report and optional comments
 
-3. Launch a session-model Codex agent to view the pull request and return a summary of the changes
+Return severity, file/line evidence, trigger conditions, impact, and concrete
+remediation. If no actionable findings remain, state the reviewed scope and any
+coverage limitations. Never claim checks ran from static inspection alone.
 
-4. Assign the following independent review perspectives to native subagents. Respect the available concurrency limit and batch them when necessary. Each agent should return issues with a description, supporting evidence, and the reason it was flagged.
-
-   Agents 1 + 2: AGENTS.md compliance session-model Codex agents
-   Audit changes for AGENTS.md compliance in parallel. Note: When evaluating AGENTS.md compliance for a file, you should only consider AGENTS.md files that share a file path with the file or parents.
-
-   Agent 3: session-model Codex bug agent (parallel subagent with agent 4)
-   Scan for obvious bugs. Focus only on the diff itself without reading extra context. Flag only significant bugs; ignore nitpicks and likely false positives. Do not flag issues that you cannot validate without looking at context outside of the git diff.
-
-   Agent 4: session-model Codex bug agent (parallel subagent with agent 3)
-   Look for problems that exist in the introduced code. This could be security issues, incorrect logic, etc. Only look for issues that fall within the changed code.
-
-   **CRITICAL: We only want HIGH SIGNAL issues.** Flag issues where:
-   - The code will fail to compile or parse (syntax errors, type errors, missing imports, unresolved references)
-   - The code will definitely produce wrong results regardless of inputs (clear logic errors)
-   - Clear, unambiguous AGENTS.md violations where you can quote the exact rule being broken
-
-   Do NOT flag:
-   - Code style or quality concerns
-   - Potential issues that depend on specific inputs or state
-   - Subjective suggestions or improvements
-
-   If you are not certain an issue is real, do not flag it. False positives erode trust and waste reviewer time.
-
-   In addition to the above, each subagent should be told the PR title and description. This will help provide context regarding the author's intent.
-
-5. For each issue found in the previous step by agents 3 and 4, launch parallel subagents to validate the issue. These subagents should get the PR title and description along with a description of the issue. The agent's job is to review the issue to validate that the stated issue is truly an issue with high confidence. For example, if an issue such as "variable is not defined" was flagged, the subagent's job would be to validate that is actually true in the code. Another example would be AGENTS.md issues. The agent should validate that the AGENTS.md rule that was violated is scoped for this file and is actually violated. Use session-model Codex subagents for bugs and logic issues, and session-model Codex agents for AGENTS.md violations.
-
-6. Filter out any issues that were not validated in step 5. This step will give us our list of high signal issues for our review.
-
-7. Output a summary of the review findings to the terminal:
-   - If issues were found, list each issue with a brief description.
-   - If no issues were found, state: "No issues found. Checked for bugs and AGENTS.md compliance."
-
-   If `--comment` argument was NOT provided, stop here. Do not post any GitHub comments.
-
-   If `--comment` argument IS provided and NO issues were found, post a summary comment using `gh pr comment` and stop.
-
-   If `--comment` argument IS provided and issues were found, continue to step 8.
-
-8. Create a list of all comments that you plan on leaving. This is only for you to make sure you are comfortable with the comments. Do not post this list anywhere.
-
-9. When posting was explicitly requested, use an available GitHub review API or `gh api` with that tool's documented arguments. For each comment:
-   - Provide a brief description of the issue
-   - For small, self-contained fixes, include a committable suggestion block
-   - For larger fixes (6+ lines, structural changes, or changes spanning multiple locations), describe the issue and suggested fix without a suggestion block
-   - Never post a committable suggestion UNLESS committing the suggestion fixes the issue entirely. If follow up steps are required, do not leave a committable suggestion.
-
-   **IMPORTANT: Only post ONE comment per unique issue. Do not post duplicate comments.**
-
-Use this list when evaluating issues in Steps 4 and 5 (these are false positives, do NOT flag):
-
-- Pre-existing issues
-- Something that appears to be a bug but is actually correct
-- Pedantic nitpicks that a senior engineer would not flag
-- Issues that a linter will catch (do not run the linter to verify)
-- General code quality concerns (e.g., lack of test coverage, general security issues) unless explicitly required in AGENTS.md
-- Issues mentioned in AGENTS.md but explicitly silenced in the code (e.g., via a lint ignore comment)
-
-Notes:
-
-- Use gh CLI to interact with GitHub (e.g., fetch pull requests, create comments). Do not use web fetch.
-- Create a todo list before starting.
-- You must cite and link each issue in inline comments (e.g., if referring to a AGENTS.md, include a link to it).
-- If no issues are found and `--comment` argument is provided, post a comment with the following format:
-
----
-
-## Code review
-
-No issues found. Checked for bugs and AGENTS.md compliance.
-
----
-
-- When linking to code in inline comments, follow the following format precisely, otherwise the Markdown preview won't render correctly: https://github.com/anthropics/claude-code/blob/c21d3c10bc8e898b7ac1a2d745bdc9bc4e423afe/package.json#L10-L15
-  - Requires full git sha
-  - You must provide the full sha. Commands like `https://github.com/owner/repo/blob/$(git rev-parse HEAD)/foo/bar` will not work, since your comment will be directly rendered in Markdown.
-  - Repo name must match the repo you're code reviewing
-  - # sign after the file name
-  - Line range format is L[start]-L[end]
-  - Provide at least 1 line of context before and after, centered on the line you are commenting about (eg. if you are commenting about lines 5-6, you should link to `L4-7`)
+Post only when explicitly authorized, including an explicit --comment request.
+Use one comment per unique issue. Build source links from the actual repository,
+full reviewed commit SHA, path, and line anchors. Offer a committable suggestion
+only when it fully fixes the scoped issue. Check existing comments to avoid
+reposting findings. Review authorization alone does not authorize application edits.

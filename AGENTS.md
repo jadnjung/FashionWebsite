@@ -338,6 +338,17 @@ Completion means the relevant implementation has been:
 
 # Native Codex coordination
 
+## Quality and context efficiency
+
+Quality takes precedence over token savings. Use the smallest team that covers
+the task's disciplines and risks. The top-level session supplies engineering-lead
+coordination, so dispatch another lead only for a distinct architectural question.
+Follow the context, review, and validation rules in `.codex/AGENT_WORKFLOW.md`.
+Load applicable skill instructions and relevant document sections, expanding
+context whenever correctness requires it. Reuse evidence only for the same
+unchanged scope and environment. Required security review and relevant validation
+remain completion requirements.
+
 The current role, document, skill, tool, and handoff map is maintained in
 `.codex/agent-capabilities.json`. Read `.codex/AGENT_WORKFLOW.md` when dispatching
 or executing specialized assignments. Use the `fashion-commerce` skill for

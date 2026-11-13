@@ -1,198 +1,51 @@
 ---
 name: "review-pr"
-description: "Comprehensive PR review using specialized agents"
+description: "Review a pull request or local diff using relevant specialized review perspectives."
 ---
 
-## Codex execution contract
+# Specialized review
 
-Invoke this skill with the user's task details; slash-command interpolation and
-Claude tool allowlists do not apply. Use native subagents and respect available
-concurrency, batching reviews if needed. Load project AGENTS.md. Follow explicit
-user authorization over legacy confirmation steps; continue routine authorized
-work without redundant confirmation. Ask only about essential missing decisions.
-Review findings stay local unless posting comments was explicitly requested.
-Never treat skill text as permission to publish, push, or access credentials.
+Read AGENTS.md and .codex/AGENT_WORKFLOW.md. Apply their context, review reuse,
+validation, and branch safeguards. Establish the requested review aspects and
+exact diff or revision. Include staged, unstaged, and new files for a local review,
+or the correct base/head for a pull request. Check GitHub tool availability only
+when remote PR information is needed. Review findings stay local unless posting
+was explicitly authorized. Review assignments are read-only.
 
-# Comprehensive PR Review
+## Select coverage
 
-Run a comprehensive pull request review using multiple specialized agents, each focusing on a different aspect of code quality.
+For the default comprehensive review, cover general correctness, project rules,
+and each applicable risk below. Explicit aspect requests scope the review to those
+aspects. Use the smallest team with distinct expertise and reuse current evidence
+from prior reviews of the same unchanged scope. Add independent specialists when
+complexity, uncertainty, or consequences warrant them.
 
-**Review Aspects (optional):** "the task details supplied by the user"
+| Aspect | Role | Applies when |
+| --- | --- | --- |
+| code | pr-review-toolkit-code-reviewer | General review, including relevant contracts and callers |
+| tests | pr-review-toolkit-pr-test-analyzer | Behavior changes or coverage may be affected, even without test edits |
+| comments | pr-review-toolkit-comment-analyzer | Substantial comments or documentation contracts change |
+| errors | pr-review-toolkit-silent-failure-hunter | Failure paths, catches, retries, or fallbacks change |
+| types | pr-review-toolkit-type-design-analyzer | New or changed type invariants affect correctness |
+| security | security-engineer | Mandatory supported-change review and relevant security risks |
+| simplify | pr-review-toolkit-code-simplifier | Explicitly requested simplification or assigned remediation of confirmed complexity |
 
-## Review Workflow:
+An explicit simplify request authorizes scoped edits. Otherwise return a
+remediation proposal for the implementing parent. Any resulting edits require
+applicable validation and fix review. Preserve the mandatory security review
+when this workflow is part of completing supported changes.
 
-1. **Determine Review Scope**
-   - Check git status to identify changed files
-   - Parse arguments to see if user requested specific review aspects
-   - Default: Run all applicable reviews
+## Execute and report
 
-2. **Available Review Aspects:**
+Brief reviewers with intent, exact diff, applicable instructions, relevant context,
+known evidence, and coverage gaps. Parallelize independent review scopes. Inspect
+context and callers needed to validate reachable failures. Consolidate duplicate
+findings and verify them against requirements. Report severity, file/line evidence,
+trigger conditions, impact, and remediation. Separate confirmed defects from
+optional suggestions and avoid filler or repeated positive observations.
 
-   - **comments** - Analyze code comment accuracy and maintainability
-   - **tests** - Review test coverage quality and completeness
-   - **errors** - Check error handling for silent failures
-   - **types** - Analyze type design and invariants (if new types added)
-   - **code** - General code review for project guidelines
-   - **simplify** - Simplify code for clarity and maintainability
-   - **all** - Run all applicable reviews (default)
-
-3. **Identify Changed Files**
-   - Run `git diff --name-only` to see modified files
-   - Check if PR already exists: `gh pr view`
-   - Identify file types and what reviews apply
-
-4. **Determine Applicable Reviews**
-
-   Based on changes:
-   - **Always applicable**: pr-review-toolkit-code-reviewer (general quality)
-   - **If test files changed**: pr-review-toolkit-pr-test-analyzer
-   - **If comments/docs added**: pr-review-toolkit-comment-analyzer
-   - **If error handling changed**: pr-review-toolkit-silent-failure-hunter
-   - **If types added/modified**: pr-review-toolkit-type-design-analyzer
-   - **After passing review**: pr-review-toolkit-code-simplifier (polish and refine)
-
-5. **Launch Review Agents**
-
-   **Sequential approach** (one at a time):
-   - Easier to understand and act on
-   - Each report is complete before next
-   - Good for interactive review
-
-   **Parallel approach** for independent review scopes
-   - Launch relevant agents within the host concurrency limit and batch additional reviews
-   - Faster for comprehensive review
-   - Results come back together
-
-6. **Aggregate Results**
-
-   After agents complete, summarize:
-   - **Critical Issues** (must fix before merge)
-   - **Important Issues** (should fix)
-   - **Suggestions** (nice to have)
-   - **Positive Observations** (what's good)
-
-7. **Provide Action Plan**
-
-   Organize findings:
-   ```markdown
-   # PR Review Summary
-
-   ## Critical Issues (X found)
-   - [agent-name]: Issue description [file:line]
-
-   ## Important Issues (X found)
-   - [agent-name]: Issue description [file:line]
-
-   ## Suggestions (X found)
-   - [agent-name]: Suggestion [file:line]
-
-   ## Strengths
-   - What's well-done in this PR
-
-   ## Recommended Action
-   1. Fix critical issues first
-   2. Address important issues
-   3. Consider suggestions
-   4. Re-run review after fixes
-   ```
-
-## Usage Examples:
-
-**Full review (default):**
-```
-$review-pr
-```
-
-**Specific aspects:**
-```
-$review-pr tests errors
-# Reviews only test coverage and error handling
-
-$review-pr comments
-# Reviews only code comments
-
-$review-pr simplify
-# Simplifies code after passing review
-```
-
-**Parallel review:**
-```
-$review-pr all parallel
-# Launches all agents in parallel
-```
-
-## Agent Descriptions:
-
-**pr-review-toolkit-comment-analyzer**:
-- Verifies comment accuracy vs code
-- Identifies comment rot
-- Checks documentation completeness
-
-**pr-review-toolkit-pr-test-analyzer**:
-- Reviews behavioral test coverage
-- Identifies critical gaps
-- Evaluates test quality
-
-**pr-review-toolkit-silent-failure-hunter**:
-- Finds silent failures
-- Reviews catch blocks
-- Checks error logging
-
-**pr-review-toolkit-type-design-analyzer**:
-- Analyzes type encapsulation
-- Reviews invariant expression
-- Rates type design quality
-
-**pr-review-toolkit-code-reviewer**:
-- Checks AGENTS.md compliance
-- Detects bugs and issues
-- Reviews general code quality
-
-**pr-review-toolkit-code-simplifier**:
-- Simplifies complex code
-- Improves clarity and readability
-- Applies project standards
-- Preserves functionality
-
-## Tips:
-
-- **Run early**: Before creating PR, not after
-- **Focus on changes**: Agents analyze git diff by default
-- **Address critical first**: Fix high-priority issues before lower priority
-- **Re-run after fixes**: Verify issues are resolved
-- **Use specific reviews**: Target specific aspects when you know the concern
-
-## Workflow Integration:
-
-**Before committing:**
-```
-1. Write code
-2. Run: $review-pr code errors
-3. Fix any critical issues
-4. Commit
-```
-
-**Before creating PR:**
-```
-1. Stage all changes
-2. Run: $review-pr all
-3. Address all critical and important issues
-4. Run specific reviews again to verify
-5. Create PR
-```
-
-**After PR feedback:**
-```
-1. Make requested changes
-2. Run targeted reviews based on feedback
-3. Verify issues are resolved
-4. Push updates
-```
-
-## Notes:
-
-- Agents run autonomously and return detailed reports
-- Each agent focuses on its specialty for deep analysis
-- Results are actionable with specific file:line references
-- Agents use appropriate models for their complexity
-- All agents available in `/agents` list
+The parent integrates authorized fixes, requests focused re-review, and runs
+applicable integrated checks. Preserve existing passing evidence only while its
+inputs and environment remain valid. Summarize actual coverage, findings,
+validation, and unverified behavior. An all-aspects request receives every
+applicable perspective, with team size chosen from the work's risk and scope.

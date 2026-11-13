@@ -10,6 +10,67 @@ Read the relevant current project documents and latest applicable DECISIONS.md e
 
 ## Assignment and handoff
 
+### Quality-first execution
+
+Choose effort from the change's scope, uncertainty, and consequences. Keep
+security, accessibility, commerce correctness, regression coverage, and integrated
+validation as acceptance criteria wherever applicable. Escalate investigation,
+independent review, or test coverage when evidence is incomplete or risk grows.
+Token savings come from eliminating repeated work. Keep model and reasoning
+quality appropriate to the task and respect the active role configuration.
+
+- The top-level session performs engineering-lead triage and integration. Add a
+  lead subagent only for a distinct architectural decision or decomposition task.
+- Handle small self-contained tasks directly. For substantial work, dispatch the
+  smallest set of specialists with distinct responsibilities. A fullstack agent
+  may own a tightly coupled UI/server feature. Split independent disciplines when
+  that improves expertise or coverage.
+- Explore each question once. Reuse an explorer's findings, then read the code
+  needed to implement, verify contracts, or resolve uncertainty. Read additional
+  context whenever the evidence is insufficient.
+- Default to isolated briefs with `fork_turns="none"` when supported. Include the
+  objective, acceptance criteria, owned paths, relevant docs/skills, interfaces,
+  dependencies, and required checks. Use full history when essential context
+  cannot be conveyed reliably in the brief. Tell implementers about other workers
+  and preserve their edits.
+- Follow up with the same implementer or reviewer for fixes. Independent fresh
+  review is valuable when the change's risk warrants another perspective.
+- Read the assigned role's registry entry and applicable document sections.
+  Treat listed skills as task-dependent candidates. Open applicable SKILL.md
+  files before use, then only relevant supporting references. Reuse instructions
+  already loaded in the current context. Search large docs for affected features
+  and current decisions, expanding to surrounding sections when needed.
+- Keep handoffs focused on changed contracts, findings, evidence, and unresolved
+  issues. Link source locations. Summarize long command output with the command,
+  exit status, counts, and relevant failures. Preserve full logs when diagnosis
+  requires them and suppress secret values.
+- Batch independent searches and checks where safe. Continue local work while
+  specialists run. Use event-driven bounded waits within host limits when idle.
+
+### Review and validation reuse
+
+The coordinator tracks the reviewed diff or revision, covered risks, findings,
+fixes, and validation results in the task context. A new artifact is needed only
+when durable project documentation adds value.
+
+Use one primary quality review for substantial changes, adding specialists for
+distinct risks or requested review aspects. Cover correctness, maintainability,
+project rules, and applicable domain concerns. Run the required read-only
+security-engineer review for supported changes. An already completed security
+review can satisfy a later hook request if it covers the complete current diff.
+Check for intervening edits before reusing it. Review fixes and newly affected
+contracts before completion. A hook request alone supplies no review evidence.
+
+Use focused checks during iteration and the applicable integrated checks before
+completion. Reuse successful results only when their inputs, dependencies,
+configuration, and relevant environment remain unchanged. The coordinator verifies
+specialist evidence and runs the required integrated checks after integration.
+Rerun affected checks after fixes, broadening coverage for shared infrastructure,
+cross-cutting contracts, uncertain impact, or unexpected failures. A documentation
+or agent-instruction change needs structural validation and behavioral scenarios
+as applicable. Application changes need the relevant compiler, test, build, and
+browser evidence. Full CI keeps its configured checks.
+
 | Work | Primary owner | Typical collaborators |
 | --- | --- | --- |
 | Scope, priorities, acceptance criteria | product-manager | engineering-lead, ecommerce-merchandiser |
