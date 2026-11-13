@@ -7,6 +7,11 @@
       "description": "Code review a pull request"
     },
     {
+      "name": "fashion-commerce",
+      "enabled": true,
+      "description": "Implement or review fashion storefront journeys, product and size data, variants, collections, drops, cart and checkout handoff, merchandising, and brand content in this Shopify-backed Esque storefront."
+    },
+    {
       "name": "feature-dev",
       "enabled": true,
       "description": "Guided feature development with codebase understanding and architecture focus"
@@ -64,8 +69,8 @@
       "name": "context7",
       "authStatus": "unsupported",
       "tools": [
-        "query-docs",
-        "resolve-library-id"
+        "resolve-library-id",
+        "query-docs"
       ]
     }
   ],
@@ -73,11 +78,11 @@
     {
       "name": "typescript_lsp",
       "tools": [
-        "typescript_hover",
-        "typescript_definition",
-        "typescript_references",
         "typescript_symbols",
-        "typescript_diagnostics"
+        "typescript_diagnostics",
+        "typescript_references",
+        "typescript_definition",
+        "typescript_hover"
       ]
     }
   ],
@@ -90,7 +95,7 @@
             "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:session_start:0:0",
             "eventName": "sessionStart",
             "handlerType": "command",
-            "command": "python -c \"import json; print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': 'Load AGENTS.md. Automatic security review snapshots edits at prompt submission and requests a read-only security-engineer review before final completion. Review fixes again before finishing; never expose secrets or push this migration.'}}))\"",
+            "command": "python -c \"import json; print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': 'Load AGENTS.md. Automatic security review snapshots edits at prompt submission and requests a read-only security-engineer review before final completion. Review fixes again before finishing; never expose secrets. The user authorizes validated commits and pushes only to surfacebook, never main; follow AGENTS.md publication safeguards.'}}))\"",
             "async": false,
             "matcher": null,
             "timeoutSec": 10,
@@ -103,8 +108,8 @@
             "displayOrder": 0,
             "enabled": true,
             "isManaged": false,
-            "currentHash": "sha256:3db65058de975857be29f6089100d7d1e89996951b596bcf3361c8fd12d56274",
-            "trustStatus": "untrusted"
+            "currentHash": "sha256:cf79a8a74b14ab6259bb814724388131d19f34bb9a8bda251ba8d49c58eb2107",
+            "trustStatus": "trusted"
           },
           {
             "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:user_prompt_submit:0:0",
@@ -124,7 +129,7 @@
             "enabled": true,
             "isManaged": false,
             "currentHash": "sha256:43feb17dac15e5e019d3739f2c1125b8fa3c3a276abf7e7b1cbb5adff2ce2d23",
-            "trustStatus": "untrusted"
+            "trustStatus": "trusted"
           },
           {
             "key": "C:\\Users\\jaden\\Desktop\\FashionWebsite\\.codex\\hooks.json:stop:0:0",
@@ -144,7 +149,7 @@
             "enabled": true,
             "isManaged": false,
             "currentHash": "sha256:e947259ed7d9e3df21723f33455e55a5d0292d9250ed3ea5abe5364df4614ac4",
-            "trustStatus": "untrusted"
+            "trustStatus": "trusted"
           }
         ],
         "warnings": [],

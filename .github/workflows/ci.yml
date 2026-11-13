@@ -2,10 +2,20 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, surfacebook]
   pull_request:
 
 jobs:
+  validate-agent-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -B -X utf8 .migration-tools/validate_migration.py
+      - run: python -B -X utf8 .migration-tools/test_agent_contracts.py
+
   validate:
     runs-on: ubuntu-latest
     steps:

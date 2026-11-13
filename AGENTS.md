@@ -66,6 +66,8 @@ Core roles include:
 - data-analytics-engineer
 - seo-performance-engineer
 - security-engineer
+- ecommerce-merchandiser
+- brand-content-editor
 
 Review specialists may include:
 
@@ -335,6 +337,19 @@ Completion means the relevant implementation has been:
 - documented when necessary
 
 # Native Codex coordination
+
+The current role, document, skill, tool, and handoff map is maintained in
+`.codex/agent-capabilities.json`. Read `.codex/AGENT_WORKFLOW.md` when dispatching
+or executing specialized assignments. Use the `fashion-commerce` skill for
+commerce-specific acceptance criteria. Route catalog, sizing, variant, collection,
+and imagery facts to ecommerce-merchandiser, and customer-facing brand/product
+language to brand-content-editor when those disciplines benefit the task.
+
+Tools and permissions come from the parent session. Verify that a named MCP,
+browser, CLI, or external account is actually available before relying on it.
+Custom-agent sandbox fields do not create an independent enforcement boundary.
+Review-only roles return findings and leave edits to the implementing parent.
+Use an appropriate runtime sandbox when hard isolation is required.
 
 The top-level session performs engineering-lead triage and owns integration and
 completion. For substantial cross-discipline work, use native subagents with the

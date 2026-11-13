@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "workflow": ".codex/AGENT_WORKFLOW.md",
+  "tool_groups": {
+    "repository": "Native repository reading, editing, search and package scripts",
+    "context7": "Configured docs MCP with official web fallback",
+    "typescript_lsp": "Configured read-only TypeScript MCP",
+    "browser": "Session-supported browser tools with browser skill",
+    "playwright": "Project Playwright CLI after dependency and browser installation",
+    "git": "Git and available authenticated CI inspection",
+    "creative_assets": "Available image tools when requested",
+    "external_services": "Authenticated store/email/deployment/analytics connections when available and authorized"
+  },
+  "roles": {
+    "engineering-lead": {
+      "mode": "planning",
+      "documents": ["PROJECT.md", "ARCHITECTURE.md", "DECISIONS.md", "ROADMAP.md"],
+      "skills": [
+        "fashion-commerce",
+        "vercel-react-best-practices",
+        "vercel-composition-patterns",
+        "web-design-guidelines",
+        "gen-test"
+      ],
+      "tool_groups": ["repository", "context7", "git"],
+      "handoffs": [
+        "product-manager",
+        "frontend-engineer",
+        "backend-engineer",
+        "qa-engineer",
+        "security-engineer"
+      ]
+    },
+    "product-manager": {
+      "mode": "planning",
+      "documents": ["PROJECT.md", "ROADMAP.md", "DECISIONS.md", "CONTENT.md"],
+      "skills": ["fashion-commerce", "writing-guidelines"],
+      "tool_groups": ["repository", "browser"],
+      "handoffs": [
+        "engineering-lead",
+        "ecommerce-merchandiser",
+        "brand-content-editor",
+        "ui-ux-designer"
+      ]
+    },
+    "ui-ux-designer": {
+      "mode": "planning",
+      "documents": [
+        "PROJECT.md",
+        "DESIGN_SYSTEM.md",
+        "INTERACTIONS.md",
+        "CONTENT.md",
+        "DECISIONS.md"
+      ],
+      "skills": [
+        "fashion-commerce",
+        "frontend-design",
+        "web-design-guidelines",
+        "vercel-react-view-transitions"
+      ],
+      "tool_groups": ["repository", "browser", "creative_assets"],
+      "handoffs": ["frontend-engineer", "brand-content-editor", "ui-reviewer"]
+    },
+    "frontend-engineer": {
+      "mode": "implementation",
+      "documents": ["DESIGN_SYSTEM.md", "INTERACTIONS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [
+        "fashion-commerce",
+        "vercel-react-best-practices",
+        "vercel-composition-patterns",
+        "web-design-guidelines",
+        "vercel-react-view-transitions",
+        "gen-test"
+      ],
+      "tool_groups": ["repository", "context7", "typescript_lsp", "browser", "playwright"],
+      "handoffs": ["backend-engineer", "ui-ux-designer", "qa-engineer", "ui-reviewer"]
+    },
+    "backend-engineer": {
+      "mode": "implementation",
+      "documents": ["ARCHITECTURE.md", "DECISIONS.md", "PROJECT.md", "ROADMAP.md"],
+      "skills": ["fashion-commerce", "gen-test", "security-guidance"],
+      "tool_groups": [
+        "repository",
+        "context7",
+        "typescript_lsp",
+        "playwright",
+        "external_services"
+      ],
+      "handoffs": [
+        "frontend-engineer",
+        "security-engineer",
+        "devops-engineer",
+        "ecommerce-merchandiser"
+      ]
+    },
+    "fullstack-engineer": {
+      "mode": "implementation",
+      "documents": [
+        "PROJECT.md",
+        "ARCHITECTURE.md",
+        "DESIGN_SYSTEM.md",
+        "INTERACTIONS.md",
+        "DECISIONS.md"
+      ],
+      "skills": [
+        "fashion-commerce",
+        "vercel-react-best-practices",
+        "vercel-composition-patterns",
+        "gen-test"
+      ],
+      "tool_groups": ["repository", "context7", "typescript_lsp", "browser", "playwright"],
+      "handoffs": ["backend-engineer", "frontend-engineer", "qa-engineer", "security-engineer"]
+    },
+    "qa-engineer": {
+      "mode": "implementation",
+      "documents": ["PROJECT.md", "ROADMAP.md", "INTERACTIONS.md", "ARCHITECTURE.md"],
+      "skills": ["fashion-commerce", "gen-test", "web-design-guidelines"],
+      "tool_groups": ["repository", "typescript_lsp", "browser", "playwright"],
+      "handoffs": ["frontend-engineer", "backend-engineer", "test-reviewer"]
+    },
+    "devops-engineer": {
+      "mode": "implementation",
+      "documents": ["ARCHITECTURE.md", "DECISIONS.md", "ROADMAP.md", "README.md"],
+      "skills": ["gen-test", "security-guidance"],
+      "tool_groups": ["repository", "context7", "git", "external_services"],
+      "handoffs": ["engineering-lead", "backend-engineer", "security-engineer", "qa-engineer"]
+    },
+    "data-analytics-engineer": {
+      "mode": "implementation",
+      "documents": ["CONTENT.md", "PROJECT.md", "DECISIONS.md", "ARCHITECTURE.md"],
+      "skills": ["fashion-commerce", "gen-test"],
+      "tool_groups": ["repository", "context7", "typescript_lsp", "browser", "external_services"],
+      "handoffs": ["product-manager", "frontend-engineer", "backend-engineer", "security-engineer"]
+    },
+    "seo-performance-engineer": {
+      "mode": "implementation",
+      "documents": ["PROJECT.md", "ARCHITECTURE.md", "DECISIONS.md", "CONTENT.md"],
+      "skills": ["fashion-commerce", "vercel-react-best-practices", "writing-guidelines"],
+      "tool_groups": ["repository", "context7", "typescript_lsp", "browser"],
+      "handoffs": [
+        "frontend-engineer",
+        "backend-engineer",
+        "brand-content-editor",
+        "ecommerce-merchandiser"
+      ]
+    },
+    "security-engineer": {
+      "mode": "review",
+      "documents": ["ARCHITECTURE.md", "DECISIONS.md", "PROJECT.md"],
+      "skills": ["fashion-commerce", "security-guidance", "gen-test"],
+      "tool_groups": ["repository", "context7", "typescript_lsp"],
+      "handoffs": ["engineering-lead", "backend-engineer", "devops-engineer"]
+    },
+    "architecture-reviewer": {
+      "mode": "review",
+      "documents": ["ARCHITECTURE.md", "DECISIONS.md", "PROJECT.md"],
+      "skills": ["vercel-composition-patterns", "vercel-react-best-practices"],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "test-reviewer": {
+      "mode": "review",
+      "documents": ["PROJECT.md", "ARCHITECTURE.md", "ROADMAP.md"],
+      "skills": ["gen-test", "fashion-commerce"],
+      "tool_groups": ["repository", "playwright"],
+      "handoffs": ["qa-engineer", "engineering-lead"]
+    },
+    "ui-reviewer": {
+      "mode": "review",
+      "documents": ["DESIGN_SYSTEM.md", "INTERACTIONS.md", "CONTENT.md", "DECISIONS.md"],
+      "skills": ["web-design-guidelines", "fashion-commerce"],
+      "tool_groups": ["repository", "browser", "playwright"],
+      "handoffs": ["ui-ux-designer", "frontend-engineer", "engineering-lead"]
+    },
+    "ecommerce-merchandiser": {
+      "mode": "planning",
+      "documents": ["PROJECT.md", "CONTENT.md", "DECISIONS.md", "ROADMAP.md"],
+      "skills": ["fashion-commerce", "writing-guidelines"],
+      "tool_groups": ["repository", "browser", "external_services"],
+      "handoffs": [
+        "product-manager",
+        "brand-content-editor",
+        "backend-engineer",
+        "frontend-engineer"
+      ]
+    },
+    "brand-content-editor": {
+      "mode": "implementation",
+      "documents": ["CONTENT.md", "DESIGN_SYSTEM.md", "PROJECT.md", "DECISIONS.md"],
+      "skills": ["fashion-commerce", "writing-guidelines"],
+      "tool_groups": ["repository", "browser", "creative_assets"],
+      "handoffs": [
+        "ecommerce-merchandiser",
+        "ui-ux-designer",
+        "seo-performance-engineer",
+        "product-manager"
+      ]
+    },
+    "code-simplifier-code-simplifier": {
+      "mode": "implementation",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "feature-dev-code-architect": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "feature-dev-code-explorer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "feature-dev-code-reviewer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-code-reviewer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-code-simplifier": {
+      "mode": "implementation",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-comment-analyzer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-pr-test-analyzer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-silent-failure-hunter": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    },
+    "pr-review-toolkit-type-design-analyzer": {
+      "mode": "review",
+      "documents": ["AGENTS.md", "ARCHITECTURE.md", "DECISIONS.md"],
+      "skills": [],
+      "tool_groups": ["repository", "typescript_lsp"],
+      "handoffs": ["engineering-lead"]
+    }
+  }
+}

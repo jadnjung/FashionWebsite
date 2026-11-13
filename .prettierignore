@@ -30,3 +30,13 @@ lib/shopify/storefront.generated.d.ts
 # — kept byte-identical to the originals in ~/.claude/, so never reformatted.
 setup/claude/global-CLAUDE.md
 setup/claude/skills/
+
+# Agent instructions and copied reference manuals follow the governance-doc policy.
+# Their metadata, local references, and role contracts are validated separately.
+AGENTS.md
+.agents/
+.codex/*.md
+
+# Generated migration evidence and the preserved migration tool distribution.
+.codex/migration-*.json
+.migration-tools/

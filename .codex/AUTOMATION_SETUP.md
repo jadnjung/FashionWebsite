@@ -1,5 +1,11 @@
 # Codex automation follow-up
 
+The current team contains 26 custom agents, including 16 project roles and ten
+plugin-derived specialists, plus 12 project skills. The role and tool map is
+maintained in [agent-capabilities.json](agent-capabilities.json), and assignments
+follow [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md). The original migration counts and
+tests below describe their installation snapshots.
+
 Status: implemented and tested on `surfacebook`; no application or Claude source
 files changed. The user authorizes commits and pushes for this migration and
 future work only to `surfacebook`, never `main`. Hook execution depends on the
@@ -34,6 +40,17 @@ records the installation check and does not refresh automatically. Changed hook
 definitions require a new local trust decision. AGENTS.md requires automatic
 review directly whenever lifecycle hooks are unavailable.
 
+The November 13, 2026 connection check reports SessionStart, UserPromptSubmit,
+and Stop enabled and trusted. It also discovers all 12 project skills, both
+Context7 tools, and all five TypeScript tools. The current stored runtime result
+records that check. Native role probes discover all 26 roles and successfully run
+the merchandising and brand-content specialists on synthetic scenarios.
+
+The isolated development runtime under `.codex/tools/development-runtime/` supplies
+Node 22.23.5 and the project's pnpm 11.22.0. Use
+`python .codex/tools/run_project.py --check` and the command examples in
+[AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) when the shell has another version.
+
 ## Superpowers
 
 Installed and enabled `superpowers@openai-curated-remote`, version **7.0.1**, through
@@ -66,8 +83,9 @@ workspace; dependency, git, and original Claude internals are excluded. Line and
 UTF-16 column arguments are 1-based. The adapter has no write tools or network
 calls. TypeScript diagnostics are explicitly incomplete language-server snapshots;
 empty results are not proof of a completed typecheck. Use the project's compiler
-check for full verification. Project node_modules were absent during setup; normal
-application dependency installation is needed for project-wide module resolution.
+check for full verification. Project dependencies were installed with the frozen
+lockfile during the November 13 development-team verification. Other checkouts
+need their own dependency installation for project-wide module resolution.
 
 Codex successfully connected and discovered all five tools. A real temporary
 TypeScript project verified hover types, definition locations, references,
@@ -84,6 +102,24 @@ npm.cmd ci --prefix .codex/tools/typescript-runtime --ignore-scripts --no-audit 
 Upstream: https://github.com/typescript-language-server/typescript-language-server
 
 ## Validation
+
+The November 13 development-team verification passed role/skill/dependency checks
+for all 26 agents and 12 skills, four agent-contract regression tests, 12 tooling
+tests, 458 application unit tests, formatting, lint, typechecking, and a production
+build. Four focused browser assertions passed across Chromium and mobile Safari.
+The full end-to-end suites were outside this setup verification. Live Shopify
+catalog and checkout testing requires the store's account configuration.
+
+The read-only security review and remediation review found no remaining blockers.
+Claude source integrity checks passed. CI now validates agent contracts on
+`surfacebook` pushes. Its hosted execution is separate from these local results.
+The tooling update also fixes Windows language-server shutdown, permits native
+checkout line endings in formatting, and allows 120 seconds for cold browser-test
+server startup. Governance references use their dedicated configuration validators.
+
+```powershell
+python -B -X utf8 .migration-tools/test_agent_contracts.py
+```
 
 All **12** follow-up tests passed, including real LSP integration, delayed semantic
 diagnostic snapshot handling, post-edit updates, review baseline behavior,

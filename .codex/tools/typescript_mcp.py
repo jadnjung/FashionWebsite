@@ -147,12 +147,22 @@ class Lsp:
         return self.request(methods[name],params)
 
     def close(self):
-        self.proc.terminate()
+        # Let the language server release its tsserver children and file watchers.
+        if self.proc.poll() is None:
+            try:
+                self.request('shutdown', None)
+                self.notify('exit', None)
+            except (BrokenPipeError, OSError, RuntimeError, TimeoutError):
+                pass
         try:
-            self.proc.wait(timeout=3)
+            self.proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            self.proc.kill()
-            self.proc.wait(timeout=3)
+            if sys.platform == 'win32':
+                subprocess.run(['taskkill', '/PID', str(self.proc.pid), '/T', '/F'],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            else:
+                self.proc.kill()
+            self.proc.wait(timeout=5)
         self.proc.stdin.close()
         self.proc.stdout.close()
 

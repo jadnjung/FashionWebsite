@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "dependencies": {
+    "node": "22.23.5",
+    "pnpm": "11.22.0"
+  }
+}

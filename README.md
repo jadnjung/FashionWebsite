@@ -29,6 +29,10 @@ secrets and a few per-machine tools. On a new computer:
 
 ## Development
 
+The current agent responsibilities, tool checks, and handoff process are described
+in [AGENT_WORKFLOW.md](./.codex/AGENT_WORKFLOW.md). The machine-readable role map is
+[agent-capabilities.json](./.codex/agent-capabilities.json).
+
 - `pnpm dev` — local dev server on http://localhost:3000. With no Shopify credentials it shows the honest "no store" states; set `PREVIEW_DEMO_MODE=1` in `.env.local` to preview with fixture products instead ([DECISIONS.md D-057](./DECISIONS.md)).
 - `pnpm test:unit` — Vitest unit tests.
 - `pnpm test:e2e` — main Playwright suite, run with **no** store, proving every Shopify-dependent surface degrades gracefully.

@@ -1,6 +1,6 @@
 {
-  "agent_count": 24,
-  "skill_count": 11,
+  "agent_count": 26,
+  "skill_count": 12,
   "source_integrity": "passed",
   "skill_dependencies": "passed",
   "hook_payload": "passed",

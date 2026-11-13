@@ -61,7 +61,7 @@ export default defineConfig({
     command: 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 120_000,
     // Obviously-fake test fixtures, not secrets. @next/env does not override
     // a key already present in process.env (verified against the installed
     // Next 16.3.1 behavior), so these win even for a developer who has real
