@@ -83,9 +83,9 @@ tests, with normal shopping tests and performance measurements using the
 application's real capability decision.
 
 Cart mutations, checkout, live inventory races, and order completion require the
-Shopify connection and remain outside the fixture audit. Fixture products have
-one image and one purchasable M/Black variant, limiting real-world gallery and
-combination coverage. Physical iPhone/iPad testing, assistive-technology testing,
+Shopify connection and remain outside the fixture audit. At the initial audit, fixture products had
+one image and one purchasable M/Black variant. The fixture follow-up below expands
+that coverage. Physical iPhone/iPad testing, assistive-technology testing,
 field Core Web Vitals, and final-product photography/sizing remain launch checks.
 
 ## Validation
@@ -117,3 +117,36 @@ security-guidance skill, reviewed that adjustment directly, and found no securit
 issue. Source-integrity and secret-pattern checks passed.
 
 Hosted CI results are separate from the local verification recorded here.
+
+## Richer fixture follow-up
+
+The opt-in Demo Mode crewneck now has six size/color combinations. Black sizes M
+and S have eight and three units at $128. Black L and Ecru S are sold out. Ecru M
+has two units at $136. Ecru L is available at $140 with zero stock, exercising the
+continue-selling case. XS and XL remain unavailable. Other products retain their
+original fixture behavior. These values are synthetic test data.
+
+Three existing licensed stock photos exercise the vertical product gallery.
+Their alt text explicitly identifies illustrative Demo images. They represent
+placeholder media, with final garment photography still required.
+
+The expanded matrix exposed missing Quick Add price and combination feedback.
+Quick Add now displays the minimum price before selection, the matched variant
+price after selection, and sold-out or unavailable-combination guidance when
+appropriate. Existing purchase gating and deferred-cart feedback still apply.
+
+New browser scenarios cover keyboard selection, touch option activation,
+quantity clamping after stock changes, selected prices, sellable zero stock,
+failed-request retry, cancellation and reopening, image decoding/lazy loading,
+320px reflow, minimum-price filtering, and search discovery. Gallery checks use
+programmatic native scrolling. Physical touch scrolling, actual browser zoom,
+assistive-technology output, live stock races, and checkout remain unverified.
+
+Follow-up validation passed formatting, lint, TypeScript checking, 459 unit
+tests, and the production Demo build. The broader populated development-server
+run passed 113 cases with four mobile-inapplicable hover checks skipped. It
+excluded the separate Collection Closet suite. After review added a
+missing-combination recovery scenario, all 21 focused fixture cases passed
+against the production server across desktop Chromium, mobile Chromium, and
+mobile WebKit. Read-only quality and security reviews completed with no
+remaining findings.

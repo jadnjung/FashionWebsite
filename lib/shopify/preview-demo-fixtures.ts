@@ -22,7 +22,12 @@
  */
 import type { CollectionDetail, CollectionSummary } from '@/lib/shopify/collections';
 import type { Look } from '@/lib/shopify/looks';
-import type { ProductDetail, ProductListItem, ProductSummary } from '@/lib/shopify/products';
+import type {
+  ProductDetail,
+  ProductListItem,
+  ProductSummary,
+  ProductVariant,
+} from '@/lib/shopify/products';
 
 const IMG = (file: string, w: number, h: number) => ({
   url: `/preview-demo/${file}`,
@@ -44,7 +49,10 @@ export const PREVIEW_PRODUCTS: ProductListItem[] = [
     tags: [],
     minPrice: { amount: '128.00', currencyCode: 'USD' },
     availableForSale: true,
-    images: [IMG('product-3.jpg', 900, 1125)],
+    images: ['product-3.jpg', 'product-4.jpg', 'product-5.jpg'].map((file, index) => ({
+      ...IMG(file, 900, 1125),
+      altText: `Demo gallery image ${index + 1} of 3. Illustrative stock photo for fixture testing.`,
+    })),
   },
   {
     id: 'preview-2',
@@ -98,6 +106,28 @@ export const PREVIEW_PRODUCTS: ProductListItem[] = [
   },
 ];
 
+// Synthetic inventory exercises selection and stock transitions without a store.
+// Keep variant-1 stable for existing preview journeys. Zero-stock sellability
+// deliberately models Shopify's independent continue-selling setting.
+const CREWNECK_VARIANTS: ProductVariant[] = [
+  { size: 'M', color: 'Black', amount: '128.00', available: true, quantity: 8 },
+  { size: 'S', color: 'Black', amount: '128.00', available: true, quantity: 3 },
+  { size: 'L', color: 'Black', amount: '128.00', available: false, quantity: 0 },
+  { size: 'M', color: 'Ecru', amount: '136.00', available: true, quantity: 2 },
+  { size: 'S', color: 'Ecru', amount: '136.00', available: false, quantity: 0 },
+  { size: 'L', color: 'Ecru', amount: '140.00', available: true, quantity: 0 },
+].map((variant, index) => ({
+  id: `preview-1-variant-${index + 1}`,
+  title: `${variant.size} / ${variant.color}`,
+  availableForSale: variant.available,
+  quantityAvailable: variant.quantity,
+  price: { amount: variant.amount, currencyCode: 'USD' },
+  selectedOptions: [
+    { name: 'Size', value: variant.size },
+    { name: 'Color', value: variant.color },
+  ],
+}));
+
 /**
  * Looks up one fixture product by handle for the Demo Mode-gated PDP path
  * (products.ts's getProduct) — also, by extension, the Quick Add route
@@ -132,19 +162,22 @@ export function getPreviewProductDetail(handle: string): ProductDetail | null {
       { id: 'opt-size', name: 'Size', values: ['XS', 'S', 'M', 'L', 'XL'] },
       { id: 'opt-color', name: 'Color', values: ['Black', 'Ecru'] },
     ],
-    variants: [
-      {
-        id: `${item.id}-variant-1`,
-        title: 'M / Black',
-        availableForSale: item.availableForSale,
-        quantityAvailable: item.availableForSale ? 8 : 0,
-        price: item.minPrice,
-        selectedOptions: [
-          { name: 'Size', value: 'M' },
-          { name: 'Color', value: 'Black' },
-        ],
-      },
-    ],
+    variants:
+      item.id === 'preview-1'
+        ? CREWNECK_VARIANTS
+        : [
+            {
+              id: `${item.id}-variant-1`,
+              title: 'M / Black',
+              availableForSale: item.availableForSale,
+              quantityAvailable: item.availableForSale ? 8 : 0,
+              price: item.minPrice,
+              selectedOptions: [
+                { name: 'Size', value: 'M' },
+                { name: 'Color', value: 'Black' },
+              ],
+            },
+          ],
   };
 }
 

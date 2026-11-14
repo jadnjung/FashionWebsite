@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
+import { formatPrice } from '@/lib/product/price';
 import {
   findMatchingVariant,
   getInitialSelections,
@@ -190,6 +191,12 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
           </p>
         )}
 
+        {loaded && (
+          <p className="mb-4 text-body text-esque-text">
+            {formatPrice(matchedVariant?.price ?? loaded.product.minPrice)}
+          </p>
+        )}
+
         {loaded &&
           (soldOut ? (
             <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
@@ -236,6 +243,11 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 // ProductPurchasePanel.tsx's identical comment on this same
                 // helper copy.
                 <p className="text-utility text-esque-text">Select all options to continue.</p>
+              )}
+              {selectionComplete && !canAddToBag && (
+                <p className="text-utility text-esque-text">
+                  {matchedVariant ? 'SOLD OUT' : 'This combination is unavailable.'}
+                </p>
               )}
             </div>
           ))}

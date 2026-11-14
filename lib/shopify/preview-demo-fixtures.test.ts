@@ -30,45 +30,57 @@ describe('getPreviewProductDetail', () => {
     expect(getPreviewProductDetail('does-not-exist')).toBeNull();
   });
 
-  test('maps a known handle to a fully-formed ProductDetail', () => {
-    const result = getPreviewProductDetail('preview-featherweight-crewneck');
+  test('keeps the richer gallery and variant matrix consistent with the listing', () => {
+    const result = getPreviewProductDetail('preview-featherweight-crewneck')!;
+    expect(result.images).toEqual(PREVIEW_PRODUCTS[0].images);
+    expect(result.images).toHaveLength(3);
+    expect(new Set(result.images.map((image) => image.url)).size).toBe(3);
+    expect(
+      result.images.every((image) => image.altText?.includes('Illustrative stock photo')),
+    ).toBe(true);
+    expect(
+      result.variants.map((variant) => [
+        variant.title,
+        variant.price.amount,
+        variant.availableForSale,
+        variant.quantityAvailable,
+      ]),
+    ).toEqual([
+      ['M / Black', '128.00', true, 8],
+      ['S / Black', '128.00', true, 3],
+      ['L / Black', '128.00', false, 0],
+      ['M / Ecru', '136.00', true, 2],
+      ['S / Ecru', '136.00', false, 0],
+      ['L / Ecru', '140.00', true, 0],
+    ]);
+    expect(result.variants[0].id).toBe('preview-1-variant-1');
+    expect(Math.min(...result.variants.map((variant) => Number(variant.price.amount)))).toBe(
+      Number(result.minPrice.amount),
+    );
+    for (const variant of result.variants) {
+      for (const option of variant.selectedOptions) {
+        expect(result.options.find((entry) => entry.name === option.name)?.values).toContain(
+          option.value,
+        );
+      }
+    }
+  });
 
-    expect(result).toEqual({
-      id: 'preview-1',
-      handle: 'preview-featherweight-crewneck',
-      title: 'Featherweight Crewneck Sweater',
-      description:
-        'Temporary preview placeholder description (free-license stock photography, not final product copy).',
-      productType: 'Sweaters',
-      tags: [],
-      minPrice: { amount: '128.00', currencyCode: 'USD' },
-      images: [
-        {
-          url: '/preview-demo/product-3.jpg',
-          altText:
-            'Free-license stock photo, temporary preview placeholder — not final product photography.',
-          width: 900,
-          height: 1125,
-        },
-      ],
-      options: [
-        { id: 'opt-size', name: 'Size', values: ['XS', 'S', 'M', 'L', 'XL'] },
-        { id: 'opt-color', name: 'Color', values: ['Black', 'Ecru'] },
-      ],
-      variants: [
-        {
-          id: 'preview-1-variant-1',
-          title: 'M / Black',
-          availableForSale: true,
-          quantityAvailable: 8,
-          price: { amount: '128.00', currencyCode: 'USD' },
-          selectedOptions: [
-            { name: 'Size', value: 'M' },
-            { name: 'Color', value: 'Black' },
-          ],
-        },
-      ],
-    });
+  test('preserves the single-variant contract for the other fixture products', () => {
+    const result = getPreviewProductDetail('preview-tailored-trouser-set')!;
+    expect(result.variants).toEqual([
+      {
+        id: 'preview-2-variant-1',
+        title: 'M / Black',
+        availableForSale: true,
+        quantityAvailable: 8,
+        price: { amount: '188.00', currencyCode: 'USD' },
+        selectedOptions: [
+          { name: 'Size', value: 'M' },
+          { name: 'Color', value: 'Black' },
+        ],
+      },
+    ]);
   });
 
   test('a sold-out fixture maps to an unavailable, zero-quantity variant — not fabricated availability', () => {
