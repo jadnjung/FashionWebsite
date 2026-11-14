@@ -2,7 +2,7 @@
 
 Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. Shopify is the commerce platform referenced in this document.
 
-Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. All items below start open. The requested deliverable is this improvement inventory. Priorities are proposed implementation order.
+Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. All items below start open. The requested deliverable is this improvement inventory. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
 
 ## Start with the four reproduced issues
 
@@ -41,6 +41,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when the product heading, options, gallery, wishlist, and Demo bag work through each storage failure. Add focused regressions for the reproduced crash and malformed records.
 - Route to frontend-engineer, with qa-engineer verification.
 
+#### Detailed behavior and verification
+
+- **Recovery behavior.** Catch both storage acquisition and read/write failures. Keep the current page usable, discard only invalid history entries, and use bounded in-memory history for the active session.
+- **Record rules.** Validate version, handle, title, destination, image shape, and timestamp before rendering. Deduplicate by product identity, cap history length, and handle expired or deleted products deliberately.
+- **Regression proof.** Open a PDP with a throwing getter, navigate to a second product, and return. Repeat with mixed valid/invalid records and quota-exceeded writes. Verify the primary shopping actions throughout.
+
 ### 02. Explain unavailable Shop the Look combinations
 
 **Confirmed in the local browser.** Outfit eligibility checks option completeness. Its click handler later rejects an unavailable matched variant by returning silently. LOOK 02 with crewneck S/Ecru and a completed trouser selection enabled ADD LOOK, produced zero `/api/cart` requests, and displayed no status. [Outfit panel](../components/looks/ShopTheLookPanel.tsx#L125), [selection eligibility](../lib/looks/look-selection.ts#L17)
@@ -49,6 +55,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Validate every included matched variant before enabling the action. Show and announce guidance beside the affected piece.
 - Complete when changing options or excluding a piece recovers the outfit. Valid additions remain atomic, and unavailable selections produce an understandable outcome.
 - Route to frontend-engineer and qa-engineer.
+
+#### Detailed behavior and verification
+
+- **Selection feedback.** Show which included piece needs a size/color change. Keep the selected values visible so the customer can understand and recover from the unavailable combination.
+- **Outfit transaction.** Recheck every included variant at activation. Define an all-or-nothing outcome for the simulated addition, retain choices after failure, and announce a single useful outcome.
+- **Edge cases.** Cover an empty included set, every piece excluded, one missing selection, an unavailable combination, and a zero-stock variant explicitly marked sellable. Excluding the blocking piece should update eligibility immediately.
 
 ### 03. Contain long product content during degraded loading
 
@@ -59,6 +71,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when representative 320, 390, 768, 1024, and 1440px layouts avoid horizontal overflow. Verify 200% text enlargement and keyboard focus around expanded content.
 - Route to frontend-engineer with ui-reviewer review.
 
+#### Detailed behavior and verification
+
+- **Content stress set.** Use an unbroken 120-character name, a multi-line editorial name, long color labels, large formatted prices, and several stacked recovery messages.
+- **Layout treatment.** Allow text columns to shrink and wrap. Preserve full accessible product names if a compact visual treatment is chosen. Keep option controls, price, and remove/save actions reachable.
+- **Review surfaces.** Check catalog cards, wishlist fallback cards, bag rows, search results, Quick Add, and outfit rows. Include landscape phone height and focus outlines at the viewport edge.
+
 ### 04. Maintain contrast throughout navigation hover states
 
 **Confirmed in the browser and source.** Menu hover text rendered forest green over the black background, approximately 1.71:1 contrast. The same treatment appears in search results and homepage category links. Required text contrast is at least 4.5:1 for normal text and 3:1 for qualifying large text, including hover states. [Menu](../components/navigation/FullScreenMenu.tsx#L321), [search](../components/navigation/SearchOverlay.tsx#L326), [category links](../components/home/CategoryShowcase.tsx#L32), [W3C contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
@@ -67,6 +85,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Choose a readable hover treatment that retains Esque’s restrained forest accent.
 - Complete when text and controls meet their applicable contrast requirements in default, hover, focus, and combined states. Check intermediate transition colors and reduced motion.
 - Route to ui-ux-designer and frontend-engineer.
+
+#### Detailed behavior and verification
+
+- **State matrix.** Measure default, hovered, keyboard-focused, selected, disabled, and combined hover/focus states on every relevant background. Include text displayed during transitions.
+- **Visual direction.** Use the forest accent for a readable underline, border, or other supporting treatment where dark green text cannot carry the required contrast. Preserve visible keyboard focus independently of hover.
+- **Proof artifact.** Record foreground/background values and the measured ratio for each corrected shared treatment. Add targeted assertions for the reproduced menu case and other reused treatments.
 
 ## P2 shopping and presentation improvements
 
@@ -79,6 +103,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when the picker avoids trapping a selection, preserves intentional choices, and never guesses a size. Verify PDP, Quick Add, and Shop the Look together.
 - Route to frontend-engineer, with commerce and accessibility review.
 
+#### Detailed behavior and verification
+
+- **Picker behavior.** After a color is selected, distinguish sizes sellable in that color. Explain unavailable pairs in text and keep another color reachable. Preserve an intentional size when changing color if the resulting pair remains valid.
+- **Data rules.** Resolve a single variant from the complete option tuple. Use sellability consistently across price, availability, button state, bag payload, and analytics context.
+- **Demo matrix.** Include disjoint pairs, an absent pair, mixed variant prices, a single sellable pair, and inventory quantity zero with continued selling enabled. Verify all three picker entrypoints.
+
 ### 06. Bring size and color touch targets into line with other controls
 
 **Measured enhancement.** The crewneck M label measured approximately 47.0 × 37.5px at a 390px viewport. A proposed 44px touch-comfort target matches recent menu, filter, and bag controls. This item improves touch comfort and consistency. [Option labels](../components/product/VariantPicker.tsx#L65)
@@ -86,6 +116,11 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Demonstrate short sizes, long color names, wrapped option rows, and disabled values.
 - Complete when enabled option hit areas reach the proposed 44px comfort target without crowding adjacent choices. Check focus outlines and selected-state contrast at narrow widths.
 - Route to frontend-engineer and ui-reviewer.
+
+#### Detailed behavior and verification
+
+- **Touch details.** Increase the actual interactive hit area and spacing while retaining the compact editorial label treatment. Check wrapped rows and adjacent actions for accidental activation.
+- **Input coverage.** Use touch, mouse, and keyboard on the same fixture. Confirm selected and unavailable states remain distinguishable without relying solely on color.
 
 ### 07. Make the size-guide structure fit the garment
 
@@ -96,6 +131,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when the chart follows the product’s option labels and garment type. Keep every synthetic value visibly provisional and preserve existing dialog/focus behavior.
 - Route to ecommerce-merchandiser for the data shape, then frontend-engineer. Final measurements remain a product-data dependency.
 
+#### Detailed behavior and verification
+
+- **Guide features.** Provide garment-specific measurement names, unit switching, a simple measurement illustration or instructions, and a clear indication that the values are synthetic.
+- **Data contract.** Represent garment category, measurement basis, units, size labels, and optional notes separately. Keep original values as the conversion source to avoid cumulative rounding.
+- **Fallback and accessibility.** When a chart is absent, retain useful fit guidance and identify the missing measurements. Ensure the table scrolls within its region, headers remain meaningful, and closing returns focus to its trigger.
+
 ### 08. Complete size, color, and collection filtering
 
 **Documented deferred feature.** Current filters cover category routing, sort, availability, and price. Size, color, and collection remain deferred. [Filter contract](../lib/catalog/filters.ts#L38), [filter interface](../components/catalog/FilterBar.tsx#L23), [roadmap](../ROADMAP.md)
@@ -104,6 +145,13 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Preserve filters and sorting in the URL, show active selections, support reset, and explain empty results. Define availability using the same matching variant.
 - Complete when reload and browser Back preserve state, keyboard and touch controls remain usable, and the local data adapter applies the combined filters correctly. Validate any Shopify query changes against the public schema.
 - Route to frontend-engineer and backend-engineer, coordinated by engineering-lead.
+
+#### Detailed behavior and verification
+
+- **Filter interactions.** Show selected values as removable chips and provide Clear all. Choose and document immediate application or an explicit Apply action for the mobile panel. Make pending and settled result counts understandable.
+- **Matching rules.** Use OR within a facet and AND across facets, subject to an explicit product decision. Size/color/availability combinations must correspond to the same variant. Define price matching against the displayed purchasable variant range.
+- **Navigation and recovery.** Reset pagination when matching criteria change. Preserve unrelated supported query parameters, normalize invalid values, and restore filters through Back/Forward. Empty results should offer a useful reset action.
+- **Demo proof.** Filter a 30-product synthetic catalog to a known small set, remove one chip, change sort, reload, and return from a PDP. Verify expected IDs and result order at every step.
 
 ### 09. Make every matching catalog item reachable
 
@@ -114,6 +162,13 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when all matching products remain reachable without duplicates or omissions. Distinguish displayed counts from any known total and provide working Retry.
 - Route to fullstack-engineer and qa-engineer.
 
+#### Detailed behavior and verification
+
+- **Continuation design.** Use an explicit Load more action or paginated navigation with a clear loading state, loaded count, end state, and inline retry. Choose the interaction before implementation.
+- **State integrity.** Bind cursors to the active filter/sort query. Prevent duplicate continuation requests, ignore stale responses after a query change, and deduplicate product IDs defensively.
+- **Focus and history.** Keep focus stable when results append and announce the added count. Define return-from-product behavior so customers can recover the previous results and reading position.
+- **Boundary cases.** Exercise 0, 1, 24, 25, and 30 results, a final partial page, a repeated cursor, and a continuation error followed by recovery.
+
 ### 10. Expand the fixture catalog beyond the current happy paths
 
 **Source-confirmed coverage limit.** Detail fixtures share a Size/Color schema and provisional information. Catalog fixtures all have media. The crewneck already covers several prices, sold-out pairs, and sellable zero stock. [Fixture definitions](../lib/shopify/preview-demo-fixtures.ts#L147)
@@ -123,6 +178,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when card, PDP, Quick Add, outfit, wishlist, and bag journeys handle applicable shapes consistently. Preserve the existing representative crewneck fixture and automated tests.
 - Route to ecommerce-merchandiser, backend-engineer, and qa-engineer.
 
+#### Detailed behavior and verification
+
+- **Fixture families.** Create clearly named normal, sparse-options, long-content, missing-media, sold-out, and large-catalog scenarios. Reuse canonical products across PDP, card, outfit, wishlist, and bag.
+- **Truthfulness.** Mark synthetic measurements, prices, availability, and imagery as demonstration data wherever customers could interpret them as real offers. Avoid manufactured reviews or unsupported product claims.
+- **Maintainability.** Document scenario IDs and expected outcomes beside the fixtures or existing test documentation. Keep deterministic ordering and fixed inputs so screenshots and assertions remain repeatable.
+
 ### 11. Improve failed-image presentation outside the fullscreen viewer
 
 **Source-confirmed enhancement opportunity.** The fullscreen viewer has explicit loading/error/retry behavior. Cards, the main gallery stack, bag thumbnails, and Recently Viewed use standard image rendering. Missing-image placeholders already exist in several components. Failed HTTP image requests need their own demonstration. [Product card](../components/catalog/ProductCard.tsx), [gallery stack](../components/product/ProductGallery.tsx), [bag rows](../components/cart/BagView.tsx), [viewer recovery](../components/product/ProductGalleryImage.tsx)
@@ -130,6 +191,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Demonstrate HTTP 404, delayed decoding, and a failed responsive rendition.
 - Complete when layouts reserve image space, meaningful names remain readable, and recovery or fallback is understandable. Preserve server-rendered first-image priority and responsive image quality.
 - Route to frontend-engineer and seo-performance-engineer.
+
+#### Detailed behavior and verification
+
+- **Fallback behavior.** Keep the product name and destination available when the image fails. Reserve the intended aspect ratio and present a restrained placeholder with useful retry only where recovery is possible.
+- **Request safety.** Avoid infinite retry loops and repeated failing requests on every render. Scope loading/error state to the active image so switching products or renditions resets correctly.
+- **Visual proof.** Capture loaded, loading, failed, and recovered states at card, gallery, bag, and history sizes. Confirm fallback copy does not push shopping actions outside the viewport.
 
 ### 12. Demonstrate Search recovery with populated results
 
@@ -139,6 +206,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when current-query results retain ownership, Retry yields usable products/collections, destinations are correct, and focus remains predictable.
 - Route to qa-engineer and frontend-engineer. Reuse existing product-request and gallery retry coverage where applicable.
 
+#### Detailed behavior and verification
+
+- **Search states.** Cover initial suggestions, typing, pending, populated results, empty results, failed request, retrying, and recovered results. Retain the query after a recoverable failure.
+- **Race control.** Resolve an older request after a newer one and after the overlay closes. Confirm stale data cannot replace the current query or unexpectedly reopen the interface.
+- **Usability proof.** Verify keyboard access to products and collections, accessible result counts, sensible Escape behavior, and focus restoration. Check a long query and long matching titles on mobile.
+
 ### 13. Extend bag tests to contested and interrupted updates
 
 **Verification opportunity.** Existing tests cover duplicate activation, sequential two-tab adds, storage clearing, invalid saved selections, retry, and blocked persistence. Delayed responses crossing another tab’s update and the browser-without-Web-Locks path need targeted coverage. [Bag tests](../tests/e2e-demo/cart.spec.ts), [cart provider](../components/cart/CartProvider.tsx)
@@ -147,6 +220,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when acknowledged lines remain consistent, stale responses cannot overwrite newer saved intent, failed operations retain understandable recovery, and duplicate adds remain prevented.
 - Route to qa-engineer and fullstack-engineer.
 
+#### Detailed behavior and verification
+
+- **Conflict policy.** Specify the expected outcome when two tabs update the same line, one removes a line during another add, or a delayed response follows a newer update. Assert the policy explicitly.
+- **Interrupted mutation.** Keep acknowledged state visible while an operation fails. Retrying must account for current state and avoid accidentally applying an already acknowledged change twice.
+- **Persistence contract.** Use stored variant references and validated server/fixture prices. Verify stale cached amounts cannot influence the authoritative simulated total and recovery explains discarded selections.
+
 ### 14. Refresh the website’s technical trust-page descriptions
 
 **Source-confirmed stale copy.** Privacy still describes the retired whole-site password flow and says analytics instrumentation has yet to be added. The accessibility statement records September review timing and describes the former interactive model. Some stated announcement limits need comparison with current behavior. [Privacy draft](../app/(storefront)/legal/privacy/page.tsx#L60), [accessibility statement](../app/(storefront)/legal/accessibility/page.tsx#L31)
@@ -154,6 +233,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Compare each technical statement with collection access, conditional analytics, browser storage, current look selection, and verified accessibility behavior.
 - Complete when the descriptions reflect actual implementation and dated test evidence. Preserve draft labeling and identify unresolved business/legal facts for the owner.
 - Route to brand-content-editor with engineering and security verification. Shipping rates, return windows, and legal approval remain owner dependencies.
+
+#### Detailed behavior and verification
+
+- **Copy inventory.** Check storage purpose, collection access, analytics gating, contact mechanism, accessibility support, and any described checkout behavior against the current implementation.
+- **Professional presentation.** Use consistent draft notices and understandable customer language. Remove obsolete implementation details and clearly identify unresolved policy fields for later completion.
+- **Evidence discipline.** Date accessibility verification accurately and describe tested scope. Link policy statements to maintained technical facts without claiming compliance or approvals that have not been established.
 
 ## P2 local verification and engineering improvements
 
@@ -165,6 +250,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when each suite explicitly selects its intended mode and either verifies a reused server or starts an isolated one. Keep credentials out of output and prevent unintended external store calls.
 - Route to qa-engineer and devops-engineer.
 
+#### Detailed behavior and verification
+
+- **Mode contract.** Define explicit Demo and unconfigured startup profiles, including the values cleared from inherited environments. Verify the served mode before browser assertions run.
+- **Isolation.** Use predictable separate ports or verified server identity. Ensure a stale development server cannot satisfy a production or no-store run accidentally.
+- **Failure output.** Report the expected mode, observed mode, port, and remediation with environment values redacted. Terminate only processes owned by the test runner.
+
 ### 16. Keep production-browser checks repeatable
 
 **Confirmed automation gap.** CI builds production output, while both browser configurations launch the development server. The latest optimized-build checks are recorded local runs. [CI workflow](../.github/workflows/ci.yml#L43), [validation record](./superpowers/plans/2026-11-13-storefront-readiness.md)
@@ -172,6 +263,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Add a documented local command for a small production smoke in Demo and unconfigured modes.
 - Complete when navigation, gallery, search, bag persistence, and focus work against the optimized server. Check the mode during build and startup, and manage ports/server cleanup predictably.
 - Route to devops-engineer and qa-engineer. Local execution needs no hosting account.
+
+#### Detailed behavior and verification
+
+- **Smoke journey.** Start from the homepage, reach a product through navigation/search, inspect an image, choose a valid variant, add to the Demo bag, reload, and verify the saved line.
+- **Second mode.** Run an unconfigured build with deliberate empty/error expectations. Confirm those states are readable and recoverable without reaching external integrations.
+- **Repeatability.** Record build/start commands, server readiness, browser version, selected tests, and exit status. Clean up the owned server even when a check fails.
 
 ### 17. Turn performance measurements into a repeatable check
 
@@ -182,6 +279,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when results are reproducible enough to establish justified regression thresholds. Preserve important image detail and keep real-device/frame-rate claims tied to actual measurements.
 - Route to seo-performance-engineer and qa-engineer.
 
+#### Detailed behavior and verification
+
+- **Measurement design.** Use a fixed fixture and route set, multiple cold samples, and a separate warm-navigation pass. Record median and spread alongside individual runs.
+- **Interaction detail.** Measure search input responsiveness, variant-to-price update, fullscreen activation, and bag feedback under the same documented throttling. Inspect network waterfalls and JavaScript activation costs.
+- **Budget decisions.** Set thresholds after establishing a repeatable baseline. Investigate material regressions with traces and compare visual quality before accepting image or animation changes.
+
 ### 18. Verify actual browser zoom and assistive-technology behavior
 
 **Documented verification gap.** Narrow reflow, keyboard journeys, and gallery zoom have automated coverage. Actual browser magnification and screen-reader output remain unverified in the readiness record. [Readiness limitations](./superpowers/plans/2026-11-13-storefront-readiness.md), [gallery tests](../tests/e2e-demo/product-gallery.spec.ts)
@@ -190,6 +293,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Start with an available local screen reader, such as Windows Narrator. Record announcements, control names, reading order, and focus restoration.
 - Complete when results include browser, tool, viewport, steps, and reproducible failures. Physical phone gestures and hardware graphics need available devices, with equipment-dependent results tracked explicitly.
 - Route to ui-reviewer and qa-engineer.
+
+#### Detailed behavior and verification
+
+- **Manual journey.** Read a PDP, choose options, open/close sizing and gallery dialogs, add to bag, edit quantity, save an item, and recover from a simulated failure using keyboard and screen reader.
+- **Magnification checks.** Inspect the header, modal close controls, data tables, filter panel, and mobile purchase bar under zoom. Verify the focused element remains visible and reading order stays coherent.
+- **Result record.** Capture exact tool/browser versions, zoom setting, fixture, spoken output where relevant, and reproduction steps. Track unavailable hardware checks as pending evidence.
 
 ### 19. Audit accessibility across interactive states
 
@@ -200,6 +309,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when confirmed issues have regressions and announcements communicate useful changes without reading unnecessary content. Keep a manual record for checks automation cannot establish.
 - Route to qa-engineer and ui-reviewer.
 
+#### Detailed behavior and verification
+
+- **State coverage.** Create a compact route-by-state matrix for navigation, search, catalog, product, outfit, saved items, and bag. Cover normal, empty, loading, failure, and recovered outcomes where applicable.
+- **Announcement design.** Prefer concise status updates tied to the action. Check whether search reads an entire result container unnecessarily and whether repeated feedback is announced reliably.
+- **Acceptance evidence.** Combine automated semantic/contrast regressions with keyboard and screen-reader observations. Link each confirmed defect to the scenario that catches it.
+
 ### 20. Verify analytics through local UI interactions
 
 **Confirmed coverage gap.** Current adapter tests mock the external sender and run without a browser window. Browser-level event counts and payloads need their own local verification. [Analytics adapter](../lib/analytics/gtag.ts#L35), [adapter tests](../lib/analytics/gtag.test.ts)
@@ -207,6 +322,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Use a local capture sink or a dummy configuration with all external requests intercepted.
 - Complete when settled search, result counts, variant context, wishlist additions, and repeated activation produce intentional events. Verify that simulated bag actions retain their documented analytics semantics and exclude personal or sensitive information.
 - Route to data-analytics-engineer and qa-engineer. A GA4 account is unnecessary for this contract check.
+
+#### Detailed behavior and verification
+
+- **Event contract.** For each covered interaction, list trigger timing, permitted properties, deduplication behavior, and whether the event describes simulated commerce.
+- **Privacy cases.** Use synthetic data and assert that email, access codes, tokens, free-text personal content, and full sensitive URLs never enter captured payloads.
+- **Browser proof.** Capture a search followed by a result click, a variant change, a saved-item action, and a Demo bag operation. Check failure/retry and repeated activation against the intended counts.
 
 ### 21. Test the actual Shopify client transport with synthetic responses
 
@@ -216,6 +337,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when variables, API version, normalized data, and safe errors match the intended contract. Ensure no request escapes the test transport.
 - Route to backend-engineer and qa-engineer. Real store permissions and final catalog behavior remain integration checks.
 
+#### Detailed behavior and verification
+
+- **Transport cases.** Exercise HTTP success with GraphQL errors, throttling, server failure, invalid JSON, partial optional fields, and request cancellation where supported.
+- **Contract assertions.** Check operation variables and normalized product/variant identities, price currency/amount, availability, image metadata, and pagination. Ensure failures produce deliberate safe errors.
+- **Scope boundary.** Local mocks establish application handling of an agreed response shape. Keep actual store permissions, live catalog fields, and platform delivery as later integration evidence.
+
 ### 22. Preview Request Access outcomes locally
 
 **Enhancement proposal.** The form and server action exist, while successful delivery depends on the email integration. A controlled local demonstration can exercise success and failure before an account is connected. [Access page](../app/(storefront)/access/page.tsx), [submission action](../app/(storefront)/access/actions.ts)
@@ -223,6 +350,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Demonstrate validation errors, pending submission, simulated success, service failure, retry, and repeated submission using synthetic contact data.
 - Complete when the Demo outcome is clearly identified, keyboard focus and consent remain usable, and no real subscription or email is sent by the local harness.
 - Route to fullstack-engineer, brand-content-editor, and qa-engineer. Actual subscription and email delivery remain external integration work.
+
+#### Detailed behavior and verification
+
+- **Form interaction.** Associate errors with fields, retain safe input after a service failure, expose pending state, prevent duplicate activation, and move focus to the useful outcome or first invalid field.
+- **Synthetic scenarios.** Use a clearly labeled local submission handler with success, already-requested, validation-error, slow-response, and unavailable-service outcomes. Include consent changes during pending submission.
+- **Delivery boundary.** Distinguish local acknowledgement from actual mailing-list enrollment. Confirm synthetic submissions generate no external messages or stored real contact records.
 
 ## P3 design and resilience proposals
 
@@ -235,6 +368,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete when image crops, gallery order, zoom, cards, and editorial spacing can be judged together. Label synthetic media and retain asset provenance. Final photography and garment models remain owner assets.
 - Route to ui-ux-designer, frontend-engineer, and ecommerce-merchandiser.
 
+#### Detailed behavior and verification
+
+- **Asset set.** Prepare consistent front, back, fabric-detail, and fit-reference views where suitable synthetic assets exist. Maintain a shared crop/background direction across catalog, PDP, outfit, and saved items.
+- **Editorial polish.** Review whitespace, type hierarchy, product-name wrapping, image alignment, and loading placeholders together at all four device tiers. Ensure the product remains the strongest visual focus.
+- **Provenance.** Record the source/license or generation provenance and any synthetic labeling requirement. Avoid suggesting that a placeholder depicts the final garment or its actual material properties.
+
 ### 24. Investigate resilience when JavaScript is delayed or unavailable
 
 **Recorded framework limitation.** The product response contains server-rendered images and links inside a streamed boundary. Existing validation found that the route’s content stays hidden until JavaScript reveals it. [Server-markup test](../tests/e2e-demo/product-gallery.spec.ts#L103), [readiness record](./superpowers/plans/2026-11-13-storefront-readiness.md#implementation-and-review-record), [loading boundary](../app/loading.tsx)
@@ -244,6 +383,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Complete an architecture decision and browser proof before changing streaming behavior. Preserve first-image performance, route errors, and normal client navigation.
 - Route to engineering-lead and frontend-engineer, with architecture-reviewer review.
 
+#### Detailed behavior and verification
+
+- **Investigation stages.** First capture current script-disabled and slow-hydration behavior. Then test the smallest supported rendering change in an isolated proof and compare normal navigation, errors, and performance.
+- **Minimum useful content.** Evaluate product title, price context, media, descriptive information, and ordinary navigation for readability while enhancement scripts are delayed. Document which shopping actions depend on JavaScript.
+- **Decision outcome.** Record the supported approach, tradeoffs, measured evidence, and remaining limitations before broad changes to route streaming or loading boundaries.
+
 ### 25. Evaluate a local Content Security Policy
 
 **Documented deferred work.** A sitewide Content Security Policy remains an explicit follow-up. Its asset and script compatibility can be explored against local fixtures. [Roadmap engineering items](../ROADMAP.md), [current configuration](../next.config.ts)
@@ -251,6 +396,61 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - Inventory required script, style, font, image, connection, and 3D-model sources. Exercise a local report-only policy and controlled integration responses.
 - Complete when violations are understood and a proposed policy passes production-mode journeys, including gallery media and the graphics fallback. Keep enforcement changes tied to compatibility evidence.
 - Route to security-engineer, devops-engineer, and frontend-engineer.
+
+#### Detailed behavior and verification
+
+- **Policy inventory.** Map each required origin to a concrete feature and environment. Include optimized images, fonts, framework scripts/styles, analytics gating, API calls, and local graphics assets.
+- **Compatibility run.** Observe report-only violations across production-mode navigation, dialogs, gallery, search, bag, and graphics fallback. Distinguish expected sources from accidental dependencies.
+- **Security acceptance.** Review proposed directives and any nonce/hash strategy with the security specialist. Redact sensitive report fields and verify that useful error recovery survives the proposed policy.
+
+## Feature packages for a more polished demo
+
+These packages expand the existing items into coherent website experiences. They are proposed scope for subsequent implementation. Each package can be demonstrated using synthetic products and intercepted service responses.
+
+| Package | Features to demonstrate | Related items | Completion evidence |
+| --- | --- | --- | --- |
+| Find the right piece | Size/color/collection filters, removable selections, understandable counts, empty-result recovery, continued browsing | 05, 08–10, 12 | A known fixture set remains discoverable through filtering, search, reload, and browser history |
+| Understand fit and details | Garment-aware size charts, unit conversion, measurement instructions, contextual availability, coherent detail imagery | 05–07, 10–11, 23 | A customer can identify a valid size/color combination and understand the provisional fit information |
+| Build a complete look | Per-piece availability guidance, inclusion controls, consistent variant pricing, atomic simulated addition, recoverable failures | 02, 05, 10, 13 | One unavailable piece is explained and a corrected outfit reaches the bag with the expected variants and total |
+| Resume shopping | Robust recently viewed history, readable saved-item snapshots, cross-tab bag consistency, return-to-results position | 01, 03, 09, 13 | Reload, failed refresh, and a second tab preserve understandable shopping intent |
+| Shop comfortably on mobile | Comfortable option targets, wrapping, stable media space, zoom/reflow, visible focus around sticky actions | 03–04, 06, 11, 18–19 | Phone/tablet layouts and keyboard journeys remain usable with long content, errors, and magnification |
+| Trust the experience | Accurate draft policies, honest Demo outcomes, restrained recovery messages, verified local event contracts | 14, 20–22 | Technical statements match implementation and synthetic interactions produce the documented local outcomes |
+| Review a professional presentation | Consistent image direction, garment-appropriate placeholders, deliberate type/spacing, readable interactive states | 03–04, 11, 23 | Reviewed screenshots cover loaded, empty, pending, failed, and recovered states at the documented sizes |
+
+### Cross-cutting interaction requirements
+
+- Keep the initiating action and its outcome connected. Place feedback near the control and announce meaningful changes through the appropriate status mechanism.
+- Preserve intentional choices through recoverable failures. Explain any invalid or discarded selection and provide a clear next action.
+- Follow existing motion timing and reduced-motion rules. Check interrupted transitions, rapid repeated input, and closing an overlay while work is pending.
+- Keep prices and availability aligned across card, picker, outfit, saved item, and bag for the same variant. Use canonical synthetic records for the demonstration.
+- Reserve media space and maintain useful product information during slow requests. Avoid layout shifts that move an action under a pointer or obscure keyboard focus.
+- Review final copy against CONTENT.md and visual behavior against DESIGN_SYSTEM.md and INTERACTIONS.md. Any example wording in this backlog remains implementation guidance pending that review.
+
+### Suggested demonstration script
+
+1. Browse a populated collection, filter by size/color, change sorting, and continue beyond the first page.
+2. Open a product, inspect coherent images, read fit guidance, switch measurement units, and select a valid variant.
+3. Try an unavailable pair, recover through the picker, and add the corrected selection to the Demo bag.
+4. Build an outfit containing an unavailable piece, correct or exclude it, and add the valid included pieces.
+5. Save an item, refresh with the product endpoint failing, and verify the readable cached snapshot and recovery.
+6. Open another tab, edit the bag during a delayed update, and inspect the final lines and feedback in both tabs.
+7. Repeat the key steps with blocked storage, keyboard navigation, reduced motion, and magnification.
+8. Review local analytics captures, production performance measurements, and the dated accessibility observations for the same revision.
+
+### Implementation handoff for each item
+
+Record the intended customer outcome, selected fixture IDs, affected entrypoints, state transitions, data rules, owned files, dependencies, and expected validation. Reuse the existing components and contracts before adding new abstractions. Keep the change small enough for its behavior and evidence to be reviewed together.
+
+| Work group | Prerequisites | Deliverable |
+| --- | --- | --- |
+| Reliability first | Reproductions 01–04 | Focused fixes and regression evidence for the four confirmed failures |
+| Demo foundation | 10, 15–16 | Reachable fixture scenarios and repeatable production browser runs |
+| Discovery and fit | Foundation plus 05–09, 12 | Connected filter, continuation, selection, and size-guide journeys |
+| Resilience and trust | 11, 13–14, 20–22 | Recovery contracts, accurate technical copy, and local integration demonstrations |
+| Inclusive presentation | 17–19, 23 | Coherent visuals with performance, keyboard, magnification, and assistive-technology evidence |
+| Architecture investigations | 24–25 | Measured rendering and CSP proposals with recorded compatibility results |
+
+The work groups can overlap when file ownership and dependencies permit. Accessibility, security, and performance review accompany relevant changes throughout the sequence.
 
 ## Execute the backlog with repeatable local demos
 
