@@ -1,6 +1,6 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 46 items, including 21 additions from the follow-up audit. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. All items below start open. The requested deliverable is this improvement inventory. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
 
@@ -24,7 +24,7 @@ The audit used headless Chromium 151.0.7922.34 through Playwright 1.62.1 on Wind
 | 03 | P1 | A long saved-item name breaks narrow-screen layout | A 320px wishlist measured 2030px of document width during an availability failure |
 | 04 | P1 | Navigation hover text loses readable contrast | Rendered text used `rgb(31, 61, 43)` over `rgb(5, 5, 5)` |
 
-P1 addresses reproduced failures that prevent progress or readability. P2 completes existing journeys and their verification. P3 covers scoped design or architecture proposals. Items identified through source inspection or missing test coverage say so explicitly.
+P1 addresses failures that prevent progress or readability and potentially blocking reliability risks. Each finding retains its reproduction status. P2 completes existing journeys and their verification. P3 covers scoped design or architecture proposals. Items identified through source inspection or missing test coverage say so explicitly.
 
 ## Preserve the completed shopping features
 
@@ -357,6 +357,12 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - **Synthetic scenarios.** Use a clearly labeled local submission handler with success, already-requested, validation-error, slow-response, and unavailable-service outcomes. Include consent changes during pending submission.
 - **Delivery boundary.** Distinguish local acknowledgement from actual mailing-list enrollment. Confirm synthetic submissions generate no external messages or stored real contact records.
 
+#### Further source findings for Request Access
+
+- The success screen says ACCESS SENT and CHECK YOUR EMAIL, while the server action only submits a subscription job. Define acknowledgement wording that matches the completed operation. A local mocked success can verify wording without claiming actual access-code delivery. [Success screen](../app/(storefront)/access/RequestAccessForm.tsx#L36), [subscription operation](../lib/klaviyo/subscribe.ts#L20)
+- First name is required and validated, but the subscription call receives only email. Decide whether that field serves an actual supported purpose. Reduce form effort or implement its deliberate data contract, with appropriate privacy wording. [Validation](../app/(storefront)/access/actions.ts#L51), [subscription input](../lib/klaviyo/subscribe.ts#L20)
+- During pending submission the button keeps REQUEST ACCESS as its label. Evaluate a concise submitting status and busy semantics so a slow response has an understandable outcome. Combine this with the existing local failure/retry scenario. [Submit control](../app/(storefront)/access/RequestAccessForm.tsx#L138)
+
 ## P3 design and resilience proposals
 
 ### 23. Make placeholder imagery more coherent for design review
@@ -402,6 +408,220 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 - **Policy inventory.** Map each required origin to a concrete feature and environment. Include optimized images, fonts, framework scripts/styles, analytics gating, API calls, and local graphics assets.
 - **Compatibility run.** Observe report-only violations across production-mode navigation, dialogs, gallery, search, bag, and graphics fallback. Distinguish expected sources from accidental dependencies.
 - **Security acceptance.** Review proposed directives and any nonce/hash strategy with the security specialist. Redact sensitive report fields and verify that useful error recovery survives the proposed policy.
+
+## Additional website holes found in the follow-up audit
+
+Reviewed on November 14, 2026 against website revision `d6cf965`, with documentation baseline `f7e519c`. These findings extend the original 25 items. Parent browser checks used the same local production Demo server, Chromium 151.0.7922.34, reduced motion, and fresh contexts at 390 × 844px or 320 × 800px. The discovery reviewer used default motion at 390 × 844px for Search and 1440 × 900px for empty-category sorting. Source-confirmed items still require their listed browser or transport demonstration. Priorities are proposed.
+
+### 26. Bound stalled bag operations and lock waits
+
+**P1.** Source-confirmed reliability gap. The bag awaits fetch and response decoding while holding its origin-wide Web Lock. There is no request deadline or lock-wait cancellation, so an unresolved response can keep global pending active and queue another tab indefinitely. [Source](../components/cart/CartProvider.tsx#L73)
+
+- **Customer impact.** A stalled operation can make the bag and other buying actions remain busy across tabs.
+- **Demonstration.** Hold the local /api/cart response, then try another mutation and a second tab. Keep this distinct from an ordinary rejected request, which already has recovery.
+- **Improvement.** Introduce deliberate request and lock-wait limits, cancellation, understandable timeout feedback, and retry that reconciles current state. Release owned resources on every completion path.
+- **Complete when.** The held request reaches a recoverable outcome within the chosen limit, subsequent actions and the second tab recover, and a late response cannot overwrite newer acknowledged intent.
+- **Owner.** fullstack-engineer and qa-engineer.
+
+### 27. Refresh saved products independently
+
+**P2.** Source-confirmed gap. WishlistView applies refreshed results after Promise.all settles. A single unresolved product request prevents already completed product results from updating the list. [Source](../components/product/WishlistView.tsx#L46)
+
+- **Customer impact.** Fresh information for healthy items is held back by one unhealthy request.
+- **Demonstration.** Save three pieces, return fresh price/stock for two, and hold the third response. Repeat while Retry is active.
+- **Improvement.** Publish independent results as they settle, bound requests, and communicate freshness/recovery per affected item. Preserve the stable saved order and usable cached content.
+- **Complete when.** The two completed items refresh promptly, the held item receives a recoverable state, and removing an item or leaving the route cancels obsolete work.
+- **Owner.** frontend-engineer and qa-engineer.
+
+### 28. Remove dead-end buying actions from known missing saved products
+
+**P2.** Browser-confirmed at 390 × 844px. Returning product:null for a saved crewneck displays No longer available together with an enabled QUICK ADD. The synthetic fallback declares availableForSale:true even when absence is confirmed. [Source](../components/product/WishlistView.tsx#L154)
+
+- **Customer impact.** The interface invites a buying action immediately after explaining that the piece is unavailable.
+- **Demonstration.** Seed a valid v1 saved crewneck and intercept its product endpoint with {product:null}. Compare a confirmed absence, HTTP 503, and a live sold-out response.
+- **Improvement.** Represent missing, stale/unknown, and live inventory as distinct states. Keep the saved title and removal control, explain availability, and offer a useful discovery destination.
+- **Complete when.** A confirmed missing item has no active purchase path. A transient refresh failure retains useful recovery and a live sold-out item reflects its actual state.
+- **Owner.** frontend-engineer and ui-reviewer.
+
+### 29. Keep optional recommendations from taking down a valid PDP
+
+**P2.** Source-confirmed failure coupling. ProductPage awaits the same-type product query before returning the valid main product. A failed recommendation query can therefore reach the page error boundary after product detail retrieval succeeded. [Source](../app/(storefront)/products/[handle]/page.tsx#L43)
+
+- **Customer impact.** An optional discovery section can prevent the primary shopping task.
+- **Demonstration.** Return a valid product detail and fail or delay only the related-product query through a controlled transport.
+- **Improvement.** Isolate optional recommendation loading and errors from the main product. Preserve observable diagnostics and provide a deliberate section fallback when needed.
+- **Complete when.** Title, information, images, options, and primary shopping actions remain usable through recommendation failure or delay, with no hidden discarded error.
+- **Owner.** fullstack-engineer and seo-performance-engineer.
+
+### 30. Preserve selected variants through product links
+
+**P2.** Source-confirmed enhancement. PDP selection initializes from option defaults, while bag product links carry only the handle. Reloading or returning from a bag line loses the line’s size/color context. [Source](../components/cart/BagView.tsx#L32)
+
+- **Customer impact.** Customers must reconstruct a choice they already made.
+- **Demonstration.** Choose a non-default variant, add it, follow its bag product link, reload, and copy/open the URL in a fresh tab.
+- **Improvement.** Define a validated variant URL contract and initialize only explicitly supplied valid choices. Synchronize intentional changes with history without forcing an unsolicited size selection.
+- **Complete when.** Bag-to-PDP, copied URLs, reload, and Back/Forward recover the intended valid variant. Invalid or foreign IDs fall back safely with understandable guidance.
+- **Owner.** frontend-engineer and backend-engineer.
+
+### 31. Handle products with more than 100 variants
+
+**P2.** Source-confirmed data completeness gap. Product and look queries request variants(first:100) without continuation metadata. A valid combination beyond that boundary can be absent from local matching while its option values are still displayed. [Source](../lib/shopify/queries/products.ts#L51)
+
+- **Customer impact.** A valid product choice can appear impossible because its data was omitted.
+- **Demonstration.** Create a synthetic response containing a sellable 101st variant and verify its full size/color tuple through PDP, Quick Add, and outfit selection.
+- **Improvement.** Fetch complete variant data or resolve selected variants through an explicit completeness-aware contract. Apply the same solution to the look query.
+- **Complete when.** The 101st valid combination is reachable and correctly priced/sellable. Truncated data never silently determines overall stock or combination validity.
+- **Owner.** backend-engineer and ecommerce-merchandiser.
+
+### 32. Close Search when selecting the current product
+
+**P2.** Browser-confirmed by the discovery reviewer at 390 × 844px. On the crewneck PDP, search for crewneck and activate that same product. The URL stays the same and the Search dialog remains visible because pathname-based closing never fires. [Source](../components/navigation/SearchOverlay.tsx#L107)
+
+- **Customer impact.** A result activation appears to do nothing.
+- **Demonstration.** Open Search on /products/preview-featherweight-crewneck, type crewneck, and select its result. Repeat with keyboard activation.
+- **Improvement.** Close Search on ordinary product-result navigation, including a destination already open. Preserve modified-click/new-tab behavior and independent Quick Add actions.
+- **Complete when.** Normal activation reveals the intended PDP and leaves focus coherent for both same-page and different-page results.
+- **Owner.** frontend-engineer and qa-engineer.
+
+### 33. Provide visible product hierarchy and a way back to discovery
+
+**P2.** Browser-confirmed enhancement at 390 × 844px. The crewneck main content links to gallery images and policies, with no category trail. The route already computes breadcrumbs for JSON-LD but does not render them as navigation. [Source](../app/(storefront)/products/[handle]/page.tsx#L54)
+
+- **Customer impact.** Direct-entry shoppers lack an obvious route into the relevant category.
+- **Demonstration.** Enter a PDP directly, then try to browse the same garment category using only its visible main content. Compare arrival from a filtered listing.
+- **Improvement.** Render a restrained accessible breadcrumb from the existing known taxonomy. Where useful, support a validated return-to-results context that preserves filters and position.
+- **Complete when.** Direct visitors can reach the real category, unknown taxonomy degrades gracefully, and return navigation preserves the supported browsing context.
+- **Owner.** ui-ux-designer and frontend-engineer.
+
+### 34. Make contact-page promises match available support
+
+**P2.** Browser-confirmed at 320 and 390px. Contact states support is available by email and promises replies while its address is only ESQUE PLACEHOLDER — SUPPORT EMAIL. There is no usable contact destination in this state. [Source](../app/(storefront)/contact/page.tsx#L43)
+
+- **Customer impact.** Customers are told support exists without a way to use it.
+- **Demonstration.** Open /contact with the support email unconfigured, then preview a synthetic configured address without sending mail.
+- **Improvement.** Make introductory and response wording conditional on support availability. Provide clear preparation-state guidance and useful existing policy links without inventing an address or response SLA.
+- **Complete when.** The unconfigured page accurately describes its current support state and offers useful navigation. The configured preview has a correctly labeled mailto destination.
+- **Owner.** brand-content-editor and frontend-engineer.
+
+### 35. Refresh an upcoming collection when its countdown ends
+
+**P2.** Browser-confirmed using a controlled client clock. On /collections/collection-002, overriding Date.now to two seconds after the fixture launch yields 0D 0H 0M 0S while the obscured teaser and access-code form remain displayed. The countdown has no completion handoff. [Source](../app/(storefront)/collections/[handle]/DropCountdown.tsx#L72)
+
+- **Customer impact.** Customers waiting for a drop can remain on a stale locked screen.
+- **Demonstration.** Keep the teaser open across a synthetic launch boundary. Test a client clock ahead of and behind the authoritative server clock.
+- **Improvement.** Trigger a bounded authoritative refresh when the countdown completes, show a useful checking/available state, and retain server-side release authorization. Keep an exact launch date/time and timezone available after hydration.
+- **Complete when.** A genuine release becomes reachable without a manual reload, clock skew cannot unlock protected content, and repeated zero ticks cannot cause refresh loops.
+- **Owner.** fullstack-engineer and qa-engineer.
+
+### 36. Give locked collection pages a clear page heading
+
+**P2.** Browser-confirmed on the upcoming collection at 390px. The main content has zero h1 elements because CollectionTeaser renders the collection title as a paragraph. [Source](../app/(storefront)/collections/[handle]/CollectionTeaser.tsx#L34)
+
+- **Customer impact.** Heading navigation cannot identify the locked collection as the page topic.
+- **Demonstration.** Open the locked collection and inspect its headings with keyboard/screen-reader navigation. Repeat after it becomes public.
+- **Improvement.** Use a meaningful page heading while preserving the restrained title appearance and avoiding disclosure of protected collection details.
+- **Complete when.** Both locked and public states expose a coherent page title and heading hierarchy.
+- **Owner.** frontend-engineer and ui-reviewer.
+
+### 37. Use product imagery in shared product previews
+
+**P3.** Browser-confirmed enhancement. The crewneck og:image points to the generic /opengraph-image. buildPageMetadata always supplies that sitewide image and accepts no product image override. [Source](../lib/seo/metadata.ts#L59)
+
+- **Customer impact.** Shared products lack a recognizable garment preview.
+- **Demonstration.** Inspect metadata for two visually different synthetic products and one product without media.
+- **Improvement.** Allow a safe product-specific social preview with meaningful alt text and retain the brand fallback for missing media. Use verified product metadata and supported image dimensions.
+- **Complete when.** Distinct product URLs emit their intended preview images and absolute URLs, with a valid fallback when media is absent. A local metadata check can validate the markup before any social account is used.
+- **Owner.** seo-performance-engineer and frontend-engineer.
+
+### 38. Declare the storefront’s dark native-control appearance
+
+**P3.** Browser-confirmed enhancement. The dark website reports computed color-scheme:normal and emits no theme-color metadata in the audited pages. Native controls and browser chrome therefore lack an explicit dark presentation contract. [Source](../app/layout.tsx)
+
+- **Customer impact.** Platform UI can look inconsistent with the storefront and needs explicit readability checks.
+- **Demonstration.** Review select menus, number controls, scrollbars, autofill, and browser chrome under light/dark system settings and forced colors.
+- **Improvement.** Declare the appropriate color scheme and browser theme color, then verify platform controls and autofill remain readable. Preserve system accessibility overrides.
+- **Complete when.** Supported browser controls suit the dark surface, focus remains visible, and forced-color/high-contrast rendering remains usable.
+- **Owner.** frontend-engineer and ui-reviewer.
+
+### 39. Avoid surprise focus and mobile keyboard activation on Request Access
+
+**P2.** Browser-confirmed focus behavior at 390 × 844px. Direct navigation to /access immediately focuses firstName because the field has unconditional autoFocus. A physical phone keyboard was not observed in this headless check. [Source](../app/(storefront)/access/RequestAccessForm.tsx#L81)
+
+- **Customer impact.** The first input takes attention before the customer chooses to begin.
+- **Demonstration.** Navigate directly and through the Request Access link on desktop and a real phone when available. Check whether the introduction and consent context remain easy to discover.
+- **Improvement.** Evaluate focus according to entry intent and input capability. Keep initial page reading predictable, while explicitly focusing the first invalid field after submission.
+- **Complete when.** Initial mobile entry preserves useful context and the agreed keyboard behavior. Validation and subsequent keyboard navigation retain clear focus.
+- **Owner.** ui-ux-designer and frontend-engineer.
+
+### 40. Connect selected color to relevant product media
+
+**P3.** Source-confirmed enhancement proposal. The normalized variant carries selected options and price but no image/media relationship. Selecting another color cannot communicate which gallery images depict that color. [Source](../lib/shopify/products.ts#L44)
+
+- **Customer impact.** A color choice can leave customers uncertain which appearance they are viewing.
+- **Demonstration.** Use one synthetic product with distinct Black/Ecru images, shared detail views, and a variant with no dedicated media.
+- **Improvement.** Define a variant-to-media association and an intentional gallery update rule. Retain the customer’s manual browsing intent and a sensible product-level fallback.
+- **Complete when.** Selected color, displayed media, image alt text, and fullscreen navigation stay coherent without unexpected focus jumps. Missing mappings use the documented fallback.
+- **Owner.** ecommerce-merchandiser and frontend-engineer.
+
+### 41. Exercise dynamic sitemap coverage with synthetic catalogs
+
+**P2.** Source-confirmed SEO gap. app/sitemap.ts returns static paths only, so product and individual collection/archive detail routes remain absent. The file describes live store access as the blocker, while enumeration and failure handling can be prepared using local response fixtures. [Source](../app/sitemap.ts#L39)
+
+- **Customer impact.** Indexable detail pages lack sitemap discovery coverage.
+- **Demonstration.** Generate entries for a synthetic catalog containing current, upcoming, archived, and missing records. Include a second page of handles.
+- **Improvement.** Build and locally validate an enumeration contract that follows existing visibility decisions. Use trustworthy modification dates where available and define partial-fetch failure behavior.
+- **Complete when.** Eligible product/collection routes have deduplicated absolute entries, protected destinations follow the agreed indexing rules, and lastModified reflects meaningful source data when supplied. Live store completeness remains a later integration check.
+- **Owner.** seo-performance-engineer and backend-engineer.
+
+### 42. Keep empty-category guidance accurate when sorting changes
+
+**P2.** Browser-confirmed by the discovery reviewer at 1440 × 900px. /tops/hoodies shows NOTHING HERE YET, while /tops/hoodies?sort=newest shows NOTHING MATCHES and CLEAR FILTERS. hasActiveFilters counts ordering as a narrowing filter. [Source](../lib/catalog/filters.ts#L130)
+
+- **Customer impact.** Sorting cannot create products in an empty category, so Clear filters suggests an ineffective recovery.
+- **Demonstration.** Visit the two URLs, then compare a populated category narrowed to zero by a real price or availability filter.
+- **Improvement.** Distinguish ordering from membership restrictions when selecting empty-state copy and reset actions.
+- **Complete when.** A genuinely empty category retains accurate guidance across sort choices, while restrictive filters still offer a working reset.
+- **Owner.** frontend-engineer and qa-engineer.
+
+### 43. Restore keyboard focus after the closet panel closes
+
+**P2.** Source-confirmed. Escape explicitly restores focus to the selected garment button. The panel CLOSE callback only dismisses selection, unmounting its currently focused control. [Source](../components/home/closet/ClosetExperience.tsx#L41)
+
+- **Customer impact.** A keyboard shopper can lose their position when the focused CLOSE button disappears.
+- **Demonstration.** With a graphics-capable browser, select a garment by keyboard, reach CLOSE, activate it, and inspect document.activeElement.
+- **Improvement.** Unify deliberate focus restoration for the panel close paths. Return to the corresponding reachable garment trigger and handle a removed product safely.
+- **Complete when.** CLOSE and Escape both leave focus at the intended garment control, with subsequent Tab order predictable. Pointer dismissal also follows an intentional focus policy.
+- **Owner.** frontend-engineer and ui-reviewer.
+
+### 44. Let visitors pause automatic closet movement
+
+**P2.** Source-confirmed enhancement. ClosetScene applies ongoing sway and selected-garment auto-rotation, which resumes after manual input. The available interface has no persistent pause control. Reduced motion already suppresses these effects. [Source](../components/home/closet/ClosetScene.tsx#L229)
+
+- **Customer impact.** Visitors who want a stationary view must depend on their system preference or repeatedly intervene.
+- **Demonstration.** Observe ambient movement and a selected garment beyond the auto-rotation delay in a graphics-capable browser.
+- **Improvement.** Provide an accessible pause/resume choice for ongoing automatic movement while preserving manual rotation and product selection.
+- **Complete when.** Paused state stops ambient sway and automatic rotation, survives selection changes within the visit, and has a clear keyboard-accessible label and state. Graphics behavior remains pending direct verification.
+- **Owner.** ui-ux-designer and frontend-engineer.
+
+### 45. Respond to reduced-motion changes during the visit
+
+**P2.** Source-confirmed. ClosetExperience initializes its preference once through useState and has no media-query change subscription. JavaScript motion can retain the previous preference until remount. [Source](../components/home/closet/ClosetExperience.tsx#L32)
+
+- **Customer impact.** Turning on reduced motion while the homepage is open may leave automatic graphics motion active.
+- **Demonstration.** Toggle the browser emulated preference in both directions while a garment is selected, then verify the graphics on a capable renderer.
+- **Improvement.** Subscribe to preference changes, clean up the listener, and update all JavaScript motion consumers. Coordinate this with the explicit pause choice in item 44.
+- **Complete when.** Enabling reduced motion stops the relevant effects during the same visit. Disabling it follows the agreed pause/resume policy and preserves selection and focus.
+- **Owner.** frontend-engineer and ui-reviewer.
+
+### 46. Use one visible search-query length contract
+
+**P3.** Source-confirmed. Search input accepts unrestricted text, local category matching and analytics use the full trimmed value, while the API truncates product/collection search to 100 characters. [Source](../app/api/search/route.ts#L26)
+
+- **Customer impact.** Customers can see a query that differs from the text actually searched, and event context can describe a different request.
+- **Demonstration.** Paste queries of 99, 100, and 101 characters and a long unbroken string. Compare displayed query, local matching, transport, and captured local event context.
+- **Improvement.** Define a shared supported length and normalization rule. Communicate the limit accessibly and apply it consistently without unexpected truncation during input composition.
+- **Complete when.** UI, local matching, transport, and allowed analytics properties represent the same intended query, including pasted and composed input.
+- **Owner.** frontend-engineer and data-analytics-engineer.
 
 ## Feature packages for a more polished demo
 
@@ -454,13 +674,23 @@ The work groups can overlap when file ownership and dependencies permit. Accessi
 
 ## Execute the backlog with repeatable local demos
 
-Work through items 01–04 first. Establish fixture scenarios and deterministic test environments before expanding filtering or pagination. Review trust-page descriptions alongside the relevant technical changes. Performance and accessibility checks should accompany each affected journey.
+Work through items 01–04 first, together with the stalled-operation risk in item 26. Establish fixture scenarios and deterministic test environments before expanding filtering or pagination. Review trust-page descriptions alongside the relevant technical changes. Performance and accessibility checks should accompany each affected journey.
 
 For each item, record the baseline revision, fixture scenario, reproduction steps, expected outcome, screenshots where relevant, validation command, and observed result. Update its status only when the implementation and applicable checks support completion. Follow AGENTS.md for role routing, review, and validated publication to `surfacebook`.
 
 Use the existing opt-in Demo Mode for populated journeys. Set `PREVIEW_DEMO_MODE=1` during both production build and startup. Keep a separate unconfigured-mode check and synthetic data for all intercepted service responses. The current local runtime and test commands are recorded in the readiness document. [Runtime and validation commands](./superpowers/plans/2026-11-13-storefront-readiness.md#validation-record)
 
 Final garment measurements, composition, care, photography, approved business policies, live Shopify transactions, real email delivery, account access, and hosted deployment remain owner or service dependencies. Each related item above identifies the interface or local verification that can progress beforehand.
+
+## Follow-up audit coverage and limits
+
+The parent inspected product, saved-item, contact, access, archive, legal, metadata, sitemap, countdown, and shared layout code. Independent UI and commerce reviewers inspected discovery/navigation/closet and shopping data/operation contracts. Their source findings were compared with the original backlog before inclusion.
+
+Local browser checks covered contact, PDP, access, missing-page recovery, archive, collections, new arrivals, and tops at 320 or 390px. The discovery reviewer checked Search on the current PDP and empty-category sorting, including a 1440px run. The parent reproduced the known-missing wishlist action mismatch and the zero-countdown teaser with a controlled client clock. Ordinary narrow routes in this sample stayed within their viewport width.
+
+A proposed claim that S/Ecru has no sold-out feedback was rejected after the browser displayed SOLD OUT. Contextual availability enhancements remain in item 05. This prevents a source-only suspicion from becoming a recorded defect.
+
+Graphics motion/focus findings are based on source and still need a graphics-capable browser demonstration. Actual phone keyboard behavior, physical safe areas, screen-reader speech, live commerce, and external message delivery remain outside the evidence gathered in this pass. Browser coverage is a sampled audit of the listed journeys. Source-confirmed risks and proposed enhancements retain their evidence labels until directly verified.
 
 ## Keep this inventory current
 
