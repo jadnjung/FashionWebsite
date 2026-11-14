@@ -62,48 +62,48 @@ function HeartIcon({ filled, ...props }: SVGProps<SVGSVGElement> & { filled: boo
 // case, where the wrapping label's computed name was too long/different
 // from what was needed).
 //
-// No extra aria-live region for this control, considered and excluded: a
-// toggle button whose own accessible name changes on activation, combined
-// with aria-pressed, is exactly WAI-ARIA APG's documented Toggle Button
-// pattern — the state change is on the very element that has focus, and is
-// reliably announced by assistive tech without a supplementary live
-// region. This differs from D-049's Interactive Model case, which involved
-// a DIFFERENT DOM subtree, away from the focused control, needing to be
-// announced — not the case here.
+// The toggle exposes its saved state directly. A separate status reports
+// storage failures because the saved state alone cannot convey persistence.
 export function WishlistToggle({ item }: WishlistToggleProps) {
-  const { isWishlisted, add, remove } = useWishlist();
+  const { isWishlisted, ready, persistenceError, add, remove } = useWishlist();
   const saved = isWishlisted(item.handle);
 
   return (
-    <Button
-      type="button"
-      variant="secondary"
-      aria-pressed={saved}
-      className="inline-flex w-fit items-center gap-2"
-      onClick={() => {
-        if (saved) {
-          remove(item.handle);
-          return;
-        }
-        add(item);
-        // Product Behavior: "Wishlist adds" (PROJECT.md §82). GA4's own
-        // standard recommended event — an honest match (DECISIONS.md
-        // D-055's own test): a real, persisted local save genuinely
-        // happens here, unlike add_to_bag_click's deliberate avoidance of
-        // GA4's standard add_to_cart name (no real cart exists). Fired
-        // only on the add branch — see the "no remove event" note in
-        // lib/analytics/events.ts.
-        trackEvent('add_to_wishlist', {
-          currency: item.minPrice.currencyCode,
-          value: Number(item.minPrice.amount),
-          items: [
-            { item_id: item.handle, item_name: item.title, price: Number(item.minPrice.amount) },
-          ],
-        });
-      }}
-    >
-      <HeartIcon filled={saved} className="h-4 w-4" />
-      {saved ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
-    </Button>
+    <div className="flex flex-col items-start gap-3">
+      <Button
+        type="button"
+        variant="secondary"
+        aria-pressed={saved}
+        disabled={!ready}
+        className="inline-flex w-fit items-center gap-2"
+        onClick={() => {
+          if (saved) {
+            remove(item.handle);
+            return;
+          }
+          add(item);
+          // Product Behavior: "Wishlist adds" (PROJECT.md §82). GA4's own
+          // standard recommended event. Saves include the in-session
+          // fallback when storage is unavailable. Fired only on the add
+          // branch — see lib/analytics/events.ts.
+          trackEvent('add_to_wishlist', {
+            currency: item.minPrice.currencyCode,
+            value: Number(item.minPrice.amount),
+            items: [
+              { item_id: item.handle, item_name: item.title, price: Number(item.minPrice.amount) },
+            ],
+          });
+        }}
+      >
+        <HeartIcon filled={saved} className="h-4 w-4" />
+        {saved ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
+      </Button>
+      {persistenceError && (
+        <p role="status" className="text-body-sm text-esque-text-secondary">
+          Browser storage is unavailable. Changes are kept for this visit and may be lost when you
+          leave.
+        </p>
+      )}
+    </div>
   );
 }

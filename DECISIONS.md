@@ -1747,3 +1747,37 @@ The audit also removes Demo Mode's obsolete image-optimizer bypass. The retired 
 Populated mobile WebKit coverage is now part of the Demo suite, with the scene-specific closet spec restricted to Chromium. This exposed pointer-trigger focus loss in Size Guide, Quick Add, and Shop the Look. Accepted dialog triggers now focus explicitly before opening, preserving native return focus on Safari. Ring activation checks pointer-drag suppression before focusing, and keyboard-generated activation remains available after a drag. Scene-functional tests isolate software-GPU workers and their shader-compilation budget from normal shopping coverage.
 
 The final no-store pass also exposed mount-time pathname effects dismissing freshly opened overlays. Menu and Search now close only after a genuine pathname change. Single-activation Demo checks replace retrying clicks, and repeated Safari menu checks verify the correction. The toast boundary test pauses its mock clock before activation so host assertion time does not consume its 100ms pre-expiry margin.
+
+## D-093 — Develop shopping interactions against an explicit Demo bag
+
+The owner requested gallery, mobile shopping, product information, saved items,
+and cart-interface improvements before real products and Shopify are available.
+The existing opt-in Demo Mode now also governs simulated bag responses. The
+server passes this mode into a shared cart provider. `/api/cart` resolves variant
+references against canonical fixtures and validates availability, quantities,
+prices, and integer-minor-unit totals. Stored client references carry variant IDs
+and quantities. `/bag` exposes quantity editing, removal, subtotal, and recovery,
+with visible Demo context and unavailable checkout. Simulated additions stay
+separate from real commerce-success analytics. The live Shopify integration
+described by D-016 remains required before transactions.
+
+PDP, Quick Add, and Shop the Look share this cart context. Mobile purchase
+controls use the same selection state and action as the main purchase panel.
+Responsive spacing reserves room for the fixed controls and keyboard focus.
+
+Product media retains its server-rendered stack, first-image priority, and
+shared transition. Progressive image links gain explicit navigation, a native
+fullscreen dialog, keyboard controls, touch swipe, zoom, and image retry.
+Native scrolling supports detailed inspection while zoomed.
+
+Product information uses optional `custom.materials`, `custom.fit`, and
+`custom.care` Shopify metafields with `single_line_text_field` or
+`multi_line_text_field` types and storefront access. Values render as React text.
+Structured types and absent fields receive pending-content guidance. Demo
+information is labeled as provisional, and shipping/returns link to draft policy
+pages. The metafield shape follows the [Storefront API documentation](https://shopify.dev/docs/api/storefront/latest/objects/Metafield).
+
+Saved items preserve the existing v1 format while validating cached entries,
+handling unavailable browser storage, and reporting session-only persistence.
+The implementation plan and validation record live in
+[the storefront readiness plan](./docs/superpowers/plans/2026-11-13-storefront-readiness.md).

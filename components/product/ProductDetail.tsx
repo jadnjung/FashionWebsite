@@ -1,5 +1,6 @@
 import { ProductGrid } from '@/components/catalog/ProductGrid';
 import { ProductGallery } from '@/components/product/ProductGallery';
+import { ProductInformation } from '@/components/product/ProductInformation';
 import { ProductPurchasePanel } from '@/components/product/ProductPurchasePanel';
 import { RecentlyViewed } from '@/components/product/RecentlyViewed';
 import type { ProductDetail as ProductDetailData, ProductListItem } from '@/lib/shopify/products';
@@ -24,7 +25,7 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
             handle={product.handle}
           />
         </div>
-        <div className="lg:col-span-5">
+        <div className="lg:sticky lg:top-[88px] lg:col-span-5 lg:self-start">
           <ProductPurchasePanel
             title={product.title}
             handle={product.handle}
@@ -39,6 +40,9 @@ export function ProductDetail({ product, relatedProducts }: ProductDetailProps) 
               <p className="text-body text-esque-text-secondary">{product.description}</p>
             )}
           </ProductPurchasePanel>
+          <div className="mt-8">
+            <ProductInformation information={product.information} />
+          </div>
         </div>
       </div>
 

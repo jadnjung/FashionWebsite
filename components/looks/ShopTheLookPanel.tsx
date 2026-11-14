@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useCart } from '@/components/cart/CartProvider';
+import { CartFeedback } from '@/components/cart/CartFeedback';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { isLookAddValid, type LookItemSelectionState } from '@/lib/looks/look-selection';
@@ -77,6 +79,7 @@ export function ShopTheLookPanel({
     initialSelectionMap(products),
   );
   const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
+  const cart = useCart();
 
   if (!open && purchaseUnavailable) {
     setPurchaseUnavailable(false);
@@ -254,15 +257,35 @@ export function ShopTheLookPanel({
               type="button"
               variant="primary"
               disabled={!canAddLook}
+              aria-disabled={cart.pending}
+              aria-busy={cart.pending}
+              className="aria-disabled:cursor-wait aria-disabled:opacity-40"
               onClick={() => {
-                if (canAddLook) setPurchaseUnavailable(true);
+                if (!canAddLook || cart.pending) return;
+                const items = products
+                  .filter((product) => selectionMap[product.handle].included)
+                  .map((product) => {
+                    const variant = findMatchingVariant(
+                      product.variants,
+                      selectionMap[product.handle].selections,
+                    );
+                    return variant?.availableForSale
+                      ? { handle: product.handle, variantId: variant.id, quantity: 1 }
+                      : null;
+                  });
+                if (items.some((item) => item === null)) return;
+                setPurchaseUnavailable(true);
+                void cart.addItems(items.filter((item) => item !== null));
               }}
             >
               ADD LOOK
             </Button>
-            <p role="status" aria-atomic="true" className="text-utility text-esque-text">
-              {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
-            </p>
+            {cart.demo && (
+              <p className="text-utility text-esque-text-secondary">
+                Demo bag. Checkout is unavailable.
+              </p>
+            )}
+            <CartFeedback active={purchaseUnavailable} />
             {!canAddLook && (
               // text-esque-text, not -secondary — see
               // ProductPurchasePanel.tsx's identical comment on this same class

@@ -28,12 +28,93 @@ export interface WishlistStorage {
   setItem(key: string, value: string): void;
 }
 
-const STORAGE_KEY = 'esque:wishlist';
+interface WishlistSessionStorage extends WishlistStorage {
+  readonly persistenceError: boolean;
+  refresh(): void;
+}
+
+/** Keeps this tab's changes usable when browser storage is blocked or full. */
+export function createWishlistSessionStorage(
+  getStorage: () => WishlistStorage,
+): WishlistSessionStorage {
+  const memory = new Map<string, string | null>();
+  let pendingWrite = false;
+  let persistenceError = false;
+
+  return {
+    get persistenceError() {
+      return persistenceError;
+    },
+    getItem(key) {
+      if (pendingWrite) return memory.get(key) ?? null;
+      try {
+        const value = getStorage().getItem(key);
+        memory.set(key, value);
+        persistenceError = false;
+        return value;
+      } catch {
+        persistenceError = true;
+        return memory.get(key) ?? null;
+      }
+    },
+    setItem(key, value) {
+      memory.set(key, value);
+      try {
+        getStorage().setItem(key, value);
+        pendingWrite = false;
+        persistenceError = false;
+      } catch {
+        pendingWrite = true;
+        persistenceError = true;
+      }
+    },
+    refresh() {
+      // Another tab cannot overwrite changes this tab could not persist.
+      if (!pendingWrite) memory.clear();
+    },
+  };
+}
+
+export const WISHLIST_STORAGE_KEY = 'esque:wishlist';
 const SCHEMA_VERSION = 1;
 
 interface StoredShape {
   v: number;
-  items: WishlistItem[];
+  items: unknown[];
+}
+
+function isWishlistItem(value: unknown): value is WishlistItem {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Partial<WishlistItem>;
+  return (
+    typeof item.handle === 'string' &&
+    /^[\p{L}\p{N}][\p{L}\p{N}-]*$/u.test(item.handle) &&
+    typeof item.title === 'string' &&
+    item.title.trim().length > 0 &&
+    (item.imageUrl === null || typeof item.imageUrl === 'string') &&
+    (item.imageAlt === null || typeof item.imageAlt === 'string') &&
+    typeof item.minPrice === 'object' &&
+    item.minPrice !== null &&
+    typeof item.minPrice.amount === 'string' &&
+    /^\d+(?:\.\d+)?$/.test(item.minPrice.amount) &&
+    Number.isFinite(Number(item.minPrice.amount)) &&
+    typeof item.minPrice.currencyCode === 'string' &&
+    /^[A-Z]{3}$/.test(item.minPrice.currencyCode)
+  );
+}
+
+function safeImageUrl(value: string | null): string | null {
+  if (value === null) return null;
+  if (/^\/preview-demo\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|avif)$/i.test(value)) return value;
+  try {
+    const url = new URL(value);
+    // Keep cached images within next.config.ts's image allowlist.
+    return url.protocol === 'https:' && url.hostname === 'cdn.shopify.com' && !url.port
+      ? value
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function isStoredShape(value: unknown): value is StoredShape {
@@ -48,10 +129,18 @@ function isStoredShape(value: unknown): value is StoredShape {
 /** Never throws — corrupt data, a wrong schema version, or a blocked store are all treated as "nothing saved yet." */
 export function readWishlist(storage: WishlistStorage): WishlistItem[] {
   try {
-    const raw = storage.getItem(STORAGE_KEY);
+    const raw = storage.getItem(WISHLIST_STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    return isStoredShape(parsed) ? parsed.items : [];
+    if (!isStoredShape(parsed)) return [];
+    const handles = new Set<string>();
+    const items: WishlistItem[] = [];
+    for (const item of parsed.items) {
+      if (!isWishlistItem(item) || handles.has(item.handle)) continue;
+      handles.add(item.handle);
+      items.push({ ...item, imageUrl: safeImageUrl(item.imageUrl) });
+    }
+    return items;
   } catch {
     return [];
   }
@@ -91,7 +180,7 @@ export function addToWishlist(storage: WishlistStorage, item: WishlistItem): Wis
   const next = [item, ...existing];
   try {
     const shape: StoredShape = { v: SCHEMA_VERSION, items: next };
-    storage.setItem(STORAGE_KEY, JSON.stringify(shape));
+    storage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(shape));
   } catch {
     // Storage full or unavailable — see doc comment above.
   }
@@ -107,7 +196,7 @@ export function removeFromWishlist(storage: WishlistStorage, handle: string): Wi
   const next = readWishlist(storage).filter((item) => item.handle !== handle);
   try {
     const shape: StoredShape = { v: SCHEMA_VERSION, items: next };
-    storage.setItem(STORAGE_KEY, JSON.stringify(shape));
+    storage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(shape));
   } catch {
     // Storage full or unavailable — see doc comment above.
   }

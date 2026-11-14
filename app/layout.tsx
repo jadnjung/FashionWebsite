@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { Footer } from '@/components/navigation/Footer';
 import { ShellClient } from '@/components/navigation/ShellClient';
+import { CartProvider } from '@/components/cart/CartProvider';
 import { functionalFont, displayFont } from '@/lib/fonts';
 import {
   OG_IMAGE_ALT,
@@ -87,7 +88,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           most of the page. Display (§7) is expressive/editorial and opt-in per
           element via the font-display utility, not a body-wide default. */}
       <body className="min-h-full flex flex-col font-functional">
-        <ShellClient footer={<Footer />}>{children}</ShellClient>
+        <CartProvider demo={process.env.PREVIEW_DEMO_MODE === '1'}>
+          <ShellClient footer={<Footer />}>{children}</ShellClient>
+        </CartProvider>
       </body>
       {/* @next/third-parties's GoogleAnalytics — the current, official
           Next.js-recommended mechanism for loading GA4's gtag.js (confirmed

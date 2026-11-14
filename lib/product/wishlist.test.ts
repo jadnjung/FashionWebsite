@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   addToWishlist,
+  createWishlistSessionStorage,
   isInWishlist,
   readWishlist,
   removeFromWishlist,
@@ -23,7 +24,7 @@ function fakeStorage(initial: Record<string, string> = {}): WishlistStorage {
 const ITEM_A: WishlistItem = {
   handle: 'hoodie-01',
   title: 'Hoodie 01',
-  imageUrl: 'https://cdn.example/hoodie-01.jpg',
+  imageUrl: 'https://cdn.shopify.com/hoodie-01.jpg',
   imageAlt: null,
   minPrice: { amount: '180.00', currencyCode: 'USD' },
 };
@@ -31,12 +32,140 @@ const ITEM_A: WishlistItem = {
 const ITEM_B: WishlistItem = {
   handle: 'pants-01',
   title: 'Pants 01',
-  imageUrl: 'https://cdn.example/pants-01.jpg',
+  imageUrl: 'https://cdn.shopify.com/pants-01.jpg',
   imageAlt: null,
   minPrice: { amount: '140.00', currencyCode: 'USD' },
 };
 
+describe('wishlist session storage', () => {
+  test('retains multiple saves and removals when storage writes fail', () => {
+    const browserStorage: WishlistStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('quota exceeded');
+      },
+    };
+    const storage = createWishlistSessionStorage(() => browserStorage);
+    addToWishlist(storage, ITEM_A);
+    addToWishlist(storage, ITEM_B);
+    expect(readWishlist(storage)).toEqual([ITEM_B, ITEM_A]);
+    expect(storage.persistenceError).toBe(true);
+    removeFromWishlist(storage, ITEM_A.handle);
+    expect(readWishlist(storage)).toEqual([ITEM_B]);
+  });
+
+  test('handles a blocked localStorage getter and retries persistence on a later mutation', () => {
+    let blocked = true;
+    const browserStorage = fakeStorage();
+    const storage = createWishlistSessionStorage(() => {
+      if (blocked) throw new Error('SecurityError');
+      return browserStorage;
+    });
+    expect(readWishlist(storage)).toEqual([]);
+    addToWishlist(storage, ITEM_A);
+    expect(readWishlist(storage)).toEqual([ITEM_A]);
+    expect(storage.persistenceError).toBe(true);
+    blocked = false;
+    addToWishlist(storage, ITEM_B);
+    expect(readWishlist(browserStorage)).toEqual([ITEM_B, ITEM_A]);
+    expect(storage.persistenceError).toBe(false);
+  });
+
+  test('refreshes after another tab changes or clears the stored list', () => {
+    const browserStorage = fakeStorage();
+    const storage = createWishlistSessionStorage(() => browserStorage);
+    addToWishlist(storage, ITEM_A);
+    browserStorage.setItem('esque:wishlist', JSON.stringify({ v: 1, items: [ITEM_B] }));
+    storage.refresh();
+    expect(readWishlist(storage)).toEqual([ITEM_B]);
+    browserStorage.setItem('esque:wishlist', '');
+    storage.refresh();
+    expect(readWishlist(storage)).toEqual([]);
+  });
+
+  test('preserves visit-only additions and removals when another tab changes storage', () => {
+    const browserStorage = fakeStorage({
+      'esque:wishlist': JSON.stringify({ v: 1, items: [ITEM_A] }),
+    });
+    const storage = createWishlistSessionStorage(() => ({
+      getItem: browserStorage.getItem,
+      setItem: () => {
+        throw new Error('quota exceeded');
+      },
+    }));
+    addToWishlist(storage, ITEM_B);
+    removeFromWishlist(storage, ITEM_A.handle);
+    browserStorage.setItem('esque:wishlist', JSON.stringify({ v: 1, items: [ITEM_A] }));
+    storage.refresh();
+    expect(readWishlist(storage)).toEqual([ITEM_B]);
+    expect(storage.persistenceError).toBe(true);
+  });
+});
+
 describe('readWishlist', () => {
+  test('preserves valid v1 saves while skipping malformed entries and duplicate handles', () => {
+    const storage = fakeStorage({
+      'esque:wishlist': JSON.stringify({
+        v: 1,
+        items: [null, ITEM_A, {}, { ...ITEM_B, minPrice: null }, ITEM_A, ITEM_B],
+      }),
+    });
+    expect(readWishlist(storage)).toEqual([ITEM_A, ITEM_B]);
+  });
+
+  test('rejects unsafe handles and invalid prices without discarding other saves', () => {
+    const storage = fakeStorage({
+      'esque:wishlist': JSON.stringify({
+        v: 1,
+        items: [
+          { ...ITEM_A, handle: '../access' },
+          { ...ITEM_A, minPrice: { amount: 'NaN', currencyCode: 'USD' } },
+          { ...ITEM_A, minPrice: { amount: '10', currencyCode: 'invalid' } },
+          ITEM_B,
+        ],
+      }),
+    });
+    expect(readWishlist(storage)).toEqual([ITEM_B]);
+  });
+
+  test('keeps a saved product with a safe image fallback for an unsupported stored URL', () => {
+    const storage = fakeStorage({
+      'esque:wishlist': JSON.stringify({
+        v: 1,
+        items: [{ ...ITEM_A, imageUrl: 'javascript:alert(1)' }],
+      }),
+    });
+    expect(readWishlist(storage)).toEqual([{ ...ITEM_A, imageUrl: null }]);
+  });
+
+  test.each([
+    '/preview-demo/crewneck-front.jpg',
+    '/preview-demo/crewneck_02.JPEG',
+    '/preview-demo/crewneck.png',
+    '/preview-demo/crewneck.webp',
+    '/preview-demo/crewneck.avif',
+  ])('preserves supported local fixture imagery %s', (imageUrl) => {
+    const storage = fakeStorage({
+      'esque:wishlist': JSON.stringify({ v: 1, items: [{ ...ITEM_A, imageUrl }] }),
+    });
+    expect(readWishlist(storage)).toEqual([{ ...ITEM_A, imageUrl }]);
+  });
+
+  test.each([
+    '//preview-demo/crewneck.jpg',
+    '/preview-demo/../crewneck.jpg',
+    '/preview-demo/%2e%2e/crewneck.jpg',
+    '/preview-demo/crewneck.jpg?redirect=1',
+    '/preview-demo/crewneck.jpg#image',
+    '/other/crewneck.jpg',
+    '/preview-demo/crewneck.svg',
+  ])('uses a safe fallback for unsupported local image paths %s', (imageUrl) => {
+    const storage = fakeStorage({
+      'esque:wishlist': JSON.stringify({ v: 1, items: [{ ...ITEM_A, imageUrl }] }),
+    });
+    expect(readWishlist(storage)).toEqual([{ ...ITEM_A, imageUrl: null }]);
+  });
+
   test('returns an empty array when nothing is stored', () => {
     expect(readWishlist(fakeStorage())).toEqual([]);
   });

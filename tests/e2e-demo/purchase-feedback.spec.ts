@@ -5,12 +5,12 @@ async function selectRadio(radio: Locator) {
   await radio.press('Space');
 }
 
-test('PDP explains purchasing availability after a valid selection and clears feedback on quantity edits', async ({
+test('PDP adds the selected demo variant and clears feedback on quantity edits', async ({
   page,
 }) => {
   await page.goto('/products/preview-featherweight-crewneck');
   const add = page.getByRole('button', { name: 'ADD TO BAG', exact: true }).first();
-  const status = page.getByRole('status').filter({ hasText: /Purchasing is not available yet\./ });
+  const status = page.getByRole('status').filter({ hasText: /Added to demo bag\./ });
   await expect(add).toBeDisabled();
   await expect(status).toHaveCount(0);
   await selectRadio(page.getByRole('radio', { name: 'M', exact: true }).first());
@@ -27,16 +27,14 @@ test('PDP explains purchasing availability after a valid selection and clears fe
   await expect(status).toBeVisible();
 });
 
-test('Quick Add gives purchasing feedback and starts fresh after reopening', async ({ page }) => {
+test('Quick Add adds to the demo bag and starts fresh after reopening', async ({ page }) => {
   await page.goto('/new');
   const trigger = page.getByRole('button', { name: 'QUICK ADD', exact: true }).first();
   await trigger.focus();
   await trigger.press('Enter');
   const dialog = page.getByRole('dialog', { name: /^Quick Add/ });
   const add = dialog.getByRole('button', { name: 'ADD TO BAG', exact: true });
-  const status = dialog
-    .getByRole('status')
-    .filter({ hasText: /Purchasing is not available yet\./ });
+  const status = dialog.getByRole('status').filter({ hasText: /Added to demo bag\./ });
   await expect(add).toBeDisabled();
   await selectRadio(dialog.getByRole('radio', { name: 'M', exact: true }));
   await selectRadio(dialog.getByRole('radio', { name: 'Black', exact: true }));
@@ -51,7 +49,7 @@ test('Quick Add gives purchasing feedback and starts fresh after reopening', asy
   await expect(status).toHaveCount(0);
 });
 
-test('Shop the Look gives purchasing feedback and clears it when the selection or open state changes', async ({
+test('Shop the Look adds included demo variants and clears feedback when selections change', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -64,9 +62,7 @@ test('Shop the Look gives purchasing feedback and clears it when the selection o
   const dialog = page.getByRole('dialog', { name: 'Shop the Look' });
   await expect(dialog).toBeVisible();
   const add = dialog.getByRole('button', { name: 'ADD LOOK', exact: true });
-  const status = dialog
-    .getByRole('status')
-    .filter({ hasText: /Purchasing is not available yet\./ });
+  const status = dialog.getByRole('status').filter({ hasText: /Added to demo bag\./ });
   await expect(add).toBeDisabled();
   for (const group of await dialog.getByRole('group', { name: 'Size', exact: true }).all()) {
     await selectRadio(group.getByRole('radio', { name: 'M', exact: true }));

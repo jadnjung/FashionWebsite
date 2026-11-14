@@ -12,6 +12,18 @@ export const GET_PRODUCT_QUERY = `#graphql
       description
       productType
       tags
+      materials: metafield(namespace: "custom", key: "materials") {
+        type
+        value
+      }
+      fit: metafield(namespace: "custom", key: "fit") {
+        type
+        value
+      }
+      care: metafield(namespace: "custom", key: "care") {
+        type
+        value
+      }
       priceRange {
         minVariantPrice {
           amount

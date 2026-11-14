@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useCart } from '@/components/cart/CartProvider';
+import { CartFeedback } from '@/components/cart/CartFeedback';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
@@ -44,6 +46,7 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   const [selections, setSelections] = useState<OptionSelections>({});
   const [retryToken, setRetryToken] = useState(0);
   const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
+  const cart = useCart();
 
   if (!open && purchaseUnavailable) {
     setPurchaseUnavailable(false);
@@ -215,11 +218,17 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 type="button"
                 variant="primary"
                 disabled={!canAddToBag}
+                aria-disabled={cart.pending}
+                aria-busy={cart.pending}
+                className="aria-disabled:cursor-wait aria-disabled:opacity-40"
                 onClick={() => {
                   // D-016/D-055: track the valid click and explain the
                   // deferred purchasing integration.
-                  if (!canAddToBag || !matchedVariant) return;
+                  if (!canAddToBag || !matchedVariant || cart.pending) return;
                   setPurchaseUnavailable(true);
+                  void cart.addItems([
+                    { handle: loaded.product.handle, variantId: matchedVariant.id, quantity: 1 },
+                  ]);
                   trackEvent('quick_add_click', {
                     currency: matchedVariant.price.currencyCode,
                     value: Number(matchedVariant.price.amount),
@@ -252,9 +261,12 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
             </div>
           ))}
       </div>
-      <p role="status" aria-atomic="true" className="mt-4 text-utility text-esque-text">
-        {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
-      </p>
+      {cart.demo && (
+        <p className="mt-4 text-utility text-esque-text-secondary">
+          Demo bag. Checkout is unavailable.
+        </p>
+      )}
+      <CartFeedback active={purchaseUnavailable} />
     </dialog>
   );
 }

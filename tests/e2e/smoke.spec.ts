@@ -80,7 +80,7 @@ test.describe('header', () => {
     // case-insensitive substring match would ambiguously also match.
     await expect(page.getByRole('button', { name: 'SEARCH' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'ACCOUNT' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'BAG (0)' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'BAG (0)' })).toBeVisible();
 
     const skipLink = page.getByRole('link', { name: /skip to content/i });
     await expect(skipLink).toBeAttached();
@@ -116,7 +116,7 @@ test.describe('header', () => {
     // PROJECT.md §73: Bag state must remain immediately accessible — not
     // compressed to icon-only or hidden behind a second tap, unlike
     // SEARCH/ACCOUNT below.
-    await expect(page.getByRole('button', { name: 'BAG (0)' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'BAG (0)' })).toBeVisible();
   });
 
   test('SEARCH and ACCOUNT compress to icon-only controls at mobile widths but keep real accessible names', async ({
@@ -144,12 +144,9 @@ test.describe('header', () => {
     expect(accountLabelBox?.width).toBeLessThanOrEqual(1);
   });
 
-  // ACCOUNT/BAG have no real behavior yet (Phase 10/2) — clicking shows a
-  // brief acknowledgment instead of doing nothing silently. See
-  // components/navigation/ComingSoonNotice.tsx. SEARCH used to be part of
-  // this trio (see git history) — it now opens a real SearchOverlay
-  // (tests/e2e/search.spec.ts covers that behavior).
-  test('ACCOUNT and BAG show an on-brand "arriving soon" notice when clicked', async ({ page }) => {
+  test('ACCOUNT shows its availability notice and BAG opens its dedicated page', async ({
+    page,
+  }) => {
     await page.goto('/');
     const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
 
@@ -158,8 +155,9 @@ test.describe('header', () => {
     await page.getByRole('button', { name: 'ACCOUNT' }).click();
     await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
 
-    await page.getByRole('button', { name: 'BAG (0)' }).click();
-    await expect(notice).toHaveText('BAG — ARRIVING SOON.');
+    await page.getByRole('link', { name: 'BAG (0)' }).click();
+    await expect(page).toHaveURL(/\/bag$/);
+    await expect(page.getByRole('heading', { name: 'Bag', exact: true })).toBeVisible();
   });
 
   // WCAG 2.2.1 (D-083): the passive 8s timeout alone isn't sufficient user
@@ -184,7 +182,7 @@ test.describe('header', () => {
       await page.goto('/');
       const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
 
-      await page.getByRole('button', { name: 'BAG (0)' }).click();
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
       await expect(notice).toBeVisible();
 
       await page.getByRole('link', { name: 'ESQUE' }).click();
@@ -205,26 +203,13 @@ test.describe('header', () => {
       await expect(notice).not.toBeVisible();
     });
 
-    // The specific regression this fix guards against: React's synthetic
-    // onClick for BAG (setComingSoonFeature('BAG')) fires before the native
-    // click reaches the document-level outside-click listener. If that
-    // listener only excluded the toast's own DOM node (not the whole
-    // utility nav), clicking BAG while ACCOUNT's toast was showing would be
-    // treated as "outside" and immediately clobber BAG's just-set value
-    // back to null in the same click, so the toast would go blank instead
-    // of switching to BAG's message.
-    test('clicking BAG while ACCOUNT toast is showing switches the message to BAG, not blank', async ({
-      page,
-    }) => {
+    test('repeated ACCOUNT activation keeps its availability notice visible', async ({ page }) => {
       await page.goto('/');
       const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
 
       await page.getByRole('button', { name: 'ACCOUNT' }).click();
       await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
 
-      await page.getByRole('button', { name: 'BAG (0)' }).click();
-      await expect(notice).toHaveText('BAG — ARRIVING SOON.');
-      // Also guards the inverse ordering, for good measure.
       await page.getByRole('button', { name: 'ACCOUNT' }).click();
       await expect(notice).toHaveText('ACCOUNT — ARRIVING SOON.');
     });
@@ -249,7 +234,7 @@ test.describe('header', () => {
       await page.goto('/');
       const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
 
-      await page.getByRole('button', { name: 'BAG (0)' }).click();
+      await page.getByRole('button', { name: 'ACCOUNT' }).click();
       await expect(notice).toBeVisible();
 
       await page.getByRole('button', { name: 'SEARCH' }).click();

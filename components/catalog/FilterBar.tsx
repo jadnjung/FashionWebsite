@@ -49,7 +49,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
               // DESIGN_SYSTEM.md §5 — green indicates selection; a sparing,
               // genuine use of forest here rather than decoration. The
               // focus ring stays --color-esque-text per D-010 regardless.
-              className={`inline-block py-2 text-utility uppercase tracking-metadata transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
+              className={`inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-metadata transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
                 active
                   ? 'text-esque-text underline decoration-esque-forest underline-offset-4'
                   : 'text-esque-text-secondary hover:text-esque-text'
@@ -61,7 +61,11 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
         })}
       </nav>
 
-      <form method="get" action={pathname} className="flex flex-wrap items-end gap-4">
+      <form
+        method="get"
+        action={pathname}
+        className="grid grid-cols-2 items-end gap-3 md:flex md:flex-wrap md:gap-4"
+      >
         {/* Preserves the active sort so applying availability/price doesn't reset it. */}
         <input type="hidden" name="sort" value={filters.sort} />
         {/* WCAG 2.2 AA (2.5.8): an independent review measured this label's
@@ -74,7 +78,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
             unlike Footer's single tight row: this label sits in a `flex
             items-end` row alongside Input/Button, both already taller than
             24px, so the row's own footprint is already governed by them. */}
-        <label className="flex items-center gap-2 py-1 text-utility uppercase tracking-metadata text-esque-text-secondary">
+        <label className="col-span-2 flex min-h-11 items-center gap-2 py-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
           <input
             type="checkbox"
             name="available"
@@ -96,7 +100,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           min={0}
           step="any"
           defaultValue={filters.minPrice ?? ''}
-          className="w-24"
+          className="w-full md:w-24"
         />
         <div className="flex flex-col gap-2">
           <Input
@@ -107,7 +111,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
             min={0}
             step="any"
             defaultValue={filters.maxPrice ?? ''}
-            className="w-24"
+            className="w-full md:w-24"
             aria-describedby={filters.maxPriceDropped ? 'max-price-dropped-note' : undefined}
           />
           {filters.maxPriceDropped && (
@@ -119,7 +123,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
             </p>
           )}
         </div>
-        <Button type="submit" variant="secondary">
+        <Button type="submit" variant="secondary" className="col-span-2">
           APPLY
         </Button>
         {hasAvailabilityOrPrice && (
@@ -135,7 +139,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
               minPrice: undefined,
               maxPrice: undefined,
             })}
-            className="py-1 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+            className="col-span-2 inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
           >
             Clear Filters
           </Link>

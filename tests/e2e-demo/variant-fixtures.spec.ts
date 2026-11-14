@@ -56,7 +56,7 @@ test('keyboard variant changes update price, scarcity, quantity bounds and purch
   await selectWithKeyboard(main, 'L');
   await expect(main.getByText('$140.00', { exact: true })).toBeVisible();
   await expect(main.getByText(/^(SOLD OUT|LOW STOCK|\d+ REMAIN)$/)).toHaveCount(0);
-  await expect(quantity).not.toHaveAttribute('max', /.+/);
+  await expect(quantity).toHaveAttribute('max', '99');
   await quantity.fill('4');
   await quantity.press('Tab');
   await expect(quantity).toHaveValue('4');

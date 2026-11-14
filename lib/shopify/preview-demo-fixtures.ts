@@ -154,6 +154,11 @@ export function getPreviewProductDetail(handle: string): ProductDetail | null {
     handle: item.handle,
     title: item.title,
     description: PREVIEW_DESCRIPTION,
+    information: {
+      materials: 'Demo placeholder. Material composition awaits the final product.',
+      fit: 'Demo placeholder. Garment and model measurements await final samples.',
+      care: 'Demo placeholder. Care instructions await the final product.',
+    },
     productType: item.productType,
     tags: item.tags,
     minPrice: item.minPrice,

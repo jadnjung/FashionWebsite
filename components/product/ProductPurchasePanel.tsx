@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCart } from '@/components/cart/CartProvider';
+import { CartFeedback } from '@/components/cart/CartFeedback';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SizeGuidePanel } from '@/components/product/SizeGuidePanel';
@@ -9,6 +11,7 @@ import { WishlistToggle } from '@/components/product/WishlistToggle';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
 import { resolveQuantity } from '@/lib/product/quantity';
+import { DEMO_QUANTITY_LIMIT } from '@/lib/cart/model';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
 import {
   findMatchingVariant,
@@ -73,6 +76,38 @@ export function ProductPurchasePanel({
   const [quantityInput, setQuantityInput] = useState('1');
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
+  const cart = useCart();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const actionRef = useRef<HTMLDivElement>(null);
+  const mobileBarRef = useRef<HTMLDivElement>(null);
+  const [actionVisible, setActionVisible] = useState(true);
+
+  useEffect(() => {
+    const action = actionRef.current;
+    if (!action || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(([entry]) => setActionVisible(entry.isIntersecting), {
+      threshold: 0.2,
+    });
+    observer.observe(action);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const bar = mobileBarRef.current;
+    if (!bar) return;
+    const updateHeight = () =>
+      document.documentElement.style.setProperty(
+        '--mobile-purchase-height',
+        `${bar.getBoundingClientRect().height}px`,
+      );
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--mobile-purchase-height');
+    };
+  }, [actionVisible]);
 
   const soldOut = isProductSoldOut(variants);
   const matchedVariant = findMatchingVariant(variants, selections);
@@ -100,10 +135,13 @@ export function ProductPurchasePanel({
   // (availableForSale: false), Add to Bag is already disabled by
   // canAddToBag regardless of this value, so leaving the field uncapped
   // there is harmless. See lib/product/quantity.ts's doc comment.
-  const quantityMax =
+  const stockMax =
     matchedVariant?.quantityAvailable != null && matchedVariant.quantityAvailable > 0
       ? matchedVariant.quantityAvailable
       : undefined;
+  const quantityMax = cart.demo
+    ? Math.min(stockMax ?? DEMO_QUANTITY_LIMIT, DEMO_QUANTITY_LIMIT)
+    : stockMax;
 
   // Re-resolves the committed quantity whenever the matched variant's real
   // upper bound changes — e.g. switching from a well-stocked variant to a
@@ -160,8 +198,49 @@ export function ProductPurchasePanel({
     setSelections((prev) => ({ ...prev, [optionName]: value }));
   }
 
+  function handleAddToBag() {
+    if (!canAddToBag || !matchedVariant || cart.pending) return;
+    setPurchaseUnavailable(true);
+    trackEvent('add_to_bag_click', {
+      currency: matchedVariant.price.currencyCode,
+      value: Number(matchedVariant.price.amount),
+      items: [
+        {
+          item_id: handle,
+          item_name: title,
+          item_category: productType,
+          item_variant: matchedVariant.id,
+          price: Number(matchedVariant.price.amount),
+        },
+      ],
+    });
+    const quantity = resolveQuantity(quantityInput, 1, quantityMax);
+    setQuantityInput(String(quantity));
+    void cart.addItems([{ handle, variantId: matchedVariant.id, quantity }]);
+  }
+
+  function handleStickyAction() {
+    if (cart.pending) return;
+    if (canAddToBag) {
+      handleAddToBag();
+      return;
+    }
+    const groups = panelRef.current?.querySelectorAll('fieldset');
+    const firstIncomplete =
+      Array.from(groups ?? []).find((group) => !group.querySelector('input:checked')) ??
+      groups?.[0];
+    const input = firstIncomplete?.querySelector<HTMLInputElement>('input:not(:disabled)');
+    if (input) {
+      input.focus({ preventScroll: true });
+      firstIncomplete?.scrollIntoView({ block: 'center' });
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-6 lg:sticky lg:top-[88px] lg:self-start">
+    <div
+      ref={panelRef}
+      className="flex flex-col gap-6 [&_fieldset]:scroll-mb-28 [&_input]:scroll-mb-28"
+    >
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-heading-1 uppercase tracking-display text-esque-text">
           {title}
@@ -245,40 +324,34 @@ export function ProductPurchasePanel({
       )}
 
       {soldOut ? (
-        <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-          NO LONGER AVAILABLE.
-        </p>
+        <div ref={actionRef}>
+          <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+            NO LONGER AVAILABLE.
+          </p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div ref={actionRef} className="flex flex-col gap-2">
           {/* D-016/D-055: this records purchase intent and explains that
               purchasing is unavailable while cart integration is deferred. */}
           <Button
             type="button"
             variant="primary"
             disabled={!canAddToBag}
-            onClick={() => {
-              if (!canAddToBag || !matchedVariant) return;
-              setPurchaseUnavailable(true);
-              trackEvent('add_to_bag_click', {
-                currency: matchedVariant.price.currencyCode,
-                value: Number(matchedVariant.price.amount),
-                items: [
-                  {
-                    item_id: handle,
-                    item_name: title,
-                    item_category: productType,
-                    item_variant: matchedVariant.id,
-                    price: Number(matchedVariant.price.amount),
-                  },
-                ],
-              });
-            }}
+            aria-disabled={cart.pending}
+            aria-busy={cart.pending}
+            className="aria-disabled:cursor-wait aria-disabled:opacity-40"
+            onClick={handleAddToBag}
           >
             ADD TO BAG
           </Button>
-          <p role="status" aria-atomic="true" className="text-utility text-esque-text">
-            {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
-          </p>
+          {cart.demo && (
+            <p className="text-utility text-esque-text-secondary">
+              Demo bag. Checkout is unavailable.
+            </p>
+          )}
+          <div className={actionVisible ? undefined : 'hidden lg:block'}>
+            <CartFeedback active={purchaseUnavailable} />
+          </div>
           {!selectionComplete && (
             // text-esque-text, not -secondary — this is the one message a
             // user needs to read right when the primary CTA next to it is
@@ -301,6 +374,35 @@ export function ProductPurchasePanel({
       <WishlistToggle item={{ handle, title, imageUrl, imageAlt, minPrice }} />
 
       <SizeGuidePanel open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+      {!actionVisible && (
+        <div
+          ref={mobileBarRef}
+          role="region"
+          aria-label="Mobile purchase controls"
+          data-mobile-purchase-bar="true"
+          className="fixed inset-x-0 bottom-0 z-30 flex max-h-[50dvh] flex-col gap-3 overflow-y-auto overscroll-contain border-t border-esque-elevated bg-esque-black px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+        >
+          <div className="flex w-full items-center gap-4">
+            <span className="shrink-0 text-utility">
+              {matchedVariant ? 'Selected' : 'From'} {formatPrice(displayPrice)}
+            </span>
+            <Button
+              type="button"
+              variant="primary"
+              className="min-w-0 flex-1 aria-disabled:cursor-wait aria-disabled:opacity-40"
+              disabled={soldOut}
+              aria-disabled={cart.pending}
+              aria-busy={cart.pending}
+              onClick={handleStickyAction}
+            >
+              {soldOut ? 'SOLD OUT' : canAddToBag ? 'ADD SELECTED ITEM' : 'CHOOSE OPTIONS'}
+            </Button>
+          </div>
+          <div className="w-full">
+            <CartFeedback active={purchaseUnavailable} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

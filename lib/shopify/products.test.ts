@@ -5,8 +5,52 @@ import {
   getProducts,
   getProductsByCollection,
   searchProducts,
+  toProductDetail,
+  type ProductDetailNode,
 } from '@/lib/shopify/products';
 import * as clientModule from '@/lib/shopify/client';
+
+describe('product information metafields', () => {
+  const product: ProductDetailNode = {
+    id: 'product-information',
+    handle: 'product-information',
+    title: 'Product information',
+    description: '',
+    productType: '',
+    tags: [],
+    priceRange: { minVariantPrice: { amount: '128.00', currencyCode: 'USD' } },
+    images: { edges: [] },
+    options: [],
+    variants: { edges: [] },
+  };
+
+  test('maps plain text fields while retaining line breaks and escaping responsibility in React', () => {
+    expect(
+      toProductDetail({
+        ...product,
+        materials: { type: 'single_line_text_field', value: '  Verified composition  ' },
+        fit: { type: 'multi_line_text_field', value: 'Measurement one\nMeasurement two' },
+        care: { type: 'multi_line_text_field', value: '<script>plain text</script>' },
+      }).information,
+    ).toEqual({
+      materials: 'Verified composition',
+      fit: 'Measurement one\nMeasurement two',
+      care: '<script>plain text</script>',
+    });
+  });
+
+  test('omits information for older data, empty fields, and structured or reference types', () => {
+    expect(toProductDetail(product)).not.toHaveProperty('information');
+    expect(
+      toProductDetail({
+        ...product,
+        materials: { type: 'multi_line_text_field', value: '  ' },
+        fit: { type: 'rich_text_field', value: '{"type":"root"}' },
+        care: { type: 'metaobject_reference', value: 'gid://shopify/Metaobject/1' },
+      }),
+    ).not.toHaveProperty('information');
+  });
+});
 
 function mockClient(response: unknown) {
   vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({

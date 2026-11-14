@@ -61,6 +61,11 @@ export interface ProductDetail {
   images: ProductImage[];
   options: ProductOption[];
   variants: ProductVariant[];
+  information?: {
+    materials: string | null;
+    fit: string | null;
+    care: string | null;
+  };
 }
 
 export interface ProductSummary {
@@ -106,6 +111,9 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
  * that selects the same set (GET_LOOKS_QUERY's product references do).
  */
 export interface ProductDetailNode {
+  materials?: { type: string; value: string } | null;
+  fit?: { type: string; value: string } | null;
+  care?: { type: string; value: string } | null;
   id: string;
   handle: string;
   title: string;
@@ -144,6 +152,11 @@ export interface ProductDetailNode {
 
 /** Maps a Storefront product node into this codebase's ProductDetail shape. */
 export function toProductDetail(product: ProductDetailNode): ProductDetail {
+  const information = {
+    materials: textMetafield(product.materials),
+    fit: textMetafield(product.fit),
+    care: textMetafield(product.care),
+  };
   return {
     id: product.id,
     handle: product.handle,
@@ -151,6 +164,7 @@ export function toProductDetail(product: ProductDetailNode): ProductDetail {
     description: product.description,
     productType: product.productType,
     tags: product.tags,
+    ...(Object.values(information).some(Boolean) ? { information } : {}),
     minPrice: product.priceRange.minVariantPrice,
     images: product.images.edges.map(({ node }) => ({
       url: node.url,
@@ -172,6 +186,12 @@ export function toProductDetail(product: ProductDetailNode): ProductDetail {
       selectedOptions: node.selectedOptions,
     })),
   };
+}
+
+function textMetafield(field: { type: string; value: string } | null | undefined): string | null {
+  if (field?.type !== 'single_line_text_field' && field?.type !== 'multi_line_text_field')
+    return null;
+  return field.value.trim() || null;
 }
 
 /**

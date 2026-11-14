@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, type RefObject, type SVGProps } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useCart } from '@/components/cart/CartProvider';
 import { ComingSoonNotice, type ComingSoonFeature } from '@/components/navigation/ComingSoonNotice';
 
 interface HeaderProps {
@@ -33,8 +34,8 @@ interface HeaderProps {
 // preference: Button's own px-6/py-3 is unscoped, so a plain conflicting
 // className has no guaranteed win against it (confirmed empirically — see
 // task-11.5-report.md).
-const compactUtilityButton = 'px-2.5! md:px-6!';
-const tightUtilityButton = 'px-3! md:px-6!';
+const compactUtilityButton = 'min-h-11 min-w-11 px-2.5! md:px-6!';
+const tightUtilityButton = 'px-2! md:px-6!';
 
 // Minimal hand-authored inline SVGs (thin single-weight strokes, matching
 // DESIGN_SYSTEM.md's Swiss/editorial line language) rather than an icon
@@ -79,9 +80,8 @@ export function Header({
   onSearchOpen,
   searchTriggerRef,
 }: HeaderProps) {
-  // Bag count is local state for now — DESIGN_SYSTEM.md's data-flow
-  // section: no cart exists until ROADMAP.md Phase 2 wires up Shopify.
-  const [bagCount] = useState(0);
+  const { cart } = useCart();
+  const bagCount = cart.totalQuantity;
 
   // ACCOUNT/BAG have no real behavior yet (see ComingSoonNotice.tsx). This
   // is an acknowledgment, not a decision the visitor needs to act on, so it
@@ -182,11 +182,15 @@ export function Header({
       role="banner"
       className="relative flex h-[72px] items-center justify-between border-b border-esque-surface bg-esque-black px-4 md:px-8"
     >
-      <Link href="/" className="font-display text-lg tracking-nav text-esque-text">
+      <Link href="/" className="shrink-0 font-display text-lg tracking-nav text-esque-text">
         ESQUE
       </Link>
 
-      <nav ref={utilityNavRef} aria-label="Utility" className="flex items-center gap-2 md:gap-6">
+      <nav
+        ref={utilityNavRef}
+        aria-label="Utility"
+        className="flex items-center gap-1 sm:gap-2 md:gap-6"
+      >
         <Button
           ref={menuTriggerRef}
           variant="secondary"
@@ -218,13 +222,12 @@ export function Header({
           <AccountIcon className="h-5 w-5 md:hidden" />
           <span className="sr-only md:not-sr-only">ACCOUNT</span>
         </Button>
-        <Button
-          variant="secondary"
-          onClick={() => setComingSoonFeature('BAG')}
-          className={tightUtilityButton}
+        <Link
+          href="/bag"
+          className={`inline-flex min-h-11 items-center justify-center whitespace-nowrap border border-esque-text py-3 text-utility uppercase tracking-nav text-esque-text transition-colors duration-200 hover:bg-esque-text hover:text-esque-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${tightUtilityButton}`}
         >
           {`BAG (${bagCount})`}
-        </Button>
+        </Link>
       </nav>
       <ComingSoonNotice feature={comingSoonFeature} />
     </header>

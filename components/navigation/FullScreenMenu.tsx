@@ -211,7 +211,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
       //    this gap with margin to spare across 10+ repeated runs. Flagged
       //    to the dispatching review rather than silently shipping the
       //    originally-estimated 24px, which reproducibly still clips.
-      className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-8 py-16"
+      className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-4 py-16 sm:px-8"
     >
       <div className="flex shrink-0 justify-end pb-8">
         <Button variant="secondary" onClick={onClose} tabIndex={0} className="min-h-11 min-w-11">
@@ -341,12 +341,10 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                     // quirk as the category Link above and FullScreenMenu's
                     // other interactive elements.
                     tabIndex={0}
-                    // h-6 w-6 (24x24px) — WCAG 2.5.8's minimum touch-target
-                    // size, the same bar this codebase just applied to
-                    // QuickAddTrigger's hit box (commit b37a937).
+                    // A 44px target leaves room for deliberate touch activation.
                     // scroll-mt-16/scroll-mb-16 — see the category Link's own
                     // comment above for why.
-                    className="flex h-6 w-6 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
                   >
                     <ChevronIcon expanded={isExpanded} />
                   </button>
@@ -394,7 +392,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                         // result group, which this list's markup mirrors.
                         // scroll-mt-16/scroll-mb-16 — see the top-level
                         // category Link's own comment above for why.
-                        className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
+                        className="inline-flex min-h-11 items-center font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
                       >
                         {subcategory.label}
                       </Link>

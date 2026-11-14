@@ -9,7 +9,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail. Setting up on a new computer? See [README.md → New machine setup](./README.md#new-machine-setup).
 
 **Where things stand:**
-- **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. **No real Shopify store or Vercel project exists yet**, so cart, checkout, accounts and deployment remain blocked (D-016).
+- **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. The Demo bag supports preview shopping flows (D-093). A real Shopify store and Vercel project still need provisioning for live cart, checkout, accounts, and deployment (D-016).
 - **Latest work:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
 - **CI:** two Playwright suites (no-store and Demo Mode), plus format, lint, typecheck, unit tests and build. It was red from 2026-10-27 until D-090 fixed it.
 
@@ -46,6 +46,7 @@ A quick orientation for a new session; the phase checklists below and [DECISIONS
 - [x] Shopify Storefront API client + typed GraphQL queries
 - [x] Product/collection data fetching
 - [ ] Cart (Storefront API cart object, persisted cart ID) — deferred pending a real Shopify store; see DECISIONS.md D-016
+- [x] Demo bag interface and simulated server responses, dedicated `/bag` page, canonical fixture prices and stock validation, quantity edits, removal, and recovery. Live Shopify cart and checkout remain separate integration work (D-093).
 - [ ] Shopify Checkout handoff — deferred pending a real Shopify store; see DECISIONS.md D-016
 
 ## Phase 3 — Core Storefront Shell

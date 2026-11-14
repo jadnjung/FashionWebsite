@@ -1,24 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { useWishlist } from '@/components/product/use-wishlist';
-import { WishlistToggle } from '@/components/product/WishlistToggle';
+import { Button } from '@/components/ui/Button';
 import { toProductListItem, type WishlistItem } from '@/lib/product/wishlist';
 import type { ProductDetail, ProductListItem } from '@/lib/shopify/products';
 
-/**
- * Builds the ProductListItem shown for a saved item when live data isn't
- * available — either because the product is confirmed gone
- * (`availableForSale: false`, reusing ProductCard's existing SOLD OUT
- * badge treatment) or because its fetch is still in flight/failed
- * (`availableForSale: true`, deliberately neutral — absence of live
- * information must never render as a negative claim any more than a false
- * claim of certainty). A synthetic ProductListItem built purely from the
- * cached WishlistItem snapshot, same shape RecentlyViewed.tsx has always
- * shown with no live check at all.
- */
-function syntheticListItem(item: WishlistItem, availableForSale: boolean): ProductListItem {
+function syntheticListItem(item: WishlistItem): ProductListItem {
   return {
     id: item.handle,
     handle: item.handle,
@@ -26,43 +16,36 @@ function syntheticListItem(item: WishlistItem, availableForSale: boolean): Produ
     productType: '',
     tags: [],
     minPrice: item.minPrice,
-    availableForSale,
+    // Unknown inventory stays neutral. Confirmed missing products get their own label.
+    availableForSale: true,
     images: item.imageUrl
       ? [{ url: item.imageUrl, altText: item.imageAlt, width: null, height: null }]
       : [],
   };
 }
 
-// The client-rendered body of /wishlist (app/(storefront)/wishlist/page.tsx
-// stays a Server Component shell around this).
+// The route remains a Server Component. Only this personal, browser-owned list hydrates.
 export function WishlistView() {
-  const { items } = useWishlist();
+  const { items, ready, persistenceError, remove } = useWishlist();
   const [liveResults, setLiveResults] = useState<Record<string, ProductDetail | null>>({});
+  const [failedHandles, setFailedHandles] = useState(() => new Set<string>());
+  const [refreshAttempt, setRefreshAttempt] = useState(0);
+  const [retrying, setRetrying] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const discoveryLink = useRef<HTMLAnchorElement>(null);
+  const retryButton = useRef<HTMLButtonElement>(null);
+  const retryFocusRequested = useRef(false);
+  const refreshFailed = items.some((item) => failedHandles.has(item.handle));
 
-  // Live sold-out enhancement: refetches each saved product's current
-  // availability so a product that has sold out since being saved shows a
-  // real SOLD OUT badge here, rather than just the cached snapshot forever.
-  // Mirrors QuickAddPanel.tsx's exact fetch/AbortController/cleanup shape —
-  // one shared AbortController, aborted in this effect's own cleanup.
-  //
-  // Each item's fetch swallows its own rejection (`.catch(() => null)`) so
-  // one failing/erroring item's promise never rejects Promise.all and
-  // blocks every other item's result from being recorded. This includes
-  // this dev/CI environment's unconfigured Shopify, which makes getProduct
-  // throw rather than return null when PREVIEW_DEMO_MODE isn't set (see
-  // lib/shopify/products.ts's own comments on getStorefrontClient's
-  // throw-when-unconfigured behavior) — that degrades gracefully to
-  // exactly what RecentlyViewed.tsx already does permanently (show the
-  // cached snapshot, no live check). This is a background enhancement
-  // layer, not a critical data need, so no per-row error message is shown.
   useEffect(() => {
     if (items.length === 0) return;
-
     const controller = new AbortController();
 
+    // A failed availability refresh preserves the saved snapshot for that product.
     Promise.all(
       items.map((item) =>
-        fetch(`/api/products/${item.handle}`, { signal: controller.signal })
+        fetch(`/api/products/${encodeURIComponent(item.handle)}`, { signal: controller.signal })
           .then((res) => {
             if (!res.ok) throw new Error('wishlist product fetch failed');
             return res.json() as Promise<{ product: ProductDetail | null }>;
@@ -73,63 +56,134 @@ export function WishlistView() {
     ).then((results) => {
       if (controller.signal.aborted) return;
       const next: Record<string, ProductDetail | null> = {};
-      for (const result of results) {
+      const failures = new Set<string>();
+      for (const [index, result] of results.entries()) {
         if (result) next[result[0]] = result[1];
+        else failures.add(items[index].handle);
       }
+      const restoreRetryFocus =
+        retryFocusRequested.current &&
+        (document.activeElement === retryButton.current ||
+          document.activeElement === document.body);
+      retryFocusRequested.current = false;
       setLiveResults(next);
+      setFailedHandles(failures);
+      setRetrying(false);
+      if (restoreRetryFocus) {
+        requestAnimationFrame(() => {
+          const target =
+            failures.size === 0 ? removeButtons.current.get(items[0].handle) : retryButton.current;
+          target?.focus();
+        });
+      }
     });
 
     return () => controller.abort();
-  }, [items]);
+  }, [items, refreshAttempt]);
 
-  // CONTENT.md §7's exact empty-state copy — no additional copy or CTA is
-  // invented beyond what's specified there.
-  if (items.length === 0) {
-    return (
-      <p className="font-display text-heading-3 uppercase tracking-display text-esque-text">
-        NOTHING SAVED YET.
-      </p>
-    );
+  function removeItem(item: WishlistItem, index: number) {
+    const nextHandle = items[index + 1]?.handle ?? items[index - 1]?.handle;
+    remove(item.handle);
+    setAnnouncement(`${item.title} removed from wishlist.`);
+    // Focus after React removes the card, including the final-item empty state.
+    requestAnimationFrame(() => {
+      const target = nextHandle ? removeButtons.current.get(nextHandle) : discoveryLink.current;
+      target?.focus();
+    });
   }
 
   return (
-    // DESIGN_SYSTEM.md §15's sitewide 4/8/12-column grid foundation as the
-    // container, but a plain, UNIFORM span for every cell — deliberately
-    // NOT the catalog's featured/standard editorial alternation
-    // (lib/catalog/grid-layout.ts's getGridItemLayout). That varied rhythm
-    // (DESIGN_SYSTEM.md §36-38) is specifically about *discovery* browsing
-    // across a drop; a wishlist is a personal, already-decided list where
-    // every saved item carries equal weight — there is no "featured" item
-    // concept here. ProductCard and ProductGrid are composed from the
-    // outside (never modified) since this is the only caller that needs
-    // this shape.
-    <div className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8">
-      {items.map((item, index) => {
-        const hasLiveResult = Object.prototype.hasOwnProperty.call(liveResults, item.handle);
-        const liveResult = liveResults[item.handle];
-        const product = !hasLiveResult
-          ? syntheticListItem(item, true)
-          : liveResult === null
-            ? syntheticListItem(item, false)
-            : toProductListItem(liveResult);
-
-        return (
-          <div
-            key={item.handle}
-            className="col-span-2 flex flex-col gap-3 md:col-span-2 lg:col-span-3"
+    <div className="flex flex-col gap-6">
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {persistenceError && (
+        <p role="status" className="text-body-sm text-esque-text-secondary">
+          Browser storage is unavailable. Changes are kept for this visit and may be lost when you
+          leave.
+        </p>
+      )}
+      {items.length > 0 && (refreshFailed || retrying) && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <p role="status" className="text-body-sm text-esque-text-secondary">
+            {retrying ? 'Refreshing availability…' : 'Availability could not be refreshed.'}
+          </p>
+          <Button
+            ref={retryButton}
+            variant="editorial"
+            className="min-h-11 text-body-sm"
+            aria-label="Retry availability"
+            disabled={retrying}
+            onClick={(event) => {
+              event.currentTarget.focus();
+              retryFocusRequested.current = true;
+              setRetrying(true);
+              setRefreshAttempt((attempt) => attempt + 1);
+            }}
           >
-            {/* priority on the first card only — DECISIONS.md D-045's same
-                "this grid is the page's primary above-the-fold content"
-                reasoning applies here: /wishlist has no hero above this
-                grid, so its first image is the page's likely LCP element.
-                Found missing (unlike ProductGrid's own callers, which all
-                pass priorityFirstImage) during a live functionality pass —
-                see DECISIONS.md. */}
-            <ProductCard product={product} layout="standard" priority={index === 0} />
-            <WishlistToggle item={item} />
-          </div>
-        );
-      })}
+            Retry
+          </Button>
+        </div>
+      )}
+      {!ready ? (
+        <p role="status" className="text-body-sm text-esque-text-secondary">
+          Loading saved pieces…
+        </p>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-start gap-6">
+          <p className="font-display text-heading-3 uppercase tracking-display text-esque-text">
+            NOTHING SAVED YET.
+          </p>
+          <Link
+            ref={discoveryLink}
+            href="/new"
+            className="inline-flex min-h-11 items-center text-body-sm text-esque-text underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          >
+            Explore New
+          </Link>
+        </div>
+      ) : (
+        <ul
+          aria-label="Saved pieces"
+          className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8"
+        >
+          {items.map((item, index) => {
+            const liveResult = Object.prototype.hasOwnProperty.call(liveResults, item.handle)
+              ? liveResults[item.handle]
+              : undefined;
+            const product = liveResult ? toProductListItem(liveResult) : syntheticListItem(item);
+
+            return (
+              <li
+                key={item.handle}
+                className="col-span-2 flex min-w-0 flex-col gap-3 md:col-span-2 lg:col-span-3"
+              >
+                <ProductCard
+                  product={product}
+                  layout="standard"
+                  sizes="(min-width: 1152px) 256px, (min-width: 768px) 25vw, 50vw"
+                  priority={index === 0}
+                />
+                {liveResult === null && (
+                  <p className="text-body-sm text-esque-text-secondary">No longer available.</p>
+                )}
+                <Button
+                  ref={(element) => {
+                    if (element) removeButtons.current.set(item.handle, element);
+                    else removeButtons.current.delete(item.handle);
+                  }}
+                  variant="editorial"
+                  aria-label={`Remove ${item.title} from wishlist`}
+                  className="min-h-11 self-start text-body-sm"
+                  onClick={() => removeItem(item, index)}
+                >
+                  Remove
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
