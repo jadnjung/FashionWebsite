@@ -42,6 +42,11 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   const [fetchState, setFetchState] = useState<FetchState>({ status: 'idle' });
   const [selections, setSelections] = useState<OptionSelections>({});
   const [retryToken, setRetryToken] = useState(0);
+  const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
+
+  if (!open && purchaseUnavailable) {
+    setPurchaseUnavailable(false);
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -101,6 +106,7 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   }, [open, handle, retryToken]);
 
   function handleOptionChange(optionName: string, value: string) {
+    setPurchaseUnavailable(false);
     // Product Behavior: "variant selection" (PROJECT.md §82) — the shared
     // VariantPicker's fourth real call site (DECISIONS.md D-036/D-060).
     trackEvent('variant_selected', {
@@ -203,11 +209,10 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 variant="primary"
                 disabled={!canAddToBag}
                 onClick={() => {
-                  // No cart exists yet (D-016/D-029) — a real, disabled-
-                  // gated click; the bag mutation itself is a deliberate
-                  // no-op, matching ProductPurchasePanel/ActiveGarmentPanel
-                  // exactly.
-                  if (!matchedVariant) return;
+                  // D-016/D-055: track the valid click and explain the
+                  // deferred purchasing integration.
+                  if (!canAddToBag || !matchedVariant) return;
+                  setPurchaseUnavailable(true);
                   trackEvent('quick_add_click', {
                     currency: matchedVariant.price.currencyCode,
                     value: Number(matchedVariant.price.amount),
@@ -235,6 +240,9 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
             </div>
           ))}
       </div>
+      <p role="status" aria-atomic="true" className="mt-4 text-utility text-esque-text">
+        {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
+      </p>
     </dialog>
   );
 }

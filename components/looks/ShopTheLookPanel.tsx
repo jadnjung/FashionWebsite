@@ -61,9 +61,8 @@ function initialSelectionMap(products: ProductDetail[]): LookSelectionMap {
 // implemented as one mechanism, not two separate flows — a per-item
 // checkbox (checked by default = included in the outfit) that the user can
 // uncheck to exclude a piece; ADD LOOK adds whichever pieces are currently
-// checked. No cart exists yet (DECISIONS.md D-016), so ADD LOOK is a real,
-// correctly-disabled-gated button whose onClick is a deliberate no-op,
-// matching D-029's established precedent exactly.
+// checked. Cart integration remains deferred (DECISIONS.md D-016), so
+// valid activation explains that purchasing is unavailable.
 // Selection state is initialized once per mount — the parent remounts the
 // panel (keyed by look) when a different look is chosen.
 export function ShopTheLookPanel({
@@ -77,6 +76,11 @@ export function ShopTheLookPanel({
   const [selectionMap, setSelectionMap] = useState<LookSelectionMap>(() =>
     initialSelectionMap(products),
   );
+  const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
+
+  if (!open && purchaseUnavailable) {
+    setPurchaseUnavailable(false);
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -89,6 +93,7 @@ export function ShopTheLookPanel({
   }, [open]);
 
   function handleToggleIncluded(handle: string) {
+    setPurchaseUnavailable(false);
     setSelectionMap((prev) => ({
       ...prev,
       [handle]: { ...prev[handle], included: !prev[handle].included },
@@ -96,6 +101,7 @@ export function ShopTheLookPanel({
   }
 
   function handleOptionChange(handle: string, optionName: string, value: string) {
+    setPurchaseUnavailable(false);
     // Product Behavior: "variant selection" (PROJECT.md §82);
     // `context: 'shop_the_look'` distinguishes this call site.
     trackEvent('variant_selected', {
@@ -244,9 +250,19 @@ export function ShopTheLookPanel({
           </div>
 
           <div className="flex flex-col gap-2 pt-6">
-            <Button type="button" variant="primary" disabled={!canAddLook} onClick={() => {}}>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!canAddLook}
+              onClick={() => {
+                if (canAddLook) setPurchaseUnavailable(true);
+              }}
+            >
               ADD LOOK
             </Button>
+            <p role="status" aria-atomic="true" className="text-utility text-esque-text">
+              {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
+            </p>
             {!canAddLook && (
               // text-esque-text, not -secondary — see
               // ProductPurchasePanel.tsx's identical comment on this same class

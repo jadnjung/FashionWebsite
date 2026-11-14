@@ -144,7 +144,10 @@ export function LooksExperience({ looks }: LooksExperienceProps) {
                 look={look}
                 index={index}
                 sizes="(min-width: 768px) 33vw, 50vw"
-                onSelect={() => openLook(index)}
+                onSelect={(event) => {
+                  event.currentTarget.focus();
+                  openLook(index);
+                }}
               />
             </li>
           ))}
@@ -173,7 +176,7 @@ interface LookCardProps {
   sizes: string;
   /** Hide the piece count (narrow ring cards); it stays in the accessible name. */
   compact?: boolean;
-  onSelect: () => void;
+  onSelect: React.MouseEventHandler<HTMLButtonElement>;
   onFocus?: () => void;
   ref?: React.Ref<HTMLButtonElement>;
 }
@@ -470,8 +473,11 @@ function LookRing({
                 sizes={`${cardWidth}px`}
                 compact={cardWidth < COMPACT_CARD_PX}
                 onFocus={() => goTo(index)}
-                onSelect={() => {
-                  if (motion.current.dragged) return;
+                onSelect={(event) => {
+                  if (motion.current.dragged && event.detail !== 0) return;
+                  // Focus only accepted activations, preserving a drag's snap
+                  // target and Safari's native-dialog return focus.
+                  event.currentTarget.focus();
                   goTo(index);
                   onSelect(index);
                 }}

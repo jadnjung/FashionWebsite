@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// Isolate software-GPU resources from the other customer-journey workers.
+test.use({ launchOptions: { args: ['--use-angle=swiftshader'] } });
+
 // Homepage Collection Closet (DECISIONS.md D-089) against Demo Mode's six
 // Collection 001 fixtures. Drives the closet through its keyboard/screen-
 // reader controls — the same state machine the 3D canvas's pointer events
@@ -15,6 +18,34 @@ const PIECES = [
 ];
 
 async function gotoReadyCloset(page: Page) {
+  // Software shader compilation belongs to functional coverage, with its own
+  // runner budget. Customer performance is measured without these overrides.
+  test.slow();
+  // CI uses software WebGL to exercise the real scene. Override capability
+  // metadata only in these functional tests, separately from fallback tests.
+  await page.addInitScript(() => {
+    Object.defineProperties(navigator, {
+      hardwareConcurrency: { value: 8 },
+      deviceMemory: { value: 8 },
+    });
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      type: string,
+      options?: WebGLContextAttributes,
+    ) {
+      return getContext.call(
+        this,
+        type,
+        type === 'webgl2' ? { ...options, failIfMajorPerformanceCaveat: false } : options,
+      );
+    } as typeof getContext;
+    const getParameter = WebGL2RenderingContext.prototype.getParameter;
+    WebGL2RenderingContext.prototype.getParameter = function (parameter: number) {
+      if (parameter === 37446 || parameter === this.RENDERER) return 'Test hardware renderer';
+      return getParameter.call(this, parameter);
+    };
+  });
   await page.goto('/');
   const hero = page.getByRole('region', { name: 'Collection Hero' });
   // Waits for the closet to mount (it only does when WebGL is available),
@@ -29,6 +60,84 @@ async function gotoReadyCloset(page: Page) {
 }
 
 test.describe('Collection Closet (Demo Mode)', () => {
+  test('keeps shopping responsive when WebGL 2 is software-rendered', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperties(navigator, {
+        hardwareConcurrency: { value: 8 },
+        deviceMemory: { value: 8 },
+      });
+      // Exercise the renderer-name guard even when the browser would reject
+      // this context through its performance-caveat hint instead.
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (
+        this: HTMLCanvasElement,
+        type: string,
+        options?: WebGLContextAttributes,
+      ) {
+        return getContext.call(
+          this,
+          type,
+          type === 'webgl2' ? { ...options, failIfMajorPerformanceCaveat: false } : options,
+        );
+      } as typeof getContext;
+      const original = WebGL2RenderingContext.prototype.getParameter;
+      WebGL2RenderingContext.prototype.getParameter = function (parameter: number) {
+        if (parameter === 37446 || parameter === this.RENDERER) {
+          (window as Window & { rendererChecked?: boolean }).rendererChecked = true;
+          return 'ANGLE SwiftShader Device';
+        }
+        return original.call(this, parameter);
+      };
+    });
+    await page.goto('/');
+    const hero = page.getByRole('region', { name: 'Collection Hero' });
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as Window & { rendererChecked?: boolean }).rendererChecked),
+      )
+      .toBe(true);
+    // The menu interaction establishes that the client has hydrated.
+    await page.getByRole('button', { name: 'MENU', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'CLOSE' }).click();
+    await expect(hero.locator('[data-closet]')).toHaveCount(0);
+    await expect(hero.getByRole('link', { name: 'ENTER COLLECTION' })).toBeVisible();
+  });
+
+  test('keeps the static hero usable when only WebGL 1 is available', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
+      Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (
+        this: HTMLCanvasElement,
+        contextId,
+        options,
+      ) {
+        if (contextId === 'webgl2') return null;
+        return getContext.call(this, contextId, options);
+      } as typeof getContext;
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    // The browser still supports WebGL 1, reproducing the compatibility
+    // mismatch with three.js's WebGL 2-only renderer.
+    expect(
+      await page.evaluate(() => {
+        const context = document.createElement('canvas').getContext('webgl');
+        if (!context) return false;
+        context.getExtension('WEBGL_lose_context')?.loseContext();
+        return true;
+      }),
+    ).toBe(true);
+    const hero = page.getByRole('region', { name: 'Collection Hero' });
+    await expect(hero.getByRole('link', { name: 'ENTER COLLECTION' })).toBeVisible();
+    await expect(hero.locator('[data-closet]')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test('hangs every piece of the current collection, each with an accessible button', async ({
     page,
   }) => {

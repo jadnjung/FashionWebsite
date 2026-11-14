@@ -28,13 +28,17 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
-  // Chromium-engine projects only: the closet needs WebGL, which headless
-  // Chromium provides everywhere (software-rendered on CI runners), while
-  // headless WebKit on Linux CI does not reliably. A desktop and a touch
-  // phone profile cover the closet's two layouts.
+  // Chromium's software WebGL covers the real closet scene. Mobile WebKit
+  // covers populated shopping journeys, excluding the scene-specific spec
+  // because headless WebKit's WebGL availability varies across CI platforms.
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 13'] },
+      testIgnore: '**/closet.spec.ts',
+    },
   ],
   webServer: {
     command: 'pnpm dev',

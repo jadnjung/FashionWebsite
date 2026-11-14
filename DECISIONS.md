@@ -1731,3 +1731,19 @@ Owner choices:
 - New Demo-suite regressions for all three: 34 passed, 2 correctly skipped on the phone profile.
 - Main-suite cursor, homepage and reduced-motion specs: 86 passed. Unit tests: 458 passed.
 
+
+## D-092 — Preserve shopping responsiveness when the closet lacks suitable GPU support
+
+The November 13, 2026 customer-experience audit reproduced a WebGL1-only homepage crash and measured severe software-rendering contention. A controlled production-browser comparison recorded 601 looks-ring frames over 10.0 seconds with the static hero, versus 40 frames over 18.0 seconds while software WebGL initialized the closet. The standard `failIfMajorPerformanceCaveat` hint still accepted the measured SwiftShader context.
+
+The closet now requires WebGL2, requests the browser performance-caveat check, and falls back to the existing static hero for recognized SwiftShader, llvmpipe, softpipe, software-rasterizer, and basic-render-driver names. Renderer information remains local to the capability check. Only its boolean result is cached. The disposable probe context is released before the real scene creates its own context. Hardware-rendered garment fidelity and the existing collection destination remain part of the experience. Privacy-restricted renderer information limits this best-effort check.
+
+Browser fallback regressions cover WebGL1 and software WebGL2. Scene-specific functional tests override capability metadata within test initialization so software-only CI still mounts the real Three.js scene and exercises its controls. Other customer-journey tests use the application's normal capability decision. Test metadata overrides provide functional evidence, with performance measured separately.
+
+The same audit adds visible menu dismissal, nested Search/Quick Add keyboard ownership, decimal filtering, truthful purchasing feedback while the cart integration remains deferred, and backorder-safe scarcity copy. See [the audit report](./docs/customer-experience-audit.md) for scope, measurements, validation, and remaining launch dependencies. Browser context performance-caveat semantics follow the [WebGL specification](https://registry.khronos.org/webgl/specs/latest/1.0/).
+
+The audit also removes Demo Mode's obsolete image-optimizer bypass. The retired entrance gate no longer intercepts optimizer requests, and populated-image regressions verify responsive source sets, decoding, and HTTP image responses. The 16:9 hero uses cover-aware responsive sizing to retain source detail on portrait screens. Cold mobile LCP measured 5.496 seconds before this image change and 2.764 seconds afterward with full hero detail retained, at 390×844, 4× CPU, 1.6 Mbps, and 150 ms latency. Subresource transfer fell from 1,571,474 to 491,179 bytes. These single-run local measurements supplement functional tests, with real-device and field performance still requiring verification.
+
+Populated mobile WebKit coverage is now part of the Demo suite, with the scene-specific closet spec restricted to Chromium. This exposed pointer-trigger focus loss in Size Guide, Quick Add, and Shop the Look. Accepted dialog triggers now focus explicitly before opening, preserving native return focus on Safari. Ring activation checks pointer-drag suppression before focusing, and keyboard-generated activation remains available after a drag. Scene-functional tests isolate software-GPU workers and their shader-compilation budget from normal shopping coverage.
+
+The final no-store pass also exposed mount-time pathname effects dismissing freshly opened overlays. Menu and Search now close only after a genuine pathname change. Single-activation Demo checks replace retrying clicks, and repeated Safari menu checks verify the correction. The toast boundary test pauses its mock clock before activation so host assertion time does not consume its 100ms pre-expiry margin.

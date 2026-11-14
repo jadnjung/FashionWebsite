@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react';
+import { Button } from '@/components/ui/Button';
 import { NAVIGATION } from '@/lib/navigation-data';
 import { trackEvent } from '@/lib/analytics/gtag';
 
@@ -72,6 +73,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
   // times the effect fires while `open` has never yet been true.
   const hasOpenedRef = useRef(false);
   const pathname = usePathname();
+  const previousPathname = useRef(pathname);
   // Accordion: at most one category's subcategories are revealed at a
   // time, keyed by category.href. Click/tap on the disclosure button
   // (keyboard Enter/Space included, free from native <button> semantics)
@@ -121,6 +123,10 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
   // destination page would render underneath a still-open, fully opaque
   // full-screen overlay.
   useEffect(() => {
+    // Initial hydration can finish after the visitor's first activation.
+    // Close only for a real route change, preserving that initial interaction.
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
     handleRouteChange();
   }, [pathname]);
 
@@ -207,6 +213,11 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
       //    originally-estimated 24px, which reproducibly still clips.
       className="esque-menu fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-esque-black px-8 py-16"
     >
+      <div className="flex shrink-0 justify-end pb-8">
+        <Button variant="secondary" onClick={onClose} tabIndex={0} className="min-h-11 min-w-11">
+          CLOSE
+        </Button>
+      </div>
       {/* `my-auto` on this inner wrapper (not `justify-center` on the
           scrolling parent above) is what keeps all categories reachable.
           With 6 categories at up to 128px each, content height can exceed

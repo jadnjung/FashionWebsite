@@ -11,8 +11,9 @@ describe('getScarcityStatus', () => {
     expect(getScarcityStatus(null, true)).toBeNull();
   });
 
-  test('zero quantity on an otherwise-available variant is sold-out', () => {
-    expect(getScarcityStatus(0, true)).toEqual({ level: 'sold-out' });
+  test('available backorder variants never display false sold-out or scarcity claims', () => {
+    expect(getScarcityStatus(0, true)).toBeNull();
+    expect(getScarcityStatus(-2, true)).toBeNull();
   });
 
   test('1 to 3 remaining is the exact-count "final" tier', () => {

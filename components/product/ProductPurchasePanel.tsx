@@ -47,10 +47,8 @@ interface ProductPurchasePanelProps {
 // the matched variant once fully selected, otherwise the product's
 // minPrice), scarcity, size/color selection, quantity, Add to Bag. See
 // DECISIONS.md D-027 (native radio groups, now shared via VariantPicker —
-// D-036) and D-029 (Add to Bag is a real, disabled-until-valid button
-// whose click handler is a deliberate no-op — no cart exists yet —
-// matching Header.tsx's existing SEARCH/ACCOUNT/BAG onClick={() => {}}
-// precedent, not a new pattern).
+// D-036). Add to Bag remains disabled until a valid variant is selected.
+// Purchasing feedback explains the deferred cart integration (D-016).
 export function ProductPurchasePanel({
   title,
   handle,
@@ -74,6 +72,7 @@ export function ProductPurchasePanel({
   // blur.
   const [quantityInput, setQuantityInput] = useState('1');
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [purchaseUnavailable, setPurchaseUnavailable] = useState(false);
 
   const soldOut = isProductSoldOut(variants);
   const matchedVariant = findMatchingVariant(variants, selections);
@@ -150,6 +149,7 @@ export function ProductPurchasePanel({
   }, [handle, title, productType, minPrice.amount, minPrice.currencyCode, soldOut]);
 
   function handleOptionChange(optionName: string, value: string) {
+    setPurchaseUnavailable(false);
     // Product Behavior: "variant selection" (PROJECT.md §82).
     trackEvent('variant_selected', {
       item_id: handle,
@@ -215,7 +215,12 @@ export function ProductPurchasePanel({
         // else's footprint depends on this button's exact height.
         <button
           type="button"
-          onClick={() => setSizeGuideOpen(true)}
+          onClick={(event) => {
+            // Safari does not focus clicked buttons. Give the native dialog
+            // a reliable return target before it captures the current focus.
+            event.currentTarget.focus();
+            setSizeGuideOpen(true);
+          }}
           className="w-fit py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
         >
           Size Guide
@@ -230,7 +235,10 @@ export function ProductPurchasePanel({
           max={quantityMax}
           name="quantity"
           value={quantityInput}
-          onChange={(event) => setQuantityInput(event.target.value)}
+          onChange={(event) => {
+            setPurchaseUnavailable(false);
+            setQuantityInput(event.target.value);
+          }}
           onBlur={() => setQuantityInput(String(resolveQuantity(quantityInput, 1, quantityMax)))}
           className="w-24"
         />
@@ -242,21 +250,15 @@ export function ProductPurchasePanel({
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {/* No cart exists yet (DECISIONS.md D-016/D-029) — adding to a
-              bag is still a real, disabled-gated click; onClick's actual
-              bag mutation remains a deliberate no-op, matching Header.tsx's
-              existing SEARCH/ACCOUNT/BAG precedent. Tracked as
-              add_to_bag_click, NOT GA4's standard add_to_cart — see
-              DECISIONS.md D-055 for why: firing GA4's own "item was added
-              to a cart" semantic event before a cart mechanism exists would
-              misrepresent what happened, and would be indistinguishable
-              from a genuine future add_to_cart once one does. */}
+          {/* D-016/D-055: this records purchase intent and explains that
+              purchasing is unavailable while cart integration is deferred. */}
           <Button
             type="button"
             variant="primary"
             disabled={!canAddToBag}
             onClick={() => {
-              if (!matchedVariant) return;
+              if (!canAddToBag || !matchedVariant) return;
+              setPurchaseUnavailable(true);
               trackEvent('add_to_bag_click', {
                 currency: matchedVariant.price.currencyCode,
                 value: Number(matchedVariant.price.amount),
@@ -274,6 +276,9 @@ export function ProductPurchasePanel({
           >
             ADD TO BAG
           </Button>
+          <p role="status" aria-atomic="true" className="text-utility text-esque-text">
+            {purchaseUnavailable ? 'Purchasing is not available yet.' : null}
+          </p>
           {!selectionComplete && (
             // text-esque-text, not -secondary — this is the one message a
             // user needs to read right when the primary CTA next to it is

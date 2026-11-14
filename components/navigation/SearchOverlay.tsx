@@ -60,14 +60,8 @@ type SearchResultsState =
 // mechanics (role="dialog" + aria-modal, the hasOpenedRef-gated open/close
 // effect, the useEffectEvent-based pathname-close effect, the hand-rolled
 // Tab-cycle focus trap + Escape-to-close) rather than reinventing them —
-// see that file for the full reasoning behind each. The one deliberate
-// addition beyond FullScreenMenu's own pattern is a real, visible CLOSE
-// button: FullScreenMenu never needed one because every visible thing in
-// it is a navigable link (clicking any category both navigates and
-// closes), but Search's primary content is an input plus result sections
-// that can be empty, loading, or erroring — there's no guaranteed
-// clickable escape route for a mouse/touch user who hasn't discovered
-// Escape.
+// see that file for the full reasoning behind each. Both overlays expose
+// a visible CLOSE button so mouse/touch users can dismiss them directly.
 export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +70,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   // why a naive "first render" guard isn't sufficient).
   const hasOpenedRef = useRef(false);
   const pathname = usePathname();
+  const previousPathname = useRef(pathname);
 
   const [query, setQuery] = useState('');
   const [searchResultsState, setSearchResultsState] = useState<SearchResultsState>({
@@ -109,6 +104,8 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   });
 
   useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
     handleRouteChange();
   }, [pathname]);
 
@@ -139,6 +136,10 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     if (!open) return;
 
     function handleKeyDown(event: KeyboardEvent) {
+      // Quick Add uses a native modal dialog. Let it own Escape and Tab
+      // until it closes, including the browser's native focus restoration.
+      if (containerRef.current?.querySelector('dialog[open]')) return;
+
       if (event.key === 'Escape') {
         onClose();
         return;
@@ -148,9 +149,13 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
       // Widened to include input:not([disabled]) — unlike FullScreenMenu,
       // this dialog's first focusable element is a text field, not a
       // link/button.
-      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled])',
-      );
+      // Quick Add stays mounted after close to restore its trigger's focus.
+      // Its hidden controls must stay outside Search's focus boundaries.
+      const focusable = Array.from(
+        containerRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled])',
+        ),
+      ).filter((element) => !element.closest('dialog:not([open])'));
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];

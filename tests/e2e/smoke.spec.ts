@@ -261,6 +261,9 @@ test.describe('header', () => {
       await page.clock.install();
       await page.goto('/');
       const notice = page.getByRole('status').filter({ hasText: 'ARRIVING SOON.' });
+      // Freeze before starting the toast timer so real assertion time does
+      // not consume the 100ms margin in the 7.9s boundary check.
+      await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 1000)));
 
       await page.getByRole('button', { name: 'ACCOUNT' }).click();
       await expect(notice).toBeVisible();
@@ -314,6 +317,7 @@ test.describe('full-screen menu', () => {
     const menu = page.getByRole('dialog', { name: /menu/i });
     const firstLink = menu.getByRole('link', { name: 'NEW' });
     const lastLink = menu.getByRole('link', { name: 'ABOUT' });
+    const close = menu.getByRole('button', { name: 'CLOSE', exact: true });
     await expect(firstLink).toBeFocused();
 
     // Forward: Tab through every category link, ending back on the first —
@@ -339,9 +343,13 @@ test.describe('full-screen menu', () => {
     }
     await expect(lastLink).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(firstLink).toBeFocused();
 
-    // Backward: Shift+Tab from the first link wraps to the last link.
+    // The close action precedes NEW, and wraps backward to ABOUT.
+    await page.keyboard.press('Shift+Tab');
+    await expect(close).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(lastLink).toBeFocused();
   });

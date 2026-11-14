@@ -92,8 +92,9 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           label="Min Price"
           name="minPrice"
           type="number"
-          inputMode="numeric"
+          inputMode="decimal"
           min={0}
+          step="any"
           defaultValue={filters.minPrice ?? ''}
           className="w-24"
         />
@@ -102,8 +103,9 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
             label="Max Price"
             name="maxPrice"
             type="number"
-            inputMode="numeric"
+            inputMode="decimal"
             min={0}
+            step="any"
             defaultValue={filters.maxPrice ?? ''}
             className="w-24"
             aria-describedby={filters.maxPriceDropped ? 'max-price-dropped-note' : undefined}

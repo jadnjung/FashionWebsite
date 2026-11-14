@@ -7,6 +7,20 @@ import { test, expect } from '@playwright/test';
 // renders over real fixture products instead of the unconfigured-store
 // error boundary — hence this suite (playwright.demo.config.ts).
 test.describe('FilterBar — dropped max-price feedback', () => {
+  test('decimal prices submit and preserve sort and availability', async ({ page }) => {
+    await page.goto('/new?sort=price-asc&available=1');
+    await page.getByRole('spinbutton', { name: 'Min Price' }).fill('95.50');
+    await page.getByRole('spinbutton', { name: 'Max Price' }).fill('188.50');
+    await page.getByRole('button', { name: 'APPLY', exact: true }).click();
+    await expect(page).toHaveURL(/minPrice=95\.50/);
+    const params = new URL(page.url()).searchParams;
+    expect(params.get('maxPrice')).toBe('188.50');
+    expect(params.get('sort')).toBe('price-asc');
+    expect(params.get('available')).toBe('1');
+    await expect(page.getByRole('link', { name: /Fluid Knit Long-Sleeve/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Velvet Evening Jacket/ })).toHaveCount(0);
+  });
+
   test('maxPrice below minPrice: field renders blank, note is visible, aria-describedby wires it to the input', async ({
     page,
   }) => {

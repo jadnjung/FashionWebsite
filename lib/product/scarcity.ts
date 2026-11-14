@@ -16,8 +16,9 @@ export function getScarcityStatus(
   availableForSale: boolean,
 ): ScarcityStatus {
   if (!availableForSale) return { level: 'sold-out' };
-  if (quantityAvailable === null) return null;
-  if (quantityAvailable <= 0) return { level: 'sold-out' };
+  // Shopify can continue selling with zero or negative stock. Availability
+  // controls sold-out status, while only positive stock supports scarcity copy.
+  if (quantityAvailable === null || quantityAvailable <= 0) return null;
   if (quantityAvailable <= FINAL_THRESHOLD) return { level: 'final', count: quantityAvailable };
   if (quantityAvailable <= LOW_STOCK_THRESHOLD) return { level: 'low' };
   return null;

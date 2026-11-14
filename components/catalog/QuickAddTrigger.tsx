@@ -115,7 +115,9 @@ export function QuickAddTrigger({ handle, title }: QuickAddTriggerProps) {
     <>
       <button
         type="button"
-        onClick={() => {
+        onClick={(event) => {
+          // Native modal return focus needs an explicit target on Safari.
+          event.currentTarget.focus();
           // Product Behavior: "Quick Add usage" (PROJECT.md §82) — the one
           // real open-a-flow step Quick Add has (DECISIONS.md D-060).
           // Fired on click regardless of load timing — opening genuinely

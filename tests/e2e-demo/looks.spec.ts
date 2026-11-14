@@ -30,6 +30,29 @@ async function gotoLooks(page: Page) {
 }
 
 test.describe('Shop the Look ring (Demo Mode)', () => {
+  test('a drag does not open a look and keyboard activation still works afterward', async ({
+    page,
+  }) => {
+    const section = await gotoLooks(page);
+    await section.getByRole('button', { name: 'PAUSE', exact: true }).click();
+    const stage = section.getByRole('group', { name: 'Looks' });
+    await stage.scrollIntoViewIfNeeded();
+    const box = await stage.boundingBox();
+    if (!box) throw new Error('Looks stage is not visible');
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const before = await frontLook(page);
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 80, y, { steps: 5 });
+    await page.mouse.up();
+    await expect.poll(() => frontLook(page)).not.toBe(before);
+    const dialog = page.getByRole('dialog', { name: 'Shop the Look' });
+    await expect(dialog).toBeHidden();
+    await section.getByRole('button', { name: /^LOOK 02,/ }).press('Enter');
+    await expect(dialog).toBeVisible();
+  });
+
   test('shows nine looks on a rotating ring with its controls', async ({ page }) => {
     const section = await gotoLooks(page);
     await expect(section.getByText('09 LOOKS')).toBeVisible();

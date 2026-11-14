@@ -47,7 +47,9 @@ export function CollectionCloset({ collection }: CollectionClosetProps) {
               alt=""
               fill
               priority
-              sizes="100vw"
+              // A portrait cover crop needs enough source pixels for its
+              // height, even though only a narrow strip is visible.
+              sizes="max(100vw, calc((100svh - 72px) * 16 / 9))"
               className={`object-cover ${hasCloset ? 'opacity-25' : 'opacity-70'}`}
             />
             <div className="absolute inset-0 bg-linear-to-b from-transparent to-esque-black" />

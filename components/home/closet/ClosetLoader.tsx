@@ -23,11 +23,24 @@ function canClosetRender(): boolean {
     cachedCapability = false;
     return false;
   }
+  let context: WebGL2RenderingContext | null = null;
   try {
     const canvas = document.createElement('canvas');
-    cachedCapability = Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
+    context = canvas.getContext('webgl2', { failIfMajorPerformanceCaveat: true });
+    const info = context?.getExtension('WEBGL_debug_renderer_info');
+    // Software WebGL can pass the browser's caveat hint but stall shopping
+    // while shaders initialize. Inspect locally, without logging GPU details.
+    const renderer = context?.getParameter(info?.UNMASKED_RENDERER_WEBGL ?? context.RENDERER);
+    cachedCapability =
+      context !== null &&
+      !/swiftshader|llvmpipe|softpipe|software rasterizer|basic render driver/i.test(
+        String(renderer),
+      );
   } catch {
     cachedCapability = false;
+  } finally {
+    // The real renderer creates its own context. Release this disposable probe.
+    context?.getExtension('WEBGL_lose_context')?.loseContext();
   }
   return cachedCapability;
 }
