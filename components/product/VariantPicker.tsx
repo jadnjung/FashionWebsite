@@ -78,7 +78,7 @@ export function VariantPicker({
                   />
                   <label
                     htmlFor={inputId}
-                    className="flex min-h-11 min-w-11 max-w-full cursor-pointer items-center justify-center border border-esque-text-secondary px-4 py-2 text-utility uppercase tracking-metadata text-esque-text [overflow-wrap:anywhere] transition-colors duration-200 ease-esque peer-checked:border-esque-text peer-checked:bg-esque-text peer-checked:text-esque-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-esque-text peer-disabled:cursor-not-allowed peer-disabled:text-esque-text-muted peer-disabled:line-through peer-disabled:opacity-40"
+                    className="flex min-h-11 min-w-11 max-w-full cursor-pointer items-center justify-center border border-esque-text-secondary px-4 py-2 text-utility uppercase tracking-metadata text-esque-text [overflow-wrap:anywhere] transition-colors duration-200 ease-esque peer-checked:border-esque-text peer-checked:bg-esque-text peer-checked:text-esque-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-esque-text peer-disabled:cursor-not-allowed peer-disabled:text-esque-text-muted peer-disabled:line-through peer-disabled:opacity-40 forced-colors:peer-checked:underline forced-colors:peer-checked:decoration-double forced-colors:peer-checked:underline-offset-4 forced-colors:peer-disabled:text-[GrayText] forced-colors:peer-disabled:opacity-100"
                   >
                     {value}
                     {!contextual && available && (

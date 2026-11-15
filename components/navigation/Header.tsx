@@ -180,7 +180,7 @@ export function Header({
   return (
     <header
       role="banner"
-      className="relative flex h-[72px] items-center justify-between border-b border-esque-surface bg-esque-black px-4 md:px-8"
+      className="relative flex min-h-[72px] flex-wrap items-center justify-between gap-y-2 border-b border-esque-surface bg-esque-black px-4 py-2 md:px-8"
     >
       <Link href="/" className="shrink-0 font-display text-lg tracking-nav text-esque-text">
         ESQUE
@@ -189,7 +189,7 @@ export function Header({
       <nav
         ref={utilityNavRef}
         aria-label="Utility"
-        className="flex items-center gap-1 sm:gap-2 md:gap-6"
+        className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-6"
       >
         <Button
           ref={menuTriggerRef}

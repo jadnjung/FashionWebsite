@@ -27,7 +27,7 @@ The following statuses describe the local implementation pass. The original numb
 | 15 | Implemented | Owned isolated test servers pin external integrations. Explicit external reuse verifies mode, production rendering and isolation profile. |
 | 16 | Implemented | Production build/start harness and two-mode smoke command support repeatable optimized-browser checks. |
 | 17 | Measurement tooling implemented | Three-sample cold mobile measurement command records LCP, CLS, transferred scripts and Search, variant, gallery and bag completion timing. The execution plan tracks the measurement run. |
-| 18 | Manual evidence pending | Automated device/reflow and expert keyboard checks are available. Actual browser magnification, screen-reader speech and physical-device testing still require direct evidence. |
+| 18 | Local text and forced-colors checks completed, manual evidence pending | Follow-up 200% text and forced-colors audits found and fixed header overflow and lost variant-selection cues. Actual browser magnification, screen-reader speech and physical-device testing still need evidence. |
 | 19 | Automated improvements implemented | Search uses one concise persistent status region. State-specific browser checks and expert review cover the changed journeys. Screen-reader speech verification remains pending. |
 | 20 | Implemented | Opt-in local browser event capture verifies named events, counts and Demo semantics. Obvious personal data in Search is redacted. |
 | 21 | Implemented | Actual SDK HTTP tests cover variables, normalization, errors, cancellation, response-body deadlines and continuation. |
@@ -67,6 +67,22 @@ The following statuses describe the local implementation pass. The original numb
 - Analytics now redacts obvious email addresses, phone numbers and URLs entered into free-text Search.
 
 The local history implementation retains valid v1 records and a bounded list. Timestamp-based expiry remains an optional schema extension. Final photography, measurements, business policy approval, live transactions, actual email delivery and account connections retain their original owner/service dependencies.
+
+## Follow-up local checks on November 15
+
+The follow-up audited the rebuilt Demo website with placeholder products. The original 46-item inventory is retained above. These additional findings and evidence boundaries inform the next pass.
+
+| Finding | Status | Evidence or next work |
+| --- | --- | --- |
+| Enlarged text clipped the mobile header | Fixed and verified | At 390×844 with text doubled once, BAG previously reached x448. The header now wraps within its bounds. All 20 fresh-page captures at 390px and 1280px fit. |
+| Forced colors hid variant selection | Fixed and verified | Checked native radios now retain a double-underlined label after blur. Focus and disabled cues remain visible in Chromium forced-colors emulation. |
+| Mobile homepage loading exceeds the lab target in some samples | Open investigation | Three idle cold mobile runs measured LCP 2876,2380,3096ms and CLS 0. Startup long tasks reached 445–808ms. Continue profiling critical loading and main-thread work under the same conditions. |
+| Hero downloads duplicate responsive candidates | Open investigation | Both 1920px and 3840px optimizer requests returned identical 38,454-byte WebP bodies. A four-sample controlled preload-removal experiment retained both requests. Determine the cause before changing loading behavior, while preserving portrait-cover detail. |
+| Visible paused or reduced-motion 3D scenes continue drawing | Efficiency follow-up | Forced SwiftShader diagnostics confirmed draw calls continue. Normal capability detection rejected software rendering. Hardware GPU cost and a safe demand-rendering design remain unverified. |
+
+The changed Header and shared VariantPicker passed 119 affected production browser checks with 11 declared skips across five profiles. Independent UI review verified the fixes and repeated keyboard/touch-emulated shopping journeys. Read-only security review found no actionable issues. Full methodology, measurements and limitations are in the completion record. [Follow-up execution record](./superpowers/plans/2026-11-14-backlog-completion.md#follow-up-local-accessibility-and-homepage-audit)
+
+Native 200%/400% browser zoom remains unverified. Edge automation reached an app-approval timeout. The installed full Chromium executable failed to spawn. The supported headless shell ignored isolated-profile zoom preferences and retained DPR 1 and a 1280px viewport, so those attempts supply no native-zoom evidence. The successful 200% text checks used explicit font and line-height enlargement. Screen-reader speech, physical-device testing and actual shopper sessions still need their own evidence.
 
 ## Start with the four reproduced issues
 
