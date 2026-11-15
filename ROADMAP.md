@@ -4,13 +4,14 @@ Tracks Collection 001 / V1 build order, near-term follow-ups (V1.1), and deferre
 
 Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
-## Current Status (updated 2026-11-12)
+## Current Status (updated 2026-11-15)
 
 A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail. Setting up on a new computer? See [README.md → New machine setup](./README.md#new-machine-setup).
 
 **Where things stand:**
 - **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. The Demo bag supports preview shopping flows (D-093). A real Shopify store and Vercel project still need provisioning for live cart, checkout, accounts, and deployment (D-016).
-- **Latest work:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
+- **Storefront readiness pass:** local implementations address the 46-item Demo backlog, with integrated production browser validation complete for the local automated scope. Evidence and outstanding manual/device checks are recorded in the [completion record](./docs/superpowers/plans/2026-11-14-backlog-completion.md).
+- **Previous milestone:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
 - **CI:** two Playwright suites (no-store and Demo Mode), plus format, lint, typecheck, unit tests and build. It was red from 2026-10-27 until D-090 fixed it.
 
 **Owner tasks (not code):**
@@ -24,7 +25,7 @@ A quick orientation for a new session; the phase checklists below and [DECISIONS
 - **Not yet verified:** real iPhone/iPad Safari, physical devices, and a post-closet Lighthouse run. Lab baseline: D-071; the 3D chunk is about 263 KB gzip, lazily loaded.
 - **Known visual limit:** every garment in a category shares one placeholder silhouette, so the Velvet Evening Jacket reads as a boxy knit until a real model exists.
 - **Lingering placeholder:** the hero's campaign statement is still labelled `ESQUE PLACEHOLDER` outside Demo Mode.
-- **Considered, not built:** a sitewide Content-Security-Policy, deferred to its own reviewed change (D-089, asset-allowlist section).
+- **CSP evaluation:** an opt-in local report-only policy is implemented and security-reviewed. Compatibility observations and the remaining hosted integration checks are tracked in the completion record. Enforcement remains a follow-up after those checks.
 
 ## Phase 0 — Project Foundation
 

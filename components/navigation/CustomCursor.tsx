@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  hasFinePointerAndHover,
-  isLowPerformanceDevice,
-  prefersReducedMotion,
-} from '@/lib/motion/media';
+import { hasFinePointerAndHover, isLowPerformanceDevice } from '@/lib/motion/media';
+import { useReducedMotion } from '@/lib/motion/use-reduced-motion';
 
 const CURSOR_ATTR = 'data-cursor';
 const FORM_FIELD_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
@@ -39,6 +36,11 @@ const ACTIVE_CLASS = 'esque-cursor-none';
 // access gate keeps its own existing, already-shipped EntranceMotion
 // pointer treatment instead (see the design spec's Non-Goals).
 export function CustomCursor() {
+  const reducedMotion = useReducedMotion();
+  return reducedMotion ? null : <PointerCursor />;
+}
+
+function PointerCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const [initialized, setInitialized] = useState(false);
   const [label, setLabel] = useState<string | null>(null);
@@ -50,7 +52,6 @@ export function CustomCursor() {
   useEffect(() => {
     const nav = navigator as Navigator & { deviceMemory?: number };
     if (
-      prefersReducedMotion(window.matchMedia) ||
       !hasFinePointerAndHover(window.matchMedia) ||
       isLowPerformanceDevice(navigator.hardwareConcurrency, nav.deviceMemory)
     ) {

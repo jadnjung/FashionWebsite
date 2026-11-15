@@ -14,7 +14,7 @@
 // resolve 'react/experimental'" before this fix. A global tsconfig "types"
 // array was also considered and rejected: it would stop TypeScript
 // auto-including every other @types/* package. See DECISIONS.md D-038.
-import Image from 'next/image';
+import { ProductImage as Image } from '@/components/ui/ProductImage';
 import Link from 'next/link';
 import { ViewTransition } from 'react';
 import { QuickAddTrigger } from '@/components/catalog/QuickAddTrigger';
@@ -61,6 +61,9 @@ interface ProductCardProps {
   // this, and only for its first card — PDP's Related Products (always
   // below the fold) leaves it unset so that section stays correctly lazy.
   priority?: boolean;
+  suppressQuickAdd?: boolean;
+  purchaseState?: 'unavailable';
+  onNavigate?: () => void;
 }
 
 // DESIGN_SYSTEM.md §39 — default: image + name, no price. Hover: crossfade
@@ -83,6 +86,9 @@ export function ProductCard({
   sizes,
   enableSharedTransition = false,
   priority = false,
+  suppressQuickAdd = false,
+  purchaseState,
+  onNavigate,
 }: ProductCardProps) {
   const [primary, secondary] = product.images;
   const sizesAttr = sizes ?? IMAGE_SIZES[layout];
@@ -98,6 +104,7 @@ export function ProductCard({
       {primary && (
         <Image
           src={primary.url}
+          fallbackTitle={product.title}
           alt={primary.altText ?? product.title}
           fill
           sizes={sizesAttr}
@@ -111,6 +118,7 @@ export function ProductCard({
         // than duplicating the product title a second time.
         <Image
           src={secondary.url}
+          fallbackTitle={product.title}
           alt=""
           aria-hidden="true"
           fill
@@ -133,26 +141,40 @@ export function ProductCard({
     // never nested inside it: a <button> can't nest inside an <a> (invalid
     // HTML; a click would also fire the outer navigation) — see
     // DECISIONS.md D-060.
-    <div className="group flex flex-col gap-3">
-      <Link
-        href={`/products/${product.handle}`}
-        data-cursor="VIEW"
-        className="flex flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
-      >
-        {enableSharedTransition ? (
-          <ViewTransition
-            name={getProductViewTransitionName(product.handle)}
-            share="morph"
-            default="none"
-          >
-            {imageContainer}
-          </ViewTransition>
-        ) : (
-          imageContainer
-        )}
-        <p className="text-product-name text-esque-text">{product.title}</p>
-      </Link>
-      <QuickAddTrigger handle={product.handle} title={product.title} />
+    <div className="group flex min-w-0 flex-col gap-3">
+      {purchaseState === 'unavailable' ? (
+        <div className="flex min-w-0 flex-col gap-3">
+          {imageContainer}
+          <p className="text-product-name text-esque-text [overflow-wrap:anywhere]">
+            {product.title}
+          </p>
+        </div>
+      ) : (
+        <Link
+          href={`/products/${product.handle}`}
+          onNavigate={onNavigate}
+          data-cursor="VIEW"
+          className="flex min-w-0 flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+        >
+          {enableSharedTransition ? (
+            <ViewTransition
+              name={getProductViewTransitionName(product.handle)}
+              share="morph"
+              default="none"
+            >
+              {imageContainer}
+            </ViewTransition>
+          ) : (
+            imageContainer
+          )}
+          <p className="text-product-name text-esque-text [overflow-wrap:anywhere]">
+            {product.title}
+          </p>
+        </Link>
+      )}
+      {!suppressQuickAdd && purchaseState !== 'unavailable' && (
+        <QuickAddTrigger handle={product.handle} title={product.title} />
+      )}
     </div>
   );
 }

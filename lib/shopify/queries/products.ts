@@ -49,12 +49,22 @@ export const GET_PRODUCT_QUERY = `#graphql
         }
       }
       variants(first: 100) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         edges {
           node {
             id
             title
             availableForSale
             quantityAvailable
+            image {
+              url
+              altText
+              width
+              height
+            }
             price {
               amount
               currencyCode
@@ -63,6 +73,25 @@ export const GET_PRODUCT_QUERY = `#graphql
               name
               value
             }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// The same variant fields as GetProduct, with an exclusive continuation cursor.
+export const GET_PRODUCT_VARIANTS_QUERY = `#graphql
+  query GetProductVariants($handle: String!, $after: String!) {
+    product(handle: $handle) {
+      variants(first: 100, after: $after) {
+        pageInfo { hasNextPage endCursor }
+        edges {
+          node {
+            id title availableForSale quantityAvailable
+            image { url altText width height }
+            price { amount currencyCode }
+            selectedOptions { name value }
           }
         }
       }

@@ -37,6 +37,11 @@ export function getDropPhase(collection: DropPhaseInput, now: Date = new Date())
   return 'current';
 }
 
+/** Pair classification and the countdown anchor from one server-time snapshot. */
+export function getDropSnapshot(collection: DropPhaseInput, now: Date = new Date()) {
+  return { phase: getDropPhase(collection, now), serverNow: now.getTime() };
+}
+
 export function isCollectionUpcoming(collection: DropPhaseInput, now: Date = new Date()): boolean {
   return getDropPhase(collection, now) === 'upcoming';
 }

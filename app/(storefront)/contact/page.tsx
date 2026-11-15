@@ -40,7 +40,11 @@ export default function ContactPage() {
         <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
           Contact
         </h1>
-        <p className="text-body text-esque-text">Esque support is available by email.</p>
+        <p className="text-body text-esque-text">
+          {SUPPORT_EMAIL
+            ? 'Contact Esque support by email.'
+            : 'Our support contact is being prepared. Explore our draft policies below.'}
+        </p>
       </header>
 
       <PolicySection title="We Can Help With">
@@ -66,8 +70,16 @@ export default function ContactPage() {
           </p>
         )}
         <p className="text-esque-text-secondary">
-          We read every message and reply as quickly as we can.
+          {SUPPORT_EMAIL
+            ? 'Include the product or order reference relevant to your question.'
+            : 'Shipping and returns information is available in our draft policies.'}
         </p>
+        <a href="/legal/shipping" className="inline-block py-2 underline">
+          Shipping policy
+        </a>{' '}
+        <a href="/legal/returns" className="inline-block py-2 underline">
+          Returns policy
+        </a>
       </PolicySection>
     </div>
   );

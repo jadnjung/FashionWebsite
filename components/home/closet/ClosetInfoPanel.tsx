@@ -19,12 +19,12 @@ export function ClosetInfoPanel({ product, onClose }: ClosetInfoPanelProps) {
       aria-live="polite"
       aria-atomic="true"
       data-closet-panel
-      className={`absolute inset-x-4 bottom-6 z-20 transition-opacity duration-300 ease-esque md:inset-x-8 lg:inset-x-auto lg:bottom-auto lg:right-12 lg:top-1/2 lg:w-[22rem] lg:-translate-y-1/2 ${
+      className={`absolute inset-x-4 bottom-20 z-20 max-h-[calc(100%-6rem)] overflow-y-auto overscroll-contain transition-opacity duration-300 ease-esque md:inset-x-8 lg:inset-x-auto lg:bottom-auto lg:right-12 lg:top-1/2 lg:max-h-[calc(100%-4rem)] lg:w-[22rem] lg:-translate-y-1/2 ${
         product ? 'opacity-100' : 'pointer-events-none opacity-0'
       }`}
     >
       {product && (
-        <div className="flex flex-col gap-3 bg-esque-black/80 p-5 backdrop-blur-sm lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+        <div className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere] bg-esque-black/80 p-5 backdrop-blur-sm lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
           <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
             {product.productType}
           </p>
@@ -40,14 +40,14 @@ export function ClosetInfoPanel({ product, onClose }: ClosetInfoPanelProps) {
           <div className="flex flex-wrap items-center gap-6 pt-2">
             <Link
               href={`/products/${product.handle}`}
-              className="py-2 text-utility uppercase tracking-nav text-esque-text underline-offset-4 transition-colors duration-200 ease-esque hover:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+              className="inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-nav text-esque-text underline-offset-4 transition-colors duration-200 ease-esque hover:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
             >
               VIEW PRODUCT
             </Link>
             <button
               type="button"
               onClick={onClose}
-              className="py-2 text-utility uppercase tracking-nav text-esque-text-secondary transition-colors duration-200 ease-esque hover:text-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+              className="inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-nav text-esque-text-secondary transition-colors duration-200 ease-esque hover:text-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
             >
               CLOSE
             </button>

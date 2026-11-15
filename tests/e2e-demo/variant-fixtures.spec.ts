@@ -72,7 +72,7 @@ test('Quick Add selections expose selected prices and sold-out combinations with
   page,
   isMobile,
 }) => {
-  await page.goto('/new');
+  await page.goto('/new?sort=featured');
   const trigger = crewneckQuickAdd(page);
   if (isMobile) {
     await trigger.tap();
@@ -123,7 +123,7 @@ test('Quick Add explains a missing combination and recovers when another color i
     );
     await route.fulfill({ response, json: payload });
   });
-  await page.goto('/new');
+  await page.goto('/new?sort=featured');
   await crewneckQuickAdd(page).press('Enter');
   const dialog = page.getByRole('dialog', { name: /Quick Add.*Featherweight/ });
   await selectWithKeyboard(dialog, 'S');
@@ -151,7 +151,7 @@ test('Quick Add retries a failed product request and restores usable variant cho
     }
     await route.continue();
   });
-  await page.goto('/new');
+  await page.goto('/new?sort=featured');
   await crewneckQuickAdd(page).press('Enter');
   const dialog = page.getByRole('dialog', { name: /Quick Add.*Featherweight/ });
   await expect(dialog.getByText('SOMETHING WENT WRONG.', { exact: true })).toBeVisible();
@@ -191,7 +191,7 @@ test('closing Quick Add while a request is pending preserves selections after re
   });
 
   try {
-    await page.goto('/new');
+    await page.goto('/new?sort=featured');
     const trigger = crewneckQuickAdd(page);
     await trigger.press('Enter');
     const dialog = page.getByRole('dialog', { name: /Quick Add.*Featherweight/ });

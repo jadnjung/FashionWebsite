@@ -60,12 +60,36 @@ export function isOptionValueAvailable(
   );
 }
 
+/** Availability within the other intentional choices. Values remain selectable
+ * whenever they are sellable in any combination, so sparse matrices cannot trap
+ * the shopper between two mutually disabled option groups. */
+export function isOptionValueAvailableForSelections(
+  variants: ProductVariant[],
+  optionName: string,
+  value: string,
+  selections: OptionSelections,
+): boolean {
+  return variants.some(
+    (variant) =>
+      variant.availableForSale &&
+      variant.selectedOptions.some(
+        (option) => option.name === optionName && option.value === value,
+      ) &&
+      variant.selectedOptions.every(
+        (option) =>
+          option.name === optionName ||
+          selections[option.name] === undefined ||
+          selections[option.name] === option.value,
+      ),
+  );
+}
+
 /** True once every option the product defines has a current selection. */
 export function isSelectionComplete(
   options: ProductOption[],
   selections: OptionSelections,
 ): boolean {
-  return options.every((option) => selections[option.name] !== undefined);
+  return options.every((option) => option.values.includes(selections[option.name]));
 }
 
 /**

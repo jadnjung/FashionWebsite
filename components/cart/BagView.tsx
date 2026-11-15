@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { ProductImage } from '@/components/ui/ProductImage';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
 import { resolveQuantity } from '@/lib/product/quantity';
+import { getProductVariantHref } from '@/lib/product/variant-url';
 import type { CartLine } from '@/lib/cart/model';
 
 function BagLine({ line, onRemove }: { line: CartLine; onRemove: (variantId: string) => void }) {
@@ -29,12 +30,13 @@ function BagLine({ line, onRemove }: { line: CartLine; onRemove: (variantId: str
   return (
     <li className="grid grid-cols-[6rem_minmax(0,1fr)] gap-4 border-b border-esque-elevated py-6 sm:grid-cols-[8rem_minmax(0,1fr)]">
       <Link
-        href={`/products/${line.handle}`}
+        href={getProductVariantHref(line.handle, line.variantId)}
         aria-label={`View ${line.title}`}
         className="relative aspect-[4/5] self-start bg-esque-surface"
       >
         {line.image && (
-          <Image
+          <ProductImage
+            fallbackTitle={line.title}
             src={line.image.url}
             alt={line.image.altText ?? line.title}
             fill
@@ -45,7 +47,7 @@ function BagLine({ line, onRemove }: { line: CartLine; onRemove: (variantId: str
       </Link>
       <div className="flex min-w-0 flex-col gap-3">
         <Link
-          href={`/products/${line.handle}`}
+          href={getProductVariantHref(line.handle, line.variantId)}
           className="text-product-name underline-offset-4 hover:underline"
         >
           {line.title}

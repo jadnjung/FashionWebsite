@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Remaining {
   days: number;
@@ -54,8 +55,8 @@ function getRemaining(targetTimestamp: number, now: number): Remaining {
  * and the static, deterministic target-date line below renders instead,
  * computed purely from the `targetTimestamp` prop. Only inside a
  * `useEffect` (which by definition runs strictly after hydration, never
- * during it) does a `setInterval` begin reading `Date.now()` and
- * populating `remaining` with live numbers. This guarantees the first
+ * during it) does a `setInterval` advance the supplied server time with
+ * monotonic elapsed browser time and populate `remaining` with live numbers. This guarantees the first
  * client render is byte-identical to the server's — no mismatch is
  * possible — and ticking only ever begins after that first paint is
  * already committed.
@@ -68,17 +69,32 @@ function getRemaining(targetTimestamp: number, now: number): Remaining {
  * suppressing under reduced motion per DESIGN_SYSTEM.md §63's "retain:
  * fades, state changes" carve-out.
  */
-export function DropCountdown({ targetTimestamp }: { targetTimestamp: number }) {
+export function DropCountdown({
+  targetTimestamp,
+  serverNow,
+}: {
+  targetTimestamp: number;
+  serverNow: number;
+}) {
+  const router = useRouter();
+  const refreshed = useRef(false);
   const [remaining, setRemaining] = useState<Remaining | null>(null);
 
   useEffect(() => {
+    const startedAt = performance.now();
     function tick() {
-      setRemaining(getRemaining(targetTimestamp, Date.now()));
+      const authoritativeNow = serverNow + (performance.now() - startedAt);
+      const next = getRemaining(targetTimestamp, authoritativeNow);
+      setRemaining(next);
+      if (authoritativeNow >= targetTimestamp && !refreshed.current) {
+        refreshed.current = true;
+        router.refresh();
+      }
     }
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [targetTimestamp]);
+  }, [targetTimestamp, serverNow, router]);
 
   if (!remaining) {
     return (
@@ -89,8 +105,22 @@ export function DropCountdown({ targetTimestamp }: { targetTimestamp: number }) 
   }
 
   return (
-    <p className="font-display text-heading-2 uppercase tracking-display text-esque-text">
-      {remaining.days}D {remaining.hours}H {remaining.minutes}M {remaining.seconds}S
-    </p>
+    <div className="flex flex-col gap-3">
+      <p className="font-display text-heading-2 uppercase tracking-display text-esque-text">
+        {remaining.days}D {remaining.hours}H {remaining.minutes}M {remaining.seconds}S
+      </p>
+      <p className="text-utility text-esque-text-secondary">
+        Launches{' '}
+        {new Date(targetTimestamp).toISOString().replace('T', ' ').replace('.000Z', ' UTC')}
+      </p>
+      {remaining.days + remaining.hours + remaining.minutes + remaining.seconds === 0 && (
+        <p role="status" className="text-body">
+          Checking launch availability.{' '}
+          <button type="button" className="min-h-11 underline" onClick={() => router.refresh()}>
+            Check again
+          </button>
+        </p>
+      )}
+    </div>
   );
 }

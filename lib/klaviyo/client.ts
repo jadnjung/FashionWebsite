@@ -42,6 +42,7 @@ export async function klaviyoRequest(path: string, body: unknown): Promise<void>
 
   const response = await fetch(`${KLAVIYO_API_BASE}${path}`, {
     method: 'POST',
+    signal: AbortSignal.timeout(10_000),
     headers: {
       Authorization: `Klaviyo-API-Key ${apiKey}`,
       accept: 'application/json',

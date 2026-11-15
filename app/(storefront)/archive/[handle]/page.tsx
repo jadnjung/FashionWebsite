@@ -1,3 +1,4 @@
+import { CollectionPagination } from '@/components/catalog/CollectionPagination';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -34,10 +35,15 @@ export async function generateMetadata({
 // (confirmed precedent: /products/[handle] has none either).
 export default async function ArchivedCollectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams: Promise<{ after?: string | string[] }>;
 }) {
   const { handle } = await params;
+  const query = await searchParams;
+  const after =
+    typeof query.after === 'string' && query.after.length <= 4096 ? query.after : undefined;
 
   // Parallelized, unlike the PDP's own second fetch: both calls here are
   // independent — each needs only `handle`, already known before either
@@ -48,7 +54,7 @@ export default async function ArchivedCollectionPage({
   // result is simply discarded below on the uncommon not-found path.
   const [collection, productsResult] = await Promise.all([
     getCachedArchivedCollection(handle),
-    getProductsByCollection(handle),
+    getProductsByCollection(handle, 24, after),
   ]);
   if (!collection) notFound();
   const products = productsResult?.products ?? [];
@@ -63,6 +69,13 @@ export default async function ArchivedCollectionPage({
         ])}
       />
       <ArchivedCollectionView collection={collection} products={products} />
+      <CollectionPagination
+        pathname={`/archive/${encodeURIComponent(handle)}`}
+        after={after}
+        count={products.length}
+        hasNextPage={productsResult?.hasNextPage ?? false}
+        endCursor={productsResult?.endCursor}
+      />
     </>
   );
 }

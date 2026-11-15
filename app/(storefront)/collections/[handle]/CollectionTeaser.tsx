@@ -16,9 +16,10 @@ export interface CollectionTeaserProps {
   handle: string;
   title: string;
   dropDate: string;
+  serverNow: number;
 }
 
-export function CollectionTeaser({ handle, title, dropDate }: CollectionTeaserProps) {
+export function CollectionTeaser({ handle, title, dropDate, serverNow }: CollectionTeaserProps) {
   // Access Funnel (drop-gate analog): fires once per mount of the locked
   // teaser — the collection-scoped funnel-entry role the deleted whole-site
   // gate's access_gate_view used to play.
@@ -29,10 +30,10 @@ export function CollectionTeaser({ handle, title, dropDate }: CollectionTeaserPr
   return (
     <div className="flex flex-col items-center gap-10 px-4 py-24 text-center">
       <div className="flex flex-col items-center gap-3">
-        <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
+        <h1 className="text-utility uppercase tracking-metadata text-esque-text-secondary">
           {title.toUpperCase()}
-        </p>
-        <DropCountdown targetTimestamp={new Date(dropDate).getTime()} />
+        </h1>
+        <DropCountdown targetTimestamp={new Date(dropDate).getTime()} serverNow={serverNow} />
       </div>
       {/* Obscured imagery: PROJECT.md §42's own vocabulary (partially
           obscured/blurred imagery, product silhouettes) — there is no real

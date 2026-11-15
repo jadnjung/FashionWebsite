@@ -3,14 +3,15 @@
 // ProductCard.tsx for the full explanation of why this is a triple-slash
 // directive, not `import {} from 'react/experimental'` (the latter fails
 // `pnpm build`: it isn't a real module). DECISIONS.md D-038.
-import Image from 'next/image';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { ViewTransition } from 'react';
 import { getProductViewTransitionName } from '@/lib/product/view-transition';
-import type { ProductImage } from '@/lib/shopify/products';
+import type { ProductImage as ProductImageData } from '@/lib/shopify/products';
+import { getDemoImageCrop } from '@/lib/product/demo-image-crop';
 import { ProductGalleryControls } from './ProductGalleryControls';
 
 interface ProductGalleryProps {
-  images: ProductImage[];
+  images: ProductImageData[];
   productTitle: string;
   // Used only to build the shared-element transition name (DECISIONS.md
   // D-038) pairing this PDP's first image with the grid ProductCard/
@@ -36,24 +37,32 @@ export function ProductGallery({ images, productTitle, handle }: ProductGalleryP
     <ProductGalleryControls images={images} productTitle={productTitle}>
       <div className="flex flex-col gap-4">
         {images.map((image, index) => {
+          const crop = getDemoImageCrop(image.url);
           const media = (
             <div
               data-gallery-item={index}
               className="relative aspect-[4/5] w-full overflow-hidden bg-esque-surface [touch-action:pan-y_pinch-zoom]"
             >
-              <Image
+              <ProductImage
+                fallbackTitle={productTitle}
                 src={image.url}
                 alt={image.altText ?? productTitle}
                 fill
                 sizes="(min-width: 1024px) 58vw, 100vw"
                 className="object-cover"
+                style={
+                  crop
+                    ? { transform: `scale(${crop.scale})`, transformOrigin: crop.origin }
+                    : undefined
+                }
                 priority={index === 0}
               />
               <a
+                id={`product-image-${index}`}
                 href={image.url}
                 data-gallery-image={index}
                 aria-label={`Enlarge ${productTitle}, image ${index + 1} of ${images.length}`}
-                className="absolute inset-0 flex cursor-zoom-in items-end justify-end p-4 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-esque-text"
+                className="absolute inset-0 flex scroll-mt-24 cursor-zoom-in items-end justify-end p-4 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-esque-text"
               >
                 <span className="bg-esque-black/90 px-3 py-2 text-utility text-esque-text">
                   Enlarge image

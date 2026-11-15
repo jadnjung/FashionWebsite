@@ -93,14 +93,17 @@ test.describe('unknown subcategory — real HTTP status (DECISIONS.md D-072)', (
     });
   }
 
-  // Regression guard: proxy.ts must not start 404-ing real subcategories.
-  // Status is asserted directly rather than inferred from the rendered UI
-  // — the existing describe block above already covers the rendered-UI
-  // side for the unrecognized case.
+  // Real taxonomy routes reach catalog retrieval. With no store configured,
+  // the root boundary reports an operational failure before headers commit.
+  // D-094 removes the streamed loading response that previously returned 200.
   for (const route of ['/tops/hoodies', '/bottoms/jeans', '/etc/jewelry']) {
-    test(`${route} (a real subcategory) still returns 200`, async ({ page }) => {
+    test(`${route} reaches the catalog and reports the unconfigured-store failure`, async ({
+      page,
+    }) => {
       const response = await page.goto(route);
-      expect(response?.status()).toBe(200);
+      expect(response?.status()).toBe(500);
+      await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
     });
   }
 });

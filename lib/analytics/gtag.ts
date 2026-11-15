@@ -55,6 +55,14 @@ export function trackEvent<Name extends AnalyticsEventName>(
   properties: AnalyticsEventProperties<Name>,
 ): void {
   if (typeof window === 'undefined') return;
+  if (process.env.NEXT_PUBLIC_PREVIEW_ANALYTICS === '1') {
+    dispatchAnalyticsEvent(name, properties, (eventName, payload) => {
+      window.dispatchEvent(
+        new CustomEvent('esque:analytics', { detail: { name: eventName, properties: payload } }),
+      );
+    });
+    return;
+  }
   if (!isAnalyticsConfigured()) return;
   dispatchAnalyticsEvent(name, properties, gtagSink);
 }

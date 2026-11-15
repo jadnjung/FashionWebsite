@@ -28,7 +28,7 @@ export default function AccessibilityStatementPage() {
           Accessibility Statement
         </h1>
         <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-          Last reviewed September 2026
+          Technical description updated November 2026
         </p>
       </header>
 
@@ -54,8 +54,11 @@ export default function AccessibilityStatementPage() {
 
       <PolicySection title="What We've Done">
         <ul className="list-disc pl-5">
-          <li>Every interactive control is reachable and operable by keyboard alone.</li>
-          <li>Visible focus indicators meet contrast requirements sitewide.</li>
+          <li>
+            Shopping controls are designed for keyboard operation and are checked in browser
+            journeys.
+          </li>
+          <li>Visible focus indicators are provided and checked during interface review.</li>
           <li>
             Text and interface colors are checked against WCAG&apos;s minimum contrast ratios.
           </li>
@@ -64,8 +67,8 @@ export default function AccessibilityStatementPage() {
             requires animation to browse, select a size, or complete a purchase.
           </li>
           <li>
-            Content that updates without a page change — such as the signature interactive model or
-            a price updating after you choose a size — is announced to screen readers.
+            Content that updates without a page change — such as product selection in the collection
+            closet or a price updating after you choose a size — is announced to screen readers.
           </li>
           <li>Form fields describe what&apos;s required and announce validation errors.</li>
         </ul>
@@ -73,10 +76,9 @@ export default function AccessibilityStatementPage() {
 
       <PolicySection title="Known Limitations">
         <p>
-          Some interactive components that update several pieces of information at once — such as
-          the multi-item outfit selector in Shop the Look — do not yet announce every individual
-          change to screen reader users as clearly as we&apos;d like. We are continuing to refine
-          this.
+          Automated browser checks cover selected shopping journeys and responsive layouts. Complete
+          screen-reader speech verification, physical-device testing, and an exhaustive WCAG review
+          remain in progress. Please report any barrier you encounter.
         </p>
       </PolicySection>
 

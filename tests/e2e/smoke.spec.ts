@@ -584,38 +584,67 @@ test.describe('full-screen menu', () => {
   test('the open/close transition genuinely animates opacity, not just its duration value', async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
     const menu = page.getByRole('dialog', { name: /menu/i });
+    const menuElement = page.locator('#esque-full-screen-menu');
 
-    await page.getByRole('button', { name: 'MENU' }).click();
-    const openedMidway = await page.evaluate(
-      () =>
-        new Promise<number>((resolve) => {
-          setTimeout(() => {
-            const el = document.getElementById('esque-full-screen-menu');
-            resolve(el ? parseFloat(getComputedStyle(el).opacity) : -1);
-          }, 150);
-        }),
+    interface TransitionElement extends HTMLElement {
+      capturedTransitions?: Animation[];
+    }
+
+    async function sampleMidpoint(action: () => Promise<void>) {
+      await menuElement.evaluate((element) => {
+        const target = element as TransitionElement;
+        delete target.capturedTransitions;
+        // Resolve the preceding style before the real interaction changes it.
+        getComputedStyle(target).getPropertyValue('opacity');
+        const observer = new MutationObserver(() => {
+          const transitions = target.getAnimations();
+          const opacity = transitions.find(
+            (animation) =>
+              animation instanceof CSSTransition && animation.transitionProperty === 'opacity',
+          );
+          if (!opacity?.effect) return;
+          // Capture at the attribute change so host load cannot consume the fade.
+          // Pause visibility too, preserving the closing overlay until resumption.
+          transitions.forEach((animation) => animation.pause());
+          opacity.currentTime = Number(opacity.effect.getComputedTiming().duration) / 2;
+          target.capturedTransitions = transitions;
+          observer.disconnect();
+        });
+        observer.observe(target, { attributes: true, attributeFilter: ['data-open'] });
+      });
+      await action();
+      await expect
+        .poll(() =>
+          menuElement.evaluate((element) =>
+            Boolean((element as TransitionElement).capturedTransitions),
+          ),
+        )
+        .toBe(true);
+      return menuElement.evaluate((element) => {
+        const target = element as TransitionElement;
+        const opacity = Number(getComputedStyle(target).opacity);
+        target.capturedTransitions!.forEach((animation) => animation.play());
+        delete target.capturedTransitions;
+        return opacity;
+      });
+    }
+
+    const openedMidway = await sampleMidpoint(() =>
+      page.getByRole('button', { name: 'MENU' }).click(),
     );
     await expect(menu).toHaveCSS('opacity', '1');
-    // Sampled partway through the 400ms fade-in — a genuine transition is
-    // still interpolating at 150ms, not already at (or still at) either end.
+    // These are computed opacity values at the real transitions' midpoint.
     expect(openedMidway).toBeGreaterThan(0);
     expect(openedMidway).toBeLessThan(1);
 
-    await page.keyboard.press('Escape');
-    const closedMidway = await page.evaluate(
-      () =>
-        new Promise<number>((resolve) => {
-          setTimeout(() => {
-            const el = document.getElementById('esque-full-screen-menu');
-            resolve(el ? parseFloat(getComputedStyle(el).opacity) : -1);
-          }, 150);
-        }),
-    );
+    const closedMidway = await sampleMidpoint(() => page.keyboard.press('Escape'));
     expect(closedMidway).toBeGreaterThan(0);
     expect(closedMidway).toBeLessThan(1);
     await expect(menu).toBeHidden();
+    await expect(menuElement).toHaveCSS('opacity', '0');
   });
 
   // Regression: #esque-full-screen-menu's own `overflow-y-auto` makes the

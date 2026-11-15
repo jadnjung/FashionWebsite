@@ -49,10 +49,12 @@ export const PREVIEW_PRODUCTS: ProductListItem[] = [
     tags: [],
     minPrice: { amount: '128.00', currencyCode: 'USD' },
     availableForSale: true,
-    images: ['product-3.jpg', 'product-4.jpg', 'product-5.jpg'].map((file, index) => ({
-      ...IMG(file, 900, 1125),
-      altText: `Demo gallery image ${index + 1} of 3. Illustrative stock photo for fixture testing.`,
-    })),
+    images: ['product-3.jpg', 'product-3.jpg?view=detail', 'product-3.jpg?view=fit'].map(
+      (file, index) => ({
+        ...IMG(file, 900, 1125),
+        altText: `Demo gallery image ${index + 1} of 3. Illustrative stock photo, synthetic ${['full view', 'detail crop', 'fit-reference crop'][index]}.`,
+      }),
+    ),
   },
   {
     id: 'preview-2',
@@ -106,6 +108,38 @@ export const PREVIEW_PRODUCTS: ProductListItem[] = [
   },
 ];
 
+// Named edge cases share the ordinary catalog, PDP, Quick Add and bag paths.
+// The remaining numbered pieces make exactly 30 deterministic current items.
+const SCENARIOS = [
+  'default-title',
+  'missing-media',
+  'sparse-options',
+  'long-labels',
+  'many-variants',
+  'one-option',
+  'mixed-gallery',
+  'variant-media',
+];
+for (let index = 0; index < 24; index += 1) {
+  const scenario = SCENARIOS[index];
+  PREVIEW_PRODUCTS.push({
+    id: `preview-scenario-${index + 1}`,
+    handle: scenario ? `preview-${scenario}` : `preview-catalog-piece-${index + 1}`,
+    title:
+      scenario === 'long-labels'
+        ? `Demo ${'PlaceholderName'.repeat(15)}`
+        : `Demo ${scenario?.replaceAll('-', ' ') ?? `catalog piece ${index + 1}`}`,
+    productType: index % 2 ? 'Trousers' : 'Sweaters',
+    tags: ['demo-synthetic'],
+    minPrice: { amount: `${260 + index}.00`, currencyCode: 'USD' },
+    availableForSale: index !== 20,
+    images:
+      scenario === 'missing-media'
+        ? []
+        : [IMG(index % 2 ? 'product-4.jpg' : 'product-3.jpg', 900, 1125)],
+  });
+}
+
 // Synthetic inventory exercises selection and stock transitions without a store.
 // Keep variant-1 stable for existing preview journeys. Zero-stock sellability
 // deliberately models Shopify's independent continue-selling setting.
@@ -149,40 +183,127 @@ export function getPreviewProductDetail(handle: string): ProductDetail | null {
     PREVIEW_PRODUCTS.find((p) => p.handle === handle) ??
     PREVIEW_UPCOMING_PRODUCTS.find((p) => p.handle === handle);
   if (!item) return null;
+  const scenario = item.handle.replace('preview-', '');
+  const defaultOnly = scenario === 'default-title';
+  const color =
+    scenario === 'long-labels'
+      ? 'Deep forest green with a deliberately extended synthetic color label'
+      : 'Black';
+  let options = defaultOnly
+    ? []
+    : [
+        { id: 'opt-size', name: 'Size', values: ['XS', 'S', 'M', 'L', 'XL'] },
+        { id: 'opt-color', name: 'Color', values: [color, 'Ecru'] },
+      ];
+  let variants: ProductVariant[] =
+    item.id === 'preview-1'
+      ? CREWNECK_VARIANTS
+      : [
+          {
+            id: `${item.id}-variant-1`,
+            title: defaultOnly ? 'Default Title' : `M / ${color}`,
+            availableForSale: item.availableForSale,
+            quantityAvailable: scenario === 'one-option' ? null : item.availableForSale ? 8 : 0,
+            price: item.minPrice,
+            selectedOptions: defaultOnly
+              ? []
+              : [
+                  { name: 'Size', value: 'M' },
+                  { name: 'Color', value: color },
+                ],
+          },
+        ];
+  if (scenario === 'one-option') {
+    options = options.slice(0, 1);
+    variants = variants.map((variant) => ({
+      ...variant,
+      title: 'M',
+      selectedOptions: [{ name: 'Size', value: 'M' }],
+    }));
+  }
+  if (scenario === 'sparse-options') {
+    options = [
+      { id: 'opt-size', name: 'Size', values: ['S', 'M'] },
+      { id: 'opt-color', name: 'Color', values: ['Black', 'Ecru'] },
+    ];
+    variants = [
+      {
+        ...variants[0],
+        selectedOptions: [
+          { name: 'Size', value: 'M' },
+          { name: 'Color', value: 'Black' },
+        ],
+      },
+      {
+        ...variants[0],
+        id: `${item.id}-variant-2`,
+        title: 'S / Ecru',
+        availableForSale: false,
+        quantityAvailable: 0,
+        selectedOptions: [
+          { name: 'Size', value: 'S' },
+          { name: 'Color', value: 'Ecru' },
+        ],
+      },
+    ];
+  }
+  if (scenario === 'many-variants') {
+    const sizes = Array.from({ length: 101 }, (_, index) => `Size ${index + 1}`);
+    options = [{ id: 'opt-size', name: 'Size', values: sizes }];
+    variants = sizes.map((size, index) => ({
+      ...variants[0],
+      id: `${item.id}-variant-${index + 1}`,
+      title: size,
+      price: { amount: `${Number(item.minPrice.amount) + index}.00`, currencyCode: 'USD' },
+      selectedOptions: [{ name: 'Size', value: size }],
+    }));
+  }
+  if (scenario === 'variant-media') {
+    options = [
+      { id: 'opt-size', name: 'Size', values: ['M'] },
+      { id: 'opt-color', name: 'Color', values: ['Black', 'Ecru', 'Unmapped'] },
+    ];
+    variants = options[1].values.map((value, index) => ({
+      ...variants[0],
+      id: `${item.id}-variant-${index + 1}`,
+      title: `M / ${value}`,
+      selectedOptions: [
+        { name: 'Size', value: 'M' },
+        { name: 'Color', value },
+      ],
+      ...(index < 2
+        ? {
+            image: {
+              ...IMG(index ? 'product-4.jpg' : 'product-3.jpg', 900, 1125),
+              altText: `Synthetic variant media ${value}. Illustrative stock photograph.`,
+            },
+          }
+        : {}),
+    }));
+  }
   return {
     id: item.id,
     handle: item.handle,
     title: item.title,
     description: PREVIEW_DESCRIPTION,
-    information: {
-      materials: 'Demo placeholder. Material composition awaits the final product.',
-      fit: 'Demo placeholder. Garment and model measurements await final samples.',
-      care: 'Demo placeholder. Care instructions await the final product.',
-    },
+    ...(scenario === 'missing-media'
+      ? {}
+      : {
+          information: {
+            materials: 'Demo placeholder. Material composition awaits the final product.',
+            fit: 'Demo placeholder. Garment and model measurements await final samples.',
+            care: 'Demo placeholder. Care instructions await the final product.',
+          },
+        }),
     productType: item.productType,
     tags: item.tags,
     minPrice: item.minPrice,
-    images: item.images,
-    options: [
-      { id: 'opt-size', name: 'Size', values: ['XS', 'S', 'M', 'L', 'XL'] },
-      { id: 'opt-color', name: 'Color', values: ['Black', 'Ecru'] },
-    ],
-    variants:
-      item.id === 'preview-1'
-        ? CREWNECK_VARIANTS
-        : [
-            {
-              id: `${item.id}-variant-1`,
-              title: 'M / Black',
-              availableForSale: item.availableForSale,
-              quantityAvailable: item.availableForSale ? 8 : 0,
-              price: item.minPrice,
-              selectedOptions: [
-                { name: 'Size', value: 'M' },
-                { name: 'Color', value: 'Black' },
-              ],
-            },
-          ],
+    images:
+      scenario === 'mixed-gallery' || scenario === 'variant-media'
+        ? [IMG('product-3.jpg', 900, 1125), IMG('product-4.jpg', 900, 1125)]
+        : item.images,
+    options,
+    variants,
   };
 }
 
@@ -226,6 +347,22 @@ export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
     title: 'Collection 002',
     dropStatus: 'active',
     dropDate: '2026-11-20T12:00:00Z',
+    archivedAt: null,
+  },
+  {
+    id: 'preview-collection-empty',
+    handle: 'demo-empty',
+    title: 'Demo empty collection',
+    dropStatus: 'active',
+    dropDate: null,
+    archivedAt: null,
+  },
+  {
+    id: 'preview-collection-capsule',
+    handle: 'demo-capsule',
+    title: 'Demo capsule',
+    dropStatus: 'active',
+    dropDate: null,
     archivedAt: null,
   },
 ];
@@ -303,6 +440,18 @@ const PREVIEW_UPCOMING_PRODUCTS: ProductListItem[] = [
  * would produce, not a fixture set that only ever contains archived data.
  */
 export function getPreviewCollectionDetail(handle: string): CollectionDetail | null {
+  if (handle === 'demo-empty' || handle === 'demo-capsule') {
+    const summary = PREVIEW_COLLECTIONS.find((collection) => collection.handle === handle)!;
+    return {
+      ...summary,
+      description: 'Synthetic collection for local preview.',
+      products: (getPreviewProductListItemsByCollection(handle) ?? []).map(
+        ({ id, handle, title }) => ({ id, handle, title }),
+      ),
+      hasNextPage: false,
+      endCursor: null,
+    };
+  }
   if (handle === 'collection-001') {
     return {
       id: 'preview-collection-current',
@@ -363,6 +512,12 @@ export function getPreviewCollectionDetail(handle: string): CollectionDetail | n
  * real not-found contract.
  */
 export function getPreviewProductsByCollection(handle: string): ProductSummary[] | null {
+  if (handle === 'demo-empty' || handle === 'demo-capsule')
+    return getPreviewProductListItemsByCollection(handle)!.map((product) => ({
+      ...product,
+      description: PREVIEW_DESCRIPTION,
+      image: product.images[0] ?? null,
+    }));
   if (handle === 'collection-001') {
     return PREVIEW_PRODUCTS.map((p) => ({
       id: p.id,
@@ -404,9 +559,20 @@ export function getPreviewProductsByCollection(handle: string): ProductSummary[]
  * lookup already associates with that handle.
  */
 export function getPreviewProductListItemsByCollection(handle: string): ProductListItem[] | null {
+  if (handle === 'demo-empty') return [];
+  if (handle === 'demo-capsule') return PREVIEW_PRODUCTS.filter((_, index) => index % 2 === 0);
   if (handle === 'collection-001') return PREVIEW_PRODUCTS;
   if (handle === 'collection-002') return PREVIEW_UPCOMING_PRODUCTS;
   return null;
+}
+
+export function getPreviewProductCollections(handle: string): { handle: string; title: string }[] {
+  const index = PREVIEW_PRODUCTS.findIndex((product) => product.handle === handle);
+  if (index < 0) return [];
+  return [
+    { handle: 'collection-001', title: 'Collection 001' },
+    ...(index % 2 === 0 ? [{ handle: 'demo-capsule', title: 'Demo capsule' }] : []),
+  ];
 }
 
 // Nine sample looks for the homepage "Shop the Look" ring (DECISIONS.md

@@ -36,6 +36,7 @@ test('mobile filters provide full-width actions and usable touch targets at narr
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto('/new');
+  await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
   const min = page.getByRole('spinbutton', { name: 'Min Price' });
   const max = page.getByRole('spinbutton', { name: 'Max Price' });
   await min.fill('128');

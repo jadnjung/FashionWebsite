@@ -156,7 +156,7 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
     >
       <div className="flex items-center justify-between pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">{title}</h2>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose} className="shrink-0">
           CLOSE
         </Button>
       </div>
@@ -252,11 +252,6 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 // ProductPurchasePanel.tsx's identical comment on this same
                 // helper copy.
                 <p className="text-utility text-esque-text">Select all options to continue.</p>
-              )}
-              {selectionComplete && !canAddToBag && (
-                <p className="text-utility text-esque-text">
-                  {matchedVariant ? 'SOLD OUT' : 'This combination is unavailable.'}
-                </p>
               )}
             </div>
           ))}

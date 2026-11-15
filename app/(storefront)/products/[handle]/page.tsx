@@ -1,4 +1,6 @@
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
+import Link from 'next/link';
+import { ProductGrid } from '@/components/catalog/ProductGrid';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProductDetail } from '@/components/product/ProductDetail';
@@ -29,21 +31,56 @@ export async function generateMetadata({
     title: `${product.title} — Esque`,
     description: product.description || `Shop ${product.title} from the current Esque collection.`,
     path: `/products/${handle}`,
+    image: product.images[0]
+      ? {
+          url: product.images[0].url,
+          alt: product.images[0].altText ?? product.title,
+          width: product.images[0].width ?? undefined,
+          height: product.images[0].height ?? undefined,
+        }
+      : undefined,
   });
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ handle: string }> }) {
+async function RelatedProducts({ productType, handle }: { productType: string; handle: string }) {
+  const result = await getProducts({
+    query: buildProductSearchQuery({ productTypes: [productType] }),
+    first: 5,
+  }).catch(() => {
+    console.error('Related product retrieval failed.');
+    return null;
+  });
+  if (!result)
+    return (
+      <p className="px-4 py-8 text-body text-esque-text-secondary">
+        Related pieces are temporarily unavailable.{' '}
+        <Link className="underline" href="/new">
+          Browse new arrivals
+        </Link>
+      </p>
+    );
+  const related = result.products.filter((item) => item.handle !== handle).slice(0, 4);
+  if (!related.length) return null;
+  return (
+    <section aria-label={`More ${productType}`} className="flex flex-col gap-6 px-4 py-8 md:px-8">
+      <h2 className="font-display text-heading-3 uppercase">More {productType}</h2>
+      <ProductGrid products={related} />
+    </section>
+  );
+}
+
+export default async function ProductPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
+}) {
   const { handle } = await params;
   const product = await getCachedProduct(handle);
   if (!product) notFound();
-
-  // Genuinely sequential — needs product.productType, so this cannot run
-  // in parallel with the product fetch above; not the kind of avoidable
-  // waterfall the async-parallel guidance warns against.
-  const { products: sameType } = await getProducts({
-    query: buildProductSearchQuery({ productTypes: [product.productType] }),
-    first: 5,
-  });
+  const query = await searchParams;
+  const initialVariantId = typeof query.variant === 'string' ? query.variant : undefined;
 
   // Breadcrumb mirrors the real navigable hierarchy: Home -> category ->
   // subcategory -> product. Falls back to a shorter Home -> product trail
@@ -64,10 +101,37 @@ export default async function ProductPage({ params }: { params: Promise<{ handle
     <>
       <JsonLd data={buildProductJsonLd(product)} />
       <JsonLd data={buildBreadcrumbJsonLd(breadcrumbItems)} />
-      <ProductDetail
-        product={product}
-        relatedProducts={sameType.filter((item) => item.handle !== product.handle).slice(0, 4)}
-      />
+      <nav
+        aria-label="Breadcrumb"
+        className="flex flex-wrap gap-2 px-4 pt-6 text-utility text-esque-text-secondary md:px-8"
+      >
+        {breadcrumbItems.map((item, index) =>
+          index === breadcrumbItems.length - 1 ? (
+            <span key={item.path} aria-current="page" className="min-w-0 break-words">
+              {item.name}
+            </span>
+          ) : (
+            <span key={item.path}>
+              <Link className="inline-block py-2 underline" href={item.path}>
+                {item.name}
+              </Link>
+              <span aria-hidden="true" className="px-2">
+                /
+              </span>
+            </span>
+          ),
+        )}
+      </nav>
+      <ProductDetail product={product} relatedProducts={[]} initialVariantId={initialVariantId} />
+      <Suspense
+        fallback={
+          <p role="status" className="px-4 py-8 text-body">
+            Loading related pieces…
+          </p>
+        }
+      >
+        <RelatedProducts productType={product.productType} handle={product.handle} />
+      </Suspense>
     </>
   );
 }

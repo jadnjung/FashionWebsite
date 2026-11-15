@@ -7,7 +7,7 @@ import { CAMERA_FOV, ClosetScene } from '@/components/home/closet/ClosetScene';
 import { ClosetGesture } from '@/components/home/closet/closet-gesture';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { INITIAL_CLOSET_STATE, closetReducer } from '@/lib/home/closet-state';
-import { prefersReducedMotion } from '@/lib/motion/media';
+import { useReducedMotion } from '@/lib/motion/use-reduced-motion';
 import { formatPrice } from '@/lib/product/price';
 import type { ClosetProduct } from '@/lib/shopify/products';
 
@@ -29,7 +29,8 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
   const [state, dispatch] = useReducer(closetReducer, INITIAL_CLOSET_STATE);
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [reducedMotion] = useState(() => prefersReducedMotion(window.matchMedia));
+  const reducedMotion = useReducedMotion();
+  const [paused, setPaused] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
   const [gesture] = useState(() => new ClosetGesture());
@@ -38,7 +39,16 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
 
   const onHover = useCallback((handle: string) => dispatch({ type: 'hover', handle }), []);
   const onUnhover = useCallback((handle: string) => dispatch({ type: 'unhover', handle }), []);
-  const onDismiss = useCallback(() => dispatch({ type: 'dismiss' }), []);
+  const onDismiss = useCallback(() => {
+    dispatch({ type: 'dismiss' });
+  }, []);
+  const onPanelClose = useCallback(() => {
+    const trigger = state.selected ? buttonRefs.current.get(state.selected) : null;
+    dispatch({ type: 'dismiss' });
+    // Deliberate close actions return to the selected piece. Outside pointer
+    // dismissal leaves focus at the control the visitor just chose.
+    trigger?.focus({ preventScroll: true });
+  }, [state.selected]);
   const onSelect = useCallback(
     (handle: string) => {
       const product = products.find((p) => p.handle === handle);
@@ -54,12 +64,10 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
   // clicks on the canvas itself are resolved by the scene.
   useEffect(() => {
     if (!state.selected) return;
-    const selected = state.selected;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      dispatch({ type: 'dismiss' });
-      const button = buttonRefs.current.get(selected);
-      if (button && hostRef.current?.contains(document.activeElement)) button.focus();
+      if (hostRef.current?.contains(document.activeElement)) onPanelClose();
+      else onDismiss();
     };
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node) || hostRef.current?.contains(event.target)) return;
@@ -71,7 +79,7 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
       window.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown);
     };
-  }, [state.selected]);
+  }, [state.selected, onPanelClose, onDismiss]);
 
   // Stop rendering entirely while the hero is scrolled out of view.
   useEffect(() => {
@@ -90,6 +98,7 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
     <div
       ref={hostRef}
       data-closet
+      data-closet-motion={reducedMotion ? 'reduced' : paused ? 'paused' : 'playing'}
       data-closet-selected={state.selected ? 'true' : 'false'}
       className="absolute inset-0"
     >
@@ -118,6 +127,7 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
               products={products}
               state={state}
               reducedMotion={reducedMotion}
+              paused={paused}
               gesture={gesture}
               onHover={onHover}
               onUnhover={onUnhover}
@@ -128,6 +138,23 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
           </Suspense>
         </Canvas>
       </div>
+
+      <button
+        type="button"
+        aria-label={
+          reducedMotion
+            ? 'Closet movement reduced'
+            : paused
+              ? 'Resume closet movement'
+              : 'Pause closet movement'
+        }
+        aria-pressed={paused}
+        disabled={reducedMotion}
+        onClick={() => setPaused((value) => !value)}
+        className="absolute bottom-6 right-4 z-30 min-h-11 border border-esque-text/30 bg-esque-black/80 px-4 text-utility uppercase tracking-nav text-esque-text disabled:cursor-default disabled:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text md:right-8"
+      >
+        {reducedMotion ? 'MOTION REDUCED' : paused ? 'PLAY' : 'PAUSE'}
+      </button>
 
       {/* Keyboard and screen-reader access to the same closet: visually
           hidden until a button inside receives focus. */}
@@ -157,7 +184,7 @@ export default function ClosetExperience({ products }: ClosetExperienceProps) {
         </ul>
       </div>
 
-      <ClosetInfoPanel product={selectedProduct} onClose={onDismiss} />
+      <ClosetInfoPanel product={selectedProduct} onClose={onPanelClose} />
     </div>
   );
 }

@@ -14,9 +14,9 @@ describe('PREVIEW_PRODUCTS', () => {
     expect(new Set(handles).size).toBe(handles.length);
   });
 
-  test('every product has at least one image', () => {
+  test('only the named missing-media scenario omits imagery', () => {
     for (const product of PREVIEW_PRODUCTS) {
-      expect(product.images.length).toBeGreaterThan(0);
+      expect(product.images.length > 0).toBe(product.handle !== 'preview-missing-media');
     }
   });
 

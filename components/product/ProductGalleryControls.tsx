@@ -252,6 +252,7 @@ export function ProductGalleryControls({
             </div>
             <div
               ref={imageViewportRef}
+              style={{ containerType: 'size' }}
               role="region"
               aria-label="Product image"
               tabIndex={0}

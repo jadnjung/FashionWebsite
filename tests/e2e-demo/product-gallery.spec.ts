@@ -145,7 +145,7 @@ test('a failed fullscreen image can be retried without closing the viewer', asyn
     const url = new URL(route.request().url());
     if (
       url.searchParams.get('url') === '/preview-demo/product-3.jpg' &&
-      Number(url.searchParams.get('w')) >= 1080
+      Number(url.searchParams.get('w')) >= 1280
     ) {
       fullscreenRequests += 1;
       if (fullscreenRequests === 1) {

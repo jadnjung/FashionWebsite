@@ -27,7 +27,7 @@ export async function getClosetCollection(
     const current = collections.find((collection) => getDropPhase(collection, now) === 'current');
     if (!current) return null;
 
-    const products = await getClosetProducts(current.handle);
+    const products = await getClosetProducts(current.handle, 6);
     if (!products || products.length === 0) return null;
 
     return { handle: current.handle, title: current.title, products };

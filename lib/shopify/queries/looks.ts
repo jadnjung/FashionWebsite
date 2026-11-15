@@ -60,12 +60,14 @@ export const GET_LOOKS_QUERY = `#graphql
                   }
                 }
                 variants(first: 100) {
+                  pageInfo { hasNextPage endCursor }
                   edges {
                     node {
                       id
                       title
                       availableForSale
                       quantityAvailable
+                      image { url altText width height }
                       price {
                         amount
                         currencyCode

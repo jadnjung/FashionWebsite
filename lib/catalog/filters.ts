@@ -44,6 +44,20 @@ export interface CatalogFilters {
   // for being below minPrice — lets the UI surface what otherwise looks
   // like a silently-ignored input (see FilterBar.tsx).
   maxPriceDropped: boolean;
+  sizes?: string[];
+  colors?: string[];
+  collections?: string[];
+}
+
+function facetValues(value: string | string[] | undefined): string[] {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  return [
+    ...new Set(
+      values
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0 && entry.length <= 160),
+    ),
+  ].slice(0, 20);
 }
 
 function firstValue(value: string | string[] | undefined): string | undefined {
@@ -79,7 +93,19 @@ export function parseCatalogFilters(
     maxPriceRaw !== undefined && minPrice !== undefined && maxPriceRaw < minPrice;
   const maxPrice = maxPriceDropped ? undefined : maxPriceRaw;
 
-  return { sort, available, minPrice, maxPrice, maxPriceDropped };
+  const facets = {
+    sizes: facetValues(searchParams.size),
+    colors: facetValues(searchParams.color),
+    collections: facetValues(searchParams.collection).filter((value) => /^[a-z0-9-]+$/.test(value)),
+  };
+  return {
+    sort,
+    available,
+    minPrice,
+    maxPrice,
+    maxPriceDropped,
+    ...Object.fromEntries(Object.entries(facets).filter(([, values]) => values.length)),
+  };
 }
 
 /** Shopify sortKey/reverse variables for a parsed sort value. */
@@ -126,11 +152,12 @@ export function buildProductSearchQuery(options: {
 
 /** True when any filter narrows the result set relative to the category's own default. */
 export function hasActiveFilters(filters: CatalogFilters, defaultSort: SortValue): boolean {
+  void defaultSort;
   return (
-    filters.sort !== defaultSort ||
     filters.available ||
     filters.minPrice !== undefined ||
-    filters.maxPrice !== undefined
+    filters.maxPrice !== undefined ||
+    Boolean(filters.sizes?.length || filters.colors?.length || filters.collections?.length)
   );
 }
 
@@ -142,19 +169,19 @@ export function hasActiveFilters(filters: CatalogFilters, defaultSort: SortValue
 export function buildFilterHref(
   pathname: string,
   currentParams: CatalogSearchParams,
-  changes: Record<string, string | undefined>,
+  changes: Record<string, string | string[] | undefined>,
 ): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(currentParams)) {
-    const v = firstValue(value);
-    if (v !== undefined) params.set(key, v);
-  }
-  for (const [key, value] of Object.entries(changes)) {
-    if (value === undefined) {
-      params.delete(key);
-    } else {
-      params.set(key, value);
+    for (const entry of Array.isArray(value) ? value : value === undefined ? [] : [value]) {
+      params.append(key, entry);
     }
+  }
+  if (Object.keys(changes).some((key) => key !== 'after')) params.delete('after');
+  for (const [key, value] of Object.entries(changes)) {
+    params.delete(key);
+    for (const entry of Array.isArray(value) ? value : value === undefined ? [] : [value])
+      params.append(key, entry);
   }
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { getDemoImageCrop } from '@/lib/product/demo-image-crop';
 import { Button } from '@/components/ui/Button';
 import type { ProductImage } from '@/lib/shopify/products';
 
@@ -22,9 +23,19 @@ export function ProductGalleryImage({
 }: ProductGalleryImageProps) {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [attempt, setAttempt] = useState(0);
+  const crop = getDemoImageCrop(image.url);
 
   return (
-    <div className="relative h-full min-h-full">
+    <div
+      className={
+        crop ? 'relative mx-auto aspect-[4/5] overflow-hidden' : 'relative h-full min-h-full'
+      }
+      style={
+        crop
+          ? { width: zoomed ? `max(200vw, ${image.width ?? 1600}px)` : 'min(100cqw, 80cqh)' }
+          : undefined
+      }
+    >
       <Image
         key={attempt}
         src={image.url}
@@ -36,8 +47,20 @@ export function ProductGalleryImage({
         aria-busy={status === 'loading'}
         onLoad={() => setStatus('loaded')}
         onError={() => setStatus('error')}
-        className={zoomed ? 'block h-auto max-w-none' : 'h-full w-full object-contain'}
-        style={zoomed ? { width: `max(200vw, ${image.width ?? 1600}px)` } : undefined}
+        className={
+          crop
+            ? 'h-full w-full object-cover'
+            : zoomed
+              ? 'block h-auto max-w-none'
+              : 'h-full w-full object-contain'
+        }
+        style={
+          crop
+            ? { transform: `scale(${crop.scale})`, transformOrigin: crop.origin }
+            : zoomed
+              ? { width: `max(200vw, ${image.width ?? 1600}px)` }
+              : undefined
+        }
       />
       {status === 'loading' && (
         <p

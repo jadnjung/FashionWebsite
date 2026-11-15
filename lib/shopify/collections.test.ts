@@ -247,7 +247,7 @@ describe('getCollections — Demo Mode', () => {
 
     expect(result.collections.length).toBeGreaterThan(0);
     expect(result.hasNextPage).toBe(false);
-    expect(result.endCursor).toBeNull();
+    expect(result.endCursor).toBe('preview:5');
     expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
 

@@ -9,6 +9,7 @@ import { test, expect } from '@playwright/test';
 test.describe('FilterBar — dropped max-price feedback', () => {
   test('decimal prices submit and preserve sort and availability', async ({ page }) => {
     await page.goto('/new?sort=price-asc&available=1');
+    await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
     await page.getByRole('spinbutton', { name: 'Min Price' }).fill('95.50');
     await page.getByRole('spinbutton', { name: 'Max Price' }).fill('188.50');
     await page.getByRole('button', { name: 'APPLY', exact: true }).click();
@@ -25,6 +26,7 @@ test.describe('FilterBar — dropped max-price feedback', () => {
     page,
   }) => {
     await page.goto('/tops?minPrice=200&maxPrice=50');
+    await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
     const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
     const note = page.getByText('Max price below min — ignored.');
 
@@ -41,6 +43,7 @@ test.describe('FilterBar — dropped max-price feedback', () => {
 
   test('a valid range (minPrice < maxPrice): no note, no aria-describedby', async ({ page }) => {
     await page.goto('/tops?minPrice=50&maxPrice=200');
+    await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
     const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
 
     await expect(maxPriceInput).toHaveValue('200');
@@ -50,6 +53,7 @@ test.describe('FilterBar — dropped max-price feedback', () => {
 
   test('no filters at all: no note', async ({ page }) => {
     await page.goto('/tops');
+    await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
     await expect(page.getByText('Max price below min — ignored.')).toHaveCount(0);
     await expect(page.getByRole('spinbutton', { name: 'Max Price' })).toHaveValue('');
   });
@@ -59,6 +63,7 @@ test.describe('FilterBar — dropped max-price feedback', () => {
   // only drops a strictly-lesser maxPrice).
   test('minPrice equal to maxPrice is a valid range, not dropped', async ({ page }) => {
     await page.goto('/tops?minPrice=100&maxPrice=100');
+    await page.locator('summary').filter({ hasText: 'Filter and sort' }).click();
     const maxPriceInput = page.getByRole('spinbutton', { name: 'Max Price' });
 
     await expect(maxPriceInput).toHaveValue('100');

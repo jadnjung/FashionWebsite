@@ -167,7 +167,7 @@ describe('hasActiveFilters', () => {
     ).toBe(false);
   });
 
-  test('true when sort differs from the default', () => {
+  test('false when only sort differs from the default because ordering preserves membership', () => {
     expect(
       hasActiveFilters(
         {
@@ -179,7 +179,7 @@ describe('hasActiveFilters', () => {
         },
         'featured',
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test('true when availability or a price bound is set, even with the default sort', () => {

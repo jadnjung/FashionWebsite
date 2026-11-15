@@ -120,3 +120,72 @@ test('Search cycles focus past a previously opened and closed Quick Add', async 
   await page.keyboard.press('Tab');
   await expect(search.getByRole('searchbox')).toBeFocused();
 });
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`menu and Search hover text remains readable with ${reducedMotion} motion`, async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'Hover requires a desktop fine pointer');
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/about');
+    const menu = await openOverlay(page, 'Menu');
+    const tops = menu.getByRole('link', { name: 'TOPS', exact: true });
+    await tops.hover();
+    await expect(tops).toHaveCSS('color', 'rgb(165, 165, 160)');
+    await page.keyboard.press('Tab');
+    await tops.focus();
+    await expect(tops).toHaveCSS('outline-style', 'solid');
+    const submenu = menu.getByRole('link', { name: 'Hoodies', exact: true });
+    await submenu.hover();
+    await expect(submenu).toHaveCSS('color', 'rgb(165, 165, 160)');
+    await menu.getByRole('button', { name: 'CLOSE', exact: true }).click();
+    const search = await openOverlay(page, 'Search');
+    await search.getByRole('searchbox').fill('hoodie');
+    const category = search.getByRole('link', { name: 'TOPS / Hoodies' });
+    await category.hover();
+    await expect(category).toHaveCSS('color', 'rgb(165, 165, 160)');
+    await search.getByRole('searchbox').fill('collection');
+    const collection = search.getByRole('link', { name: 'Collection 001', exact: true });
+    await collection.hover();
+    await expect(collection).toHaveCSS('color', 'rgb(165, 165, 160)');
+    await page.keyboard.press('Tab');
+    await collection.focus();
+    await expect(collection).toHaveCSS('outline-style', 'solid');
+    await expect(search).toHaveCSS('background-color', 'rgb(5, 5, 5)');
+  });
+}
+
+test('live reduced motion restores the native cursor until another real pointer move', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Custom cursor requires a fine pointer');
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
+    Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
+  });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/about');
+  let pointerStep = 0;
+  await expect
+    .poll(async () => {
+      await page.mouse.move(100 + pointerStep++, 200);
+      return page
+        .locator('html')
+        .evaluate((element) => element.classList.contains('esque-cursor-none'));
+    })
+    .toBe(true);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('html')).not.toHaveClass(/esque-cursor-none/);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('html')).not.toHaveClass(/esque-cursor-none/);
+  await expect
+    .poll(async () => {
+      await page.mouse.move(120 + pointerStep++, 220);
+      return page
+        .locator('html')
+        .evaluate((element) => element.classList.contains('esque-cursor-none'));
+    })
+    .toBe(true);
+});

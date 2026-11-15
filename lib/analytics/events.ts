@@ -223,15 +223,19 @@ export function sanitizeEventProperties(
   const deniedKeys = Object.keys(properties).filter((key) =>
     PII_KEY_DENYLIST.has(key.toLowerCase()),
   );
-  if (deniedKeys.length === 0) return properties;
+  const redactSearch =
+    typeof properties.search_term === 'string' &&
+    /@|https?:\/\/|(?:\+?\d[\s().-]*){7,}/i.test(properties.search_term);
+  if (deniedKeys.length === 0 && !redactSearch) return properties;
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (deniedKeys.length > 0 && process.env.NODE_ENV !== 'production') {
     console.warn(
       `[analytics] Stripped PII-shaped propert${deniedKeys.length === 1 ? 'y' : 'ies'} before sending: ${deniedKeys.join(', ')}`,
     );
   }
   const cleaned = { ...properties };
   for (const key of deniedKeys) delete cleaned[key];
+  if (redactSearch) cleaned.search_term = '[redacted]';
   return cleaned;
 }
 

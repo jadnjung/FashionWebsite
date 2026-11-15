@@ -1,11 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useSyncExternalStore } from 'react';
+import { ProductImage } from '@/components/ui/ProductImage';
 import {
   readRecentlyViewed,
   recordRecentlyViewed,
+  createRecentlyViewedSessionStorage,
   type RecentlyViewedItem,
 } from '@/lib/product/recently-viewed';
 
@@ -37,6 +38,7 @@ function formatPrice(price: { amount: string; currencyCode: string }): string {
 // Recording "this product was viewed" stays a plain effect: it only writes
 // to the external store, it never calls a state setter itself.
 const STORAGE_EVENT = 'storage';
+const storage = createRecentlyViewedSessionStorage(() => window.localStorage);
 
 // Cached by content, not just re-computed on every call: useSyncExternalStore
 // calls getSnapshot on every render to check for tearing, and returning a
@@ -48,7 +50,7 @@ let cachedSnapshot: RecentlyViewedItem[] = [];
 let cachedSnapshotJson = '';
 
 function getSnapshot(): RecentlyViewedItem[] {
-  const next = readRecentlyViewed(window.localStorage);
+  const next = readRecentlyViewed(storage);
   const nextJson = JSON.stringify(next);
   if (nextJson !== cachedSnapshotJson) {
     cachedSnapshot = next;
@@ -92,7 +94,7 @@ export function RecentlyViewed({
   const items = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    recordRecentlyViewed(window.localStorage, {
+    recordRecentlyViewed(storage, {
       handle,
       title,
       imageUrl,
@@ -113,21 +115,24 @@ export function RecentlyViewed({
         {otherItems.map((item) => (
           <Link
             key={item.handle}
-            href={`/products/${item.handle}`}
+            href={`/products/${encodeURIComponent(item.handle)}`}
             className="flex w-40 shrink-0 flex-col gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden bg-esque-surface">
               {item.imageUrl && (
-                <Image
+                <ProductImage
                   src={item.imageUrl}
                   alt={item.imageAlt ?? item.title}
                   fill
                   sizes="160px"
                   className="object-cover"
+                  fallbackTitle={item.title}
                 />
               )}
             </div>
-            <p className="text-product-name text-esque-text">{item.title}</p>
+            <p className="break-words text-product-name text-esque-text [overflow-wrap:anywhere]">
+              {item.title}
+            </p>
             <p className="text-utility text-esque-text-secondary">{formatPrice(item.minPrice)}</p>
           </Link>
         ))}

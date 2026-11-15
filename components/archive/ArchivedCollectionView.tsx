@@ -14,7 +14,7 @@ interface ArchivedCollectionViewProps {
 // additionally needs the fetched title for generateMetadata).
 export function ArchivedCollectionView({ collection, products }: ArchivedCollectionViewProps) {
   return (
-    <div className="flex flex-col gap-8 px-4 py-12 md:px-8">
+    <div id="collection-results" className="flex flex-col gap-8 px-4 py-12 md:px-8">
       <Link
         href="/archive"
         className="w-fit text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"

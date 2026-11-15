@@ -1,7 +1,11 @@
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import { getPreviewLooks } from '@/lib/shopify/preview-demo-fixtures';
 import { GET_LOOKS_QUERY } from '@/lib/shopify/queries/looks';
-import { toProductDetail, type ProductDetail, type ProductImage } from '@/lib/shopify/products';
+import {
+  completeProductDetail,
+  type ProductDetail,
+  type ProductImage,
+} from '@/lib/shopify/products';
 
 /** A curated outfit for the homepage "Shop the Look" ring (DECISIONS.md D-091). */
 export interface Look {
@@ -33,9 +37,11 @@ export async function getLooks(first = MAX_LOOKS): Promise<Look[]> {
 
   const looks: Look[] = [];
   for (const node of data?.metaobjects.nodes ?? []) {
-    const products = (node.products?.references?.nodes ?? [])
-      .filter((reference) => 'handle' in reference)
-      .map(toProductDetail);
+    const products = await Promise.all(
+      (node.products?.references?.nodes ?? [])
+        .filter((reference) => typeof reference.handle === 'string')
+        .map(completeProductDetail),
+    );
     if (products.length === 0) continue;
 
     const image = node.image?.reference?.image;

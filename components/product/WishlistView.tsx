@@ -31,6 +31,7 @@ export function WishlistView() {
   const [failedHandles, setFailedHandles] = useState(() => new Set<string>());
   const [refreshAttempt, setRefreshAttempt] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [refreshingHandles, setRefreshingHandles] = useState(() => new Set<string>());
   const [announcement, setAnnouncement] = useState('');
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const discoveryLink = useRef<HTMLAnchorElement>(null);
@@ -40,34 +41,62 @@ export function WishlistView() {
 
   useEffect(() => {
     if (items.length === 0) return;
-    const controller = new AbortController();
+    let disposed = false;
+    const controllers = items.map(() => new AbortController());
+    const failures = new Set<string>();
 
-    // A failed availability refresh preserves the saved snapshot for that product.
-    Promise.all(
-      items.map((item) =>
-        fetch(`/api/products/${encodeURIComponent(item.handle)}`, { signal: controller.signal })
-          .then((res) => {
-            if (!res.ok) throw new Error('wishlist product fetch failed');
-            return res.json() as Promise<{ product: ProductDetail | null }>;
-          })
-          .then(({ product }) => [item.handle, product] as const)
-          .catch(() => null),
-      ),
-    ).then((results) => {
-      if (controller.signal.aborted) return;
-      const next: Record<string, ProductDetail | null> = {};
-      const failures = new Set<string>();
-      for (const [index, result] of results.entries()) {
-        if (result) next[result[0]] = result[1];
-        else failures.add(items[index].handle);
+    async function refreshItem(item: WishlistItem, controller: AbortController) {
+      let onAbort: () => void;
+      const cancelled = new Promise<never>((_, reject) => {
+        onAbort = () => reject(controller.signal.reason);
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+      });
+      const timeout = window.setTimeout(() => controller.abort(), 10_000);
+      try {
+        const result = await Promise.race([
+          fetch(`/api/products/${encodeURIComponent(item.handle)}`, {
+            signal: controller.signal,
+          }).then(async (response) => {
+            if (!response.ok) throw new Error('wishlist product fetch failed');
+            const data = (await response.json()) as { product?: ProductDetail | null };
+            if (data.product === undefined || (data.product && data.product.handle !== item.handle))
+              throw new Error('wishlist product response invalid');
+            return data.product;
+          }),
+          cancelled,
+        ]);
+        if (disposed || controller.signal.aborted) return;
+        setLiveResults((current) => ({ ...current, [item.handle]: result }));
+      } catch {
+        if (disposed) return;
+        failures.add(item.handle);
+        setFailedHandles((current) => new Set(current).add(item.handle));
+      } finally {
+        window.clearTimeout(timeout);
+        controller.signal.removeEventListener('abort', onAbort!);
+        if (!disposed) {
+          setRefreshingHandles((current) => {
+            const next = new Set(current);
+            next.delete(item.handle);
+            return next;
+          });
+        }
       }
+    }
+
+    async function refresh() {
+      // Keep effect setup reversible before publishing any state or starting requests.
+      await Promise.resolve();
+      if (disposed) return;
+      setRefreshingHandles(new Set(items.map((item) => item.handle)));
+      setFailedHandles(new Set());
+      await Promise.allSettled(items.map((item, index) => refreshItem(item, controllers[index])));
+      if (disposed) return;
       const restoreRetryFocus =
         retryFocusRequested.current &&
         (document.activeElement === retryButton.current ||
           document.activeElement === document.body);
       retryFocusRequested.current = false;
-      setLiveResults(next);
-      setFailedHandles(failures);
       setRetrying(false);
       if (restoreRetryFocus) {
         requestAnimationFrame(() => {
@@ -76,9 +105,13 @@ export function WishlistView() {
           target?.focus();
         });
       }
-    });
+    }
+    void refresh();
 
-    return () => controller.abort();
+    return () => {
+      disposed = true;
+      controllers.forEach((controller) => controller.abort());
+    };
   }, [items, refreshAttempt]);
 
   function removeItem(item: WishlistItem, index: number) {
@@ -163,9 +196,28 @@ export function WishlistView() {
                   layout="standard"
                   sizes="(min-width: 1152px) 256px, (min-width: 768px) 25vw, 50vw"
                   priority={index === 0}
+                  purchaseState={liveResult === null ? 'unavailable' : undefined}
                 />
+                {refreshingHandles.has(item.handle) && (
+                  <p role="status" className="text-body-sm text-esque-text-secondary">
+                    Refreshing this piece’s availability…
+                  </p>
+                )}
+                {failedHandles.has(item.handle) && !refreshingHandles.has(item.handle) && (
+                  <p role="status" className="text-body-sm text-esque-text-secondary">
+                    Saved details shown. Availability refresh failed.
+                  </p>
+                )}
                 {liveResult === null && (
-                  <p className="text-body-sm text-esque-text-secondary">No longer available.</p>
+                  <>
+                    <p className="text-body-sm text-esque-text-secondary">No longer available.</p>
+                    <Link
+                      href="/new"
+                      className="inline-flex min-h-11 items-center text-body-sm text-esque-text underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                    >
+                      Explore available pieces
+                    </Link>
+                  </>
                 )}
                 <Button
                   ref={(element) => {

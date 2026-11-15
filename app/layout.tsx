@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { Footer } from '@/components/navigation/Footer';
 import { ShellClient } from '@/components/navigation/ShellClient';
@@ -30,6 +30,8 @@ const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATIO
 // buildPageMetadata (the homepage has no page.tsx metadata override — its
 // title/description/canonical/openGraph below double as '/'s own real
 // metadata, not just a fallback default for pages that forget to set one).
+export const viewport: Viewport = { colorScheme: 'dark', themeColor: '#050505' };
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_NAME,
@@ -81,6 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
+      data-preview-mode={process.env.PREVIEW_DEMO_MODE === '1' ? 'demo' : 'unconfigured'}
+      data-render-mode={process.env.NODE_ENV}
+      data-browser-test-profile={process.env.BROWSER_TEST_PROFILE}
       className={`${functionalFont.variable} ${displayFont.variable} h-full antialiased`}
     >
       {/* Functional Swiss sans is the site's base/default typeface — DESIGN_SYSTEM.md

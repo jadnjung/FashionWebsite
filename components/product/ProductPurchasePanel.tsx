@@ -13,6 +13,8 @@ import { formatPrice } from '@/lib/product/price';
 import { resolveQuantity } from '@/lib/product/quantity';
 import { DEMO_QUANTITY_LIMIT } from '@/lib/cart/model';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
+import { getVariantSelections } from '@/lib/product/variant-url';
+import type { SizeChart } from '@/lib/product/size-guide';
 import {
   findMatchingVariant,
   getInitialSelections,
@@ -40,6 +42,9 @@ interface ProductPurchasePanelProps {
   // the same data (ProductDetail.tsx's own image[0] lookup).
   imageUrl: string | null;
   imageAlt: string | null;
+  initialVariantId?: string;
+  galleryImageUrls: string[];
+  sizeChart: SizeChart | null;
   // Server-rendered, static description — passed as children (composition,
   // not a string prop) so it stays zero-JS even though it renders inside
   // this client boundary. See the design spec's Component breakdown.
@@ -61,10 +66,19 @@ export function ProductPurchasePanel({
   variants,
   imageUrl,
   imageAlt,
+  initialVariantId,
+  galleryImageUrls,
+  sizeChart,
   children,
 }: ProductPurchasePanelProps) {
-  const [selections, setSelections] = useState<OptionSelections>(() =>
-    getInitialSelections(options),
+  const [selections, setSelections] = useState<OptionSelections>(
+    () =>
+      getVariantSelections(options, variants, initialVariantId) ?? getInitialSelections(options),
+  );
+  const [invalidVariantLink, setInvalidVariantLink] = useState(
+    () =>
+      initialVariantId !== undefined &&
+      getVariantSelections(options, variants, initialVariantId) === null,
   );
   // Raw string, not a clamped number — see lib/product/quantity.ts's
   // resolveQuantity doc comment. Clamping on every keystroke (the previous
@@ -81,6 +95,18 @@ export function ProductPurchasePanel({
   const actionRef = useRef<HTMLDivElement>(null);
   const mobileBarRef = useRef<HTMLDivElement>(null);
   const [actionVisible, setActionVisible] = useState(true);
+
+  useEffect(() => {
+    const restoreSelection = () => {
+      const variantId = new URLSearchParams(window.location.search).get('variant');
+      const restored = getVariantSelections(options, variants, variantId);
+      setSelections(restored ?? getInitialSelections(options));
+      setInvalidVariantLink(variantId !== null && restored === null);
+      setPurchaseUnavailable(false);
+    };
+    window.addEventListener('popstate', restoreSelection);
+    return () => window.removeEventListener('popstate', restoreSelection);
+  }, [options, variants]);
 
   useEffect(() => {
     const action = actionRef.current;
@@ -111,6 +137,9 @@ export function ProductPurchasePanel({
 
   const soldOut = isProductSoldOut(variants);
   const matchedVariant = findMatchingVariant(variants, selections);
+  const selectedImageIndex = matchedVariant?.image
+    ? galleryImageUrls.indexOf(matchedVariant.image.url)
+    : -1;
   const selectionComplete = isSelectionComplete(options, selections);
   const displayPrice = matchedVariant?.price ?? minPrice;
   const scarcityLabel = matchedVariant
@@ -118,7 +147,8 @@ export function ProductPurchasePanel({
         getScarcityStatus(matchedVariant.quantityAvailable, matchedVariant.availableForSale),
       )
     : null;
-  const canAddToBag = !soldOut && matchedVariant !== null && matchedVariant.availableForSale;
+  const canAddToBag =
+    !soldOut && selectionComplete && matchedVariant !== null && matchedVariant.availableForSale;
   // Real Shopify inventory, when known AND actually a usable upper bound.
   // "No variant matched yet", `quantityAvailable: null` (unknown real-world
   // inventory, DECISIONS.md D-028), and a non-positive quantityAvailable
@@ -188,6 +218,7 @@ export function ProductPurchasePanel({
 
   function handleOptionChange(optionName: string, value: string) {
     setPurchaseUnavailable(false);
+    setInvalidVariantLink(false);
     // Product Behavior: "variant selection" (PROJECT.md §82).
     trackEvent('variant_selected', {
       item_id: handle,
@@ -195,7 +226,13 @@ export function ProductPurchasePanel({
       option_value: value,
       context: 'pdp',
     });
-    setSelections((prev) => ({ ...prev, [optionName]: value }));
+    const next = { ...selections, [optionName]: value };
+    setSelections(next);
+    const selectedVariant = findMatchingVariant(variants, next);
+    const url = new URL(window.location.href);
+    if (selectedVariant) url.searchParams.set('variant', selectedVariant.id);
+    else url.searchParams.delete('variant');
+    if (url.href !== window.location.href) window.history.pushState(null, '', url);
   }
 
   function handleAddToBag() {
@@ -274,6 +311,12 @@ export function ProductPurchasePanel({
 
       {children}
 
+      {invalidVariantLink && (
+        <p role="status" className="text-utility text-esque-text">
+          That variant is unavailable for this piece. Choose your options again.
+        </p>
+      )}
+
       {!soldOut && (
         <VariantPicker
           namePrefix={`pdp-${handle}`}
@@ -282,6 +325,19 @@ export function ProductPurchasePanel({
           selections={selections}
           onChange={handleOptionChange}
         />
+      )}
+
+      {matchedVariant?.image && (
+        <a
+          href={
+            selectedImageIndex >= 0
+              ? `#product-image-${selectedImageIndex}`
+              : matchedVariant.image.url
+          }
+          className="inline-flex min-h-11 w-fit items-center text-utility underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+        >
+          View selected color image
+        </a>
       )}
 
       {!soldOut && options.length > 0 && (
@@ -373,7 +429,11 @@ export function ProductPurchasePanel({
           reference, only `.handle` is read for a cheap lookup. */}
       <WishlistToggle item={{ handle, title, imageUrl, imageAlt, minPrice }} />
 
-      <SizeGuidePanel open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+      <SizeGuidePanel
+        open={sizeGuideOpen}
+        onClose={() => setSizeGuideOpen(false)}
+        chart={sizeChart}
+      />
       {!actionVisible && (
         <div
           ref={mobileBarRef}

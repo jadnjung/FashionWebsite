@@ -50,7 +50,7 @@ describe('getClosetCollection', () => {
 
     const result = await getClosetCollection(NOW);
 
-    expect(getClosetProducts).toHaveBeenCalledWith('collection-001');
+    expect(getClosetProducts).toHaveBeenCalledWith('collection-001', 6);
     expect(result).toEqual({
       handle: 'collection-001',
       title: 'COLLECTION-001',

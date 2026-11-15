@@ -1,44 +1,24 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { formatMeasurement, type SizeChart } from '@/lib/product/size-guide';
 
 interface SizeGuidePanelProps {
   open: boolean;
   onClose: () => void;
+  chart: SizeChart | null;
 }
 
-const PLACEHOLDER_MEASUREMENTS: [string, string, string][] = [
-  ['S', '38', '27'],
-  ['M', '40', '28'],
-  ['L', '42', '29'],
-  ['XL', '44', '30'],
-];
-
-// DESIGN_SYSTEM.md §46 — side panel (desktop) / bottom sheet (mobile),
-// implemented as ONE native <dialog> whose position switches responsively
-// via CSS rather than two separate components. See DECISIONS.md D-027 for
-// why this uses the native element instead of FullScreenMenu's hand-rolled
-// role="dialog" pattern: showModal() gives focus-trapping, Escape-to-close,
-// and a backdrop natively — FullScreenMenu's WebKit-specific workarounds
-// (explicit tabIndex, manual focus restore, Strict-Mode-safe open-tracking)
-// exist because it hand-builds a *different*, bespoke full-screen
-// transition; a plain utility panel doesn't need that bespoke mechanism.
-//
-// Measurements below are placeholder content, clearly labeled as such —
-// PROJECT.md §101 lists final sizes/measurements as still-open product
-// decisions. The panel mechanism is real; the numbers are illustrative.
-export function SizeGuidePanel({ open, onClose }: SizeGuidePanelProps) {
+export function SizeGuidePanel({ open, onClose, chart }: SizeGuidePanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [unit, setUnit] = useState<'in' | 'cm'>('in');
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
+    if (open && !dialog.open) dialog.showModal();
+    else if (!open && dialog.open) dialog.close();
   }, [open]);
 
   return (
@@ -46,59 +26,105 @@ export function SizeGuidePanel({ open, onClose }: SizeGuidePanelProps) {
       ref={dialogRef}
       onClose={onClose}
       aria-label="Size Guide"
-      // top-auto — DECISIONS.md D-059: without it, the native <dialog>'s own
-      // UA modal-positioning rule leaves `top` non-auto alongside this
-      // panel's own `bottom-0` and (fit-content, capped by max-h) auto
-      // height — an over-constrained box that browsers resolve by pinning
-      // to `top` and leaving the unfilled space as a dead gap at the
-      // *bottom*, the opposite of the "bottom sheet" this panel has always
-      // been documented (D-027, DESIGN_SYSTEM.md §46) and intended to be.
-      // Confirmed live (not assumed) on a real mobile viewport before this
-      // fix: pinned to the top with a ~492px empty gap below it. `top-auto`
-      // removes `top` from the constraint so `bottom-0` alone determines
-      // position; unaffected at `md:` and up, where `md:inset-y-0` sets an
-      // explicit `top:0` again anyway.
       className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[85vh] w-full max-w-full overflow-y-auto border-0 bg-esque-surface p-6 text-esque-text backdrop:bg-esque-black/70 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-full md:w-full md:max-w-md"
     >
-      <div className="flex items-center justify-between pb-6">
+      <div className="flex items-center justify-between gap-4 pb-6">
         <h2 className="font-display text-heading-3 uppercase tracking-display">Size Guide</h2>
         <Button variant="secondary" onClick={onClose}>
           CLOSE
         </Button>
       </div>
-      {/* text-esque-text-secondary, not text-esque-text-muted: muted
-          (#666662) measures only ~3.3:1 against this panel's surface
-          background — below WCAG AA's 4.5:1 minimum for this normal-size
-          (13px) text. Secondary (#A5A5A0, ~8:1) is DESIGN_SYSTEM.md's own
-          documented tier for "descriptions, metadata" — exactly this kind
-          of real, readable explanatory copy. See DECISIONS.md D-048. */}
-      <p className="pb-4 text-utility uppercase tracking-metadata text-esque-text-secondary">
-        ESQUE PLACEHOLDER — MEASUREMENTS
-      </p>
-      <table className="w-full text-left text-body">
-        <thead>
-          <tr className="border-b border-esque-text-muted text-utility uppercase tracking-metadata text-esque-text-secondary">
-            <th scope="col" className="py-2">
-              Size
-            </th>
-            <th scope="col" className="py-2">
-              Chest (in)
-            </th>
-            <th scope="col" className="py-2">
-              Length (in)
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {PLACEHOLDER_MEASUREMENTS.map(([size, chest, length]) => (
-            <tr key={size} className="border-b border-esque-elevated">
-              <td className="py-2">{size}</td>
-              <td className="py-2">{chest}</td>
-              <td className="py-2">{length}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {chart ? (
+        <div className="flex flex-col gap-4">
+          {chart.provisional && (
+            <p className="text-utility text-esque-text-secondary">
+              Synthetic demo measurements. Provisional values for illustration only.
+            </p>
+          )}
+          <p className="text-body">Garment measurements for {chart.category}.</p>
+          <fieldset>
+            <legend className="mb-2 text-utility">Measurement units</legend>
+            <div className="flex gap-3">
+              {(['in', 'cm'] as const).map((value) => (
+                <label
+                  key={value}
+                  className="flex min-h-11 cursor-pointer items-center gap-2 border border-esque-text-secondary px-3 text-utility"
+                >
+                  <input
+                    type="radio"
+                    name="size-guide-unit"
+                    value={value}
+                    checked={unit === value}
+                    onChange={() => setUnit(value)}
+                    className="accent-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                  />
+                  {value === 'in' ? 'Inches' : 'Centimeters'}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div
+            role="region"
+            aria-label="Size measurements"
+            tabIndex={0}
+            className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-esque-text"
+          >
+            <table className="w-full text-left text-body">
+              <caption className="pb-3 text-left text-utility text-esque-text-secondary">
+                {chart.provisional ? 'Synthetic ' : ''}garment measurements in{' '}
+                {unit === 'in' ? 'inches' : 'centimeters'}
+              </caption>
+              <thead>
+                <tr className="border-b border-esque-text-muted text-utility text-esque-text-secondary">
+                  <th scope="col" className="py-2 pr-4">
+                    Size
+                  </th>
+                  {chart.measurements.map((measurement) => (
+                    <th key={measurement.label} scope="col" className="py-2 pr-4">
+                      {measurement.label} ({unit})
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {chart.rows.map((row) => (
+                  <tr key={row.size} className="border-b border-esque-elevated">
+                    <th scope="row" className="py-2 pr-4 font-normal">
+                      {row.size}
+                    </th>
+                    {row.values.map((value, index) => (
+                      <td key={index} className="py-2 pr-4">
+                        {formatMeasurement(value, unit)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <h3 className="text-body">How to measure</h3>
+          <ul className="list-disc space-y-3 pl-4 text-utility text-esque-text-secondary">
+            {chart.measurements.map((measurement) => (
+              <li key={measurement.label}>{measurement.instruction}</li>
+            ))}
+          </ul>
+          <p className="text-utility text-esque-text-secondary">{chart.note}</p>
+        </div>
+      ) : (
+        <div className="space-y-4 text-body text-esque-text-secondary">
+          <p>Measurements for this piece are pending.</p>
+          <p>
+            Check the product’s fit information and compare with a garment you already wear. Contact
+            us for sizing help before choosing a size.
+          </p>
+          <a
+            href="/contact"
+            className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          >
+            Contact us
+          </a>
+        </div>
+      )}
     </dialog>
   );
 }

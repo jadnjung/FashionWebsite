@@ -50,3 +50,20 @@ describe('buildPageMetadata', () => {
     ]);
   });
 });
+
+test('uses a product image override for sharing', () => {
+  const result = buildPageMetadata({
+    title: 'Demo garment',
+    description: 'Synthetic garment',
+    path: '/products/demo',
+    image: {
+      url: '/preview-demo/product-3.jpg',
+      alt: 'Demo garment front',
+      width: 800,
+      height: 1000,
+    },
+  });
+  expect(result.openGraph?.images).toEqual([
+    { url: '/preview-demo/product-3.jpg', alt: 'Demo garment front', width: 800, height: 1000 },
+  ]);
+});

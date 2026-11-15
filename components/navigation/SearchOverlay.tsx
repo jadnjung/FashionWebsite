@@ -10,6 +10,11 @@ import { searchCategories } from '@/lib/catalog/taxonomy';
 import { getCollectionHref } from '@/lib/collections/drop-phase';
 import type { CollectionSummary } from '@/lib/shopify/collections';
 import type { ProductListItem } from '@/lib/shopify/products';
+import {
+  MAX_SEARCH_QUERY_LENGTH,
+  MIN_SEARCH_QUERY_LENGTH,
+  normalizeSearchQuery,
+} from '@/lib/search-query';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -21,12 +26,6 @@ interface SearchOverlayProps {
   triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
-// DESIGN_SYSTEM.md §50 — "feel instantaneous": a one-character query isn't
-// yet a real search attempt (no fetch fires, no result sections render at
-// all), and 2+ characters searches immediately. A judgment call in the
-// same spirit as D-028's scarcity thresholds — the spec doesn't pin an
-// exact number, so one is chosen and recorded rather than left implicit.
-const MIN_QUERY_LENGTH = 2;
 // INTERACTIONS.md §3's "Standard UI" tier is 200-350ms for this exact
 // class of interaction ("filter, menu item, quick add"); 200ms is the
 // tier's fast end, chosen because DESIGN_SYSTEM.md §50 specifically calls
@@ -44,9 +43,14 @@ const DEBOUNCE_MS = 200;
 // deferral, resolved — see D-069).
 type SearchResultsState =
   | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'loaded'; products: ProductListItem[]; collections: CollectionSummary[] };
+  | { status: 'loading'; query: string }
+  | { status: 'error'; query: string }
+  | {
+      status: 'loaded';
+      query: string;
+      products: ProductListItem[];
+      collections: CollectionSummary[];
+    };
 
 // DESIGN_SYSTEM.md §50 — full-screen predictive search overlay, triggered
 // by Header's SEARCH button. Resolves DECISIONS.md D-025's deferral: see
@@ -73,6 +77,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   const previousPathname = useRef(pathname);
 
   const [query, setQuery] = useState('');
+  const [composing, setComposing] = useState(false);
   const [searchResultsState, setSearchResultsState] = useState<SearchResultsState>({
     status: 'idle',
   });
@@ -81,8 +86,10 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   // incrementing this is included in that effect's dependency array below.
   const [retryToken, setRetryToken] = useState(0);
 
-  const trimmedQuery = query.trim();
-  const isQueryLongEnough = trimmedQuery.length >= MIN_QUERY_LENGTH;
+  const trimmedQuery = normalizeSearchQuery(query);
+  const isQueryTooLong = trimmedQuery.length > MAX_SEARCH_QUERY_LENGTH;
+  const isQueryLongEnough =
+    trimmedQuery.length >= MIN_SEARCH_QUERY_LENGTH && !isQueryTooLong && !composing;
 
   // CATEGORIES is local, zero-I/O, pure computation (lib/catalog/taxonomy.ts)
   // — genuinely instantaneous, computed synchronously on every render via
@@ -122,12 +129,13 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
       // searchResultsState is reset alongside query — without this, a
       // settled result/error from a *previous*, fully-closed session could
       // flash briefly (until the new debounced fetch overwrites it) the
-      // moment a freshly reopened search crosses MIN_QUERY_LENGTH again.
+      // moment a freshly reopened search crosses MIN_SEARCH_QUERY_LENGTH again.
       // This is a real side effect of the close transition (like the
       // focus() call above), not an effect whose only job is mirroring
       // state, so it doesn't reintroduce the react-hooks/set-state-in-effect
       // shape the debounced-fetch effect's own early return avoids below.
       setQuery('');
+      setComposing(false);
       setSearchResultsState({ status: 'idle' });
     }
   }, [open, triggerRef]);
@@ -178,7 +186,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
   // keystroke) wraps a fetch bound to an AbortController, whose cleanup
   // both clears the timer and aborts any in-flight request, so a fast
   // typist never has an earlier, slower response clobber a later, faster
-  // one. Closing the overlay (or a query dropping below MIN_QUERY_LENGTH)
+  // one. Closing the overlay (or a query dropping below MIN_SEARCH_QUERY_LENGTH)
   // hits the early return below, which both resets to idle and — via this
   // effect's own cleanup running first — aborts whatever was in flight,
   // with no extra code needed.
@@ -205,7 +213,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      setSearchResultsState({ status: 'loading' });
+      setSearchResultsState({ status: 'loading', query: trimmedQuery });
       fetch(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, { signal: controller.signal })
         .then((res) => {
           if (!res.ok) throw new Error('search request failed');
@@ -215,7 +223,8 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
           }>;
         })
         .then(({ products, collections }) => {
-          setSearchResultsState({ status: 'loaded', products, collections });
+          if (controller.signal.aborted) return;
+          setSearchResultsState({ status: 'loaded', query: trimmedQuery, products, collections });
           // Discovery: "search queries, no-result searches" (PROJECT.md
           // §82) — DECISIONS.md D-058/D-069. Fired once per settled
           // (debounced, resolved) query, not per keystroke, with
@@ -234,7 +243,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
           // having been superseded/aborted (a new keystroke, a close, or
           // this same effect's own cleanup) — an abort is not an error.
           if (controller.signal.aborted) return;
-          setSearchResultsState({ status: 'error' });
+          setSearchResultsState({ status: 'error', query: trimmedQuery });
         });
     }, DEBOUNCE_MS);
 
@@ -244,12 +253,14 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     };
   }, [open, trimmedQuery, isQueryLongEnough, retryToken]);
 
-  // Masks a stale searchResultsState value the moment open/isQueryLongEnough
-  // goes false, without needing an effect to explicitly reset it (see the
-  // comment on the debounced-fetch effect above) — query always resets to
-  // '' on close, so the next open naturally starts derived-idle too.
+  // Each response belongs to its query. Hide the previous result during
+  // the next query's debounce window as well as while its request runs.
   const effectiveSearchResultsState: SearchResultsState =
-    open && isQueryLongEnough ? searchResultsState : { status: 'idle' };
+    open && isQueryLongEnough
+      ? searchResultsState.status !== 'idle' && searchResultsState.query === trimmedQuery
+        ? searchResultsState
+        : { status: 'loading', query: trimmedQuery }
+      : { status: 'idle' };
 
   const showNothingMatches =
     isQueryLongEnough &&
@@ -283,7 +294,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
         </Button>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 pt-8">
+      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col gap-10 pt-8">
         <div>
           <label htmlFor="esque-search-input" className="sr-only">
             Search
@@ -296,13 +307,38 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
             placeholder="SEARCH ESQUE"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onCompositionStart={() => setComposing(true)}
+            onCompositionEnd={(event) => {
+              setQuery(event.currentTarget.value);
+              setComposing(false);
+            }}
+            aria-describedby="esque-search-limit"
+            aria-invalid={(!composing && isQueryTooLong) || undefined}
             className="w-full border-0 border-b border-esque-text-secondary bg-transparent font-display text-heading-3 uppercase tracking-display text-esque-text placeholder:text-esque-text-secondary focus-visible:border-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text md:text-heading-1"
           />
+          <p id="esque-search-limit" className="mt-3 text-utility text-esque-text-secondary">
+            Up to {MAX_SEARCH_QUERY_LENGTH} characters.
+          </p>
+          {!composing && isQueryTooLong && (
+            <p role="alert" className="mt-2 text-body text-esque-text">
+              Use {MAX_SEARCH_QUERY_LENGTH} characters or fewer.
+            </p>
+          )}
         </div>
 
+        <p role="status" aria-atomic="true" className="sr-only">
+          {effectiveSearchResultsState.status === 'loading'
+            ? 'Searching…'
+            : effectiveSearchResultsState.status === 'error'
+              ? 'Search could not load. Try again.'
+              : effectiveSearchResultsState.status === 'loaded'
+                ? `${effectiveSearchResultsState.products.length + effectiveSearchResultsState.collections.length + categoryResults.length} results for ${trimmedQuery}.`
+                : ''}
+        </p>
+
         {trimmedQuery.length > 0 && (
-          <div aria-live="polite" aria-atomic="true" className="flex flex-col gap-10">
-            {!isQueryLongEnough && (
+          <div className="flex flex-col gap-10">
+            {!isQueryLongEnough && !isQueryTooLong && !composing && (
               <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
                 Keep typing…
               </p>
@@ -321,9 +357,9 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
                           links and the CLOSE/Retry buttons above. */}
                       <Link
                         href={result.href}
-                        onClick={onClose}
+                        onNavigate={onClose}
                         tabIndex={0}
-                        className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                        className="font-display text-heading-3 uppercase tracking-display [overflow-wrap:anywhere] text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary hover:underline hover:decoration-esque-forest hover:underline-offset-8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
                       >
                         {result.label}
                       </Link>
@@ -381,7 +417,12 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
                   effectiveSearchResultsState.products.length > 0 && (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                       {effectiveSearchResultsState.products.map((product) => (
-                        <ProductCard key={product.id} product={product} layout="standard" />
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          layout="standard"
+                          onNavigate={onClose}
+                        />
                       ))}
                     </div>
                   )}
@@ -415,9 +456,9 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
                             sequence quirk as the CATEGORIES links above. */}
                         <Link
                           href={getCollectionHref(collection)}
-                          onClick={onClose}
+                          onNavigate={onClose}
                           tabIndex={0}
-                          className="font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                          className="font-display text-heading-3 uppercase tracking-display [overflow-wrap:anywhere] text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary hover:underline hover:decoration-esque-forest hover:underline-offset-8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
                         >
                           {collection.title}
                         </Link>

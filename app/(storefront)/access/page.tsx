@@ -19,7 +19,7 @@ export default function AccessPage() {
       <p className="max-w-xs text-utility uppercase tracking-metadata text-esque-text-secondary">
         EARLY ACCESS TO FUTURE DROPS.
       </p>
-      <RequestAccessForm />
+      <RequestAccessForm demo={process.env.PREVIEW_DEMO_MODE === '1'} />
     </div>
   );
 }

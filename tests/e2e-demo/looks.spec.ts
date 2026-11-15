@@ -44,7 +44,7 @@ test.describe('Shop the Look ring (Demo Mode)', () => {
     const before = await frontLook(page);
     await page.mouse.move(x, y);
     await page.mouse.down();
-    await page.mouse.move(x + 80, y, { steps: 5 });
+    await page.mouse.move(x + 160, y, { steps: 10 });
     await page.mouse.up();
     await expect.poll(() => frontLook(page)).not.toBe(before);
     const dialog = page.getByRole('dialog', { name: 'Shop the Look' });

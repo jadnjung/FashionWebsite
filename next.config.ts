@@ -10,7 +10,27 @@ const nextConfig: NextConfig = {
   // documented mechanism, not a workaround. See DECISIONS.md D-009 and
   // https://nextjs.org/docs/app/guides/ai-agents.
   agentRules: false,
+  async headers() {
+    if (process.env.PREVIEW_CSP_REPORT_ONLY !== '1') return [];
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.shopify.com; font-src 'self'; connect-src 'self' https://cdn.shopify.com https://*.google-analytics.com https://www.googletagmanager.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+          },
+        ],
+      },
+    ];
+  },
   images: {
+    localPatterns: [
+      { pathname: '/**', search: '' },
+      { pathname: '/preview-demo/product-3.jpg', search: '?view=detail' },
+      { pathname: '/preview-demo/product-3.jpg', search: '?view=fit' },
+    ],
     // Demo fixtures use the same responsive optimizer as production (D-092).
     // ProductCard (ROADMAP.md Phase 4) is the first real next/image
     // consumer of Shopify product photography. next/image refuses to

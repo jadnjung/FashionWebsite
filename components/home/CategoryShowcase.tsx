@@ -10,7 +10,7 @@ const CATEGORIES: CategorySlug[] = ['tops', 'bottoms', 'etc'];
 // real Phase 4 category routes. No imagery-on-hover (DESIGN_SYSTEM.md's
 // fuller vision) — no real category photography exists yet (PROJECT.md
 // §101); the hover treatment that IS built (a color shift, reusing
-// FullScreenMenu's exact hover:text-esque-forest treatment) needs no
+// FullScreenMenu's exact hover:text-esque-text-secondary treatment) needs no
 // photography and is fully real.
 export function CategoryShowcase() {
   return (
@@ -29,7 +29,7 @@ export function CategoryShowcase() {
         <Link
           key={category}
           href={`/${category}`}
-          className="font-display text-display-l uppercase leading-none tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+          className="font-display text-display-l uppercase leading-none tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
         >
           {getCategoryLabel(category)}
         </Link>

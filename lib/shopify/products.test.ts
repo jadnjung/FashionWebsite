@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import {
+  completeProductDetail,
   getClosetProducts,
   getProduct,
   getProducts,
@@ -9,6 +10,129 @@ import {
   type ProductDetailNode,
 } from '@/lib/shopify/products';
 import * as clientModule from '@/lib/shopify/client';
+import { GET_PRODUCT_QUERY, GET_PRODUCT_VARIANTS_QUERY } from '@/lib/shopify/queries/products';
+
+describe('production variant continuation', () => {
+  function variant(number: number) {
+    return {
+      node: {
+        id: `gid://shopify/ProductVariant/${number}`,
+        title: `Size ${number}`,
+        availableForSale: number === 101,
+        quantityAvailable: 0,
+        price: { amount: `${100 + number}.25`, currencyCode: 'USD' },
+        selectedOptions: [{ name: 'Size', value: `Size ${number}` }],
+      },
+    };
+  }
+
+  function firstPage(): ProductDetailNode {
+    return {
+      id: 'gid://shopify/Product/continuation',
+      handle: 'synthetic-continuation',
+      title: 'Synthetic continuation',
+      description: '',
+      productType: 'Sweaters',
+      tags: [],
+      priceRange: { minVariantPrice: { amount: '101.25', currencyCode: 'USD' } },
+      images: { edges: [] },
+      options: [
+        {
+          id: 'size',
+          name: 'Size',
+          optionValues: Array.from({ length: 101 }, (_, index) => ({
+            id: `size-${index + 1}`,
+            name: `Size ${index + 1}`,
+          })),
+        },
+      ],
+      variants: {
+        edges: Array.from({ length: 100 }, (_, index) => variant(index + 1)),
+        pageInfo: { hasNextPage: true, endCursor: 'variant-100' },
+      },
+    };
+  }
+
+  function useClient(request: ReturnType<typeof vi.fn>) {
+    vi.stubEnv('PREVIEW_DEMO_MODE', '');
+    vi.spyOn(clientModule, 'getStorefrontClient').mockReturnValue({
+      request,
+    } as unknown as ReturnType<typeof clientModule.getStorefrontClient>);
+  }
+
+  test('getProduct completes the SDK pages and preserves the 101st variant sellability and price', async () => {
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { product: firstPage() } })
+      .mockResolvedValueOnce({
+        data: {
+          product: {
+            variants: {
+              edges: [variant(101)],
+              pageInfo: { hasNextPage: false, endCursor: 'variant-101' },
+            },
+          },
+        },
+      });
+    useClient(request);
+    const result = await getProduct('synthetic-continuation');
+    expect(request.mock.calls).toEqual([
+      [GET_PRODUCT_QUERY, { variables: { handle: 'synthetic-continuation' } }],
+      [
+        GET_PRODUCT_VARIANTS_QUERY,
+        { variables: { handle: 'synthetic-continuation', after: 'variant-100' } },
+      ],
+    ]);
+    expect(result?.variants).toHaveLength(101);
+    expect(result?.variants[100]).toEqual(variant(101).node);
+    expect(result?.variants.filter((item) => item.availableForSale).map((item) => item.id)).toEqual(
+      ['gid://shopify/ProductVariant/101'],
+    );
+    expect(result?.options[0].values[100]).toBe('Size 101');
+  });
+
+  test.each([
+    ['SDK errors', { errors: { message: 'Continuation throttled' } }, 'Continuation throttled'],
+    ['deleted product', { data: { product: null } }, 'product changed'],
+    [
+      'missing metadata',
+      { data: { product: { variants: { edges: [variant(101)] } } } },
+      'metadata is missing',
+    ],
+  ])('rejects %s instead of returning an incomplete product', async (_name, response, message) => {
+    const request = vi.fn().mockResolvedValue(response);
+    useClient(request);
+    await expect(completeProductDetail(firstPage())).rejects.toThrow(message);
+    expect(request).toHaveBeenCalledExactlyOnceWith(GET_PRODUCT_VARIANTS_QUERY, {
+      variables: { handle: 'synthetic-continuation', after: 'variant-100' },
+    });
+  });
+
+  test('rejects a repeated continuation cursor before requesting the page twice', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: {
+        product: {
+          variants: {
+            edges: [variant(101)],
+            pageInfo: { hasNextPage: true, endCursor: 'variant-100' },
+          },
+        },
+      },
+    });
+    useClient(request);
+    await expect(completeProductDetail(firstPage())).rejects.toThrow('pagination did not advance');
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  test('propagates a continuation transport failure instead of returning the first 100 variants', async () => {
+    const request = vi.fn().mockRejectedValue(new Error('Synthetic connection interrupted'));
+    useClient(request);
+    await expect(completeProductDetail(firstPage())).rejects.toThrow(
+      'Synthetic connection interrupted',
+    );
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('product information metafields', () => {
   const product: ProductDetailNode = {
@@ -638,7 +762,7 @@ describe('getClosetProducts — Demo Mode', () => {
 
     const result = await getClosetProducts('collection-001');
 
-    expect(result).toHaveLength(6);
+    expect(result).toHaveLength(24);
     expect(result?.every((p) => p.modelUrl === null && p.fabricColor === null)).toBe(true);
     expect(getStorefrontClient.mock.calls.length).toBe(callsBefore);
   });
@@ -654,8 +778,8 @@ describe('getProducts — Demo Mode', () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getProducts({ first: 3 });
     expect(result.products).toHaveLength(3);
-    expect(result.hasNextPage).toBe(false);
-    expect(result.endCursor).toBeNull();
+    expect(result.hasNextPage).toBe(true);
+    expect(result.endCursor).toBe('preview:3');
   });
 
   test('filters by the same product_type:"X" query string category pages and the Interactive Model build', async () => {
@@ -716,7 +840,7 @@ describe('getProducts — Demo Mode', () => {
     const result = await getProducts({ query: 'available_for_sale:true' });
     expect(result.products.every((p) => p.availableForSale)).toBe(true);
     // Only preview-relaxed-linen-trouser has availableForSale: false.
-    expect(result.products).toHaveLength(5);
+    expect(result.products).toHaveLength(24);
     expect(result.products.some((p) => p.handle === 'preview-relaxed-linen-trouser')).toBe(false);
   });
 
@@ -751,7 +875,8 @@ describe('getProducts — Demo Mode', () => {
   test('returns every fixture, unfiltered, when options.query is undefined', async () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await getProducts({});
-    expect(result.products).toHaveLength(6);
+    expect(result.products).toHaveLength(24);
+    expect(result.hasNextPage).toBe(true);
   });
 });
 
@@ -874,7 +999,13 @@ describe('searchProducts — Demo Mode', () => {
     vi.stubEnv('PREVIEW_DEMO_MODE', '1');
     const result = await searchProducts('trouser');
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((p) => p.title.toLowerCase().includes('trouser'))).toBe(true);
+    expect(
+      result.every(
+        (p) =>
+          p.title.toLowerCase().includes('trouser') ||
+          p.productType.toLowerCase().includes('trouser'),
+      ),
+    ).toBe(true);
   });
 
   test('a query matching a fixture productType returns that fixture', async () => {

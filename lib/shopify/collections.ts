@@ -12,6 +12,7 @@ import {
   PREVIEW_COLLECTIONS,
   getPreviewCollectionDetail,
 } from '@/lib/shopify/preview-demo-fixtures';
+import { previewPage } from '@/lib/shopify/pagination';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -59,7 +60,17 @@ export async function getCollection(
   // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
   // Never reaches getStorefrontClient() below, so it never requires (or
   // risks touching) real Shopify credentials.
-  if (process.env.PREVIEW_DEMO_MODE === '1') return getPreviewCollectionDetail(handle);
+  if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const collection = getPreviewCollectionDetail(handle);
+    if (!collection) return null;
+    const page = previewPage(collection.products, first, after);
+    return {
+      ...collection,
+      products: page.items,
+      hasNextPage: page.hasNextPage,
+      endCursor: page.endCursor,
+    };
+  }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_COLLECTION_QUERY, {
     variables: { handle, first, after: after ?? null },
@@ -103,10 +114,11 @@ export async function getCollections(
 ): Promise<{ collections: CollectionSummary[]; hasNextPage: boolean; endCursor: string | null }> {
   // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
   if (process.env.PREVIEW_DEMO_MODE === '1') {
+    const page = previewPage(PREVIEW_COLLECTIONS, first, after);
     return {
-      collections: PREVIEW_COLLECTIONS.slice(0, first),
-      hasNextPage: false,
-      endCursor: null,
+      collections: page.items,
+      hasNextPage: page.hasNextPage,
+      endCursor: page.endCursor,
     };
   }
   const client = getStorefrontClient();

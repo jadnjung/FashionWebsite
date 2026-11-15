@@ -1781,3 +1781,22 @@ Saved items preserve the existing v1 format while validating cached entries,
 handling unavailable browser storage, and reporting session-only persistence.
 The implementation plan and validation record live in
 [the storefront readiness plan](./docs/superpowers/plans/2026-11-13-storefront-readiness.md).
+
+
+## D-094 — Bounded catalog discovery and resilient local shopping verification
+
+November 15, 2026.
+
+Catalog matching uses fixed 24-candidate batches, at most four per response, and a shared ten-second request deadline. Per-edge continuation preserves unconsumed candidates. Filter option discovery has an independent bounded product cursor, retains selected values and follows collection memberships. Sparse result pages can continue into later candidates. Current and archived collection routes also expose their existing product cursors.
+
+Filter and sort controls use one native disclosure with explicit GET Apply submission. This keeps product imagery within the initial mobile browsing area, maintains keyboard and no-JavaScript access, and avoids duplicate form controls. The same compact disclosure applies across viewport sizes. This refines D-024 and the earlier mobile-sheet direction using the observed expanded-control layout.
+
+The homepage closet requests six representative pieces. Complete collection browsing remains available through the paginated collection route. Expanded stress fixtures therefore exercise the catalog without increasing the hero to 24 animated garments.
+
+The root loading boundary is removed so primary product HTML stays visible with scripting disabled. Optional recommendations have their own Suspense boundary and recover locally from retrieval failure. Gallery links and descriptive content render on the server, while interactive purchasing and fullscreen enhancements use JavaScript. Optimized-browser validation checks the supported behavior. With the root streaming fallback removed, a valid catalog route whose required store is unconfigured returns HTTP 500 with the existing error boundary and Retry control. Unknown taxonomy routes retain their explicit HTTP 404 response.
+
+Local browser servers pin external commerce, email and analytics connections during both build and startup. An isolation profile and rendering-mode marker verify explicitly reused servers. Ordinary test runs own their server. A separate production smoke command builds and checks both Demo and unconfigured modes.
+
+Demo Request Access returns an explicit simulated outcome. Live requests acknowledge subscription submission and retain input after recoverable service failure. Local analytics capture verifies the existing event contract, including the distinction between purchase intent and simulated bag success. The optional CSP profile remains report-only while compatibility is evaluated.
+
+The implementation, review and validation record is maintained in [the backlog completion plan](./docs/superpowers/plans/2026-11-14-backlog-completion.md).

@@ -10,6 +10,42 @@ import {
 // read this fallback directly; both must be bumped together when the
 // pinned Storefront API version changes.
 const DEFAULT_API_VERSION = '2026-07';
+const REQUEST_TIMEOUT_MS = 10_000;
+
+const deadlineFetch: NonNullable<
+  Parameters<typeof createStorefrontApiClient>[0]['customFetchApi']
+> = async (url, init) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(new DOMException('Storefront request timed out', 'TimeoutError')),
+    REQUEST_TIMEOUT_MS,
+  );
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, controller.signal])
+    : controller.signal;
+  let onAbort: (() => void) | undefined;
+  try {
+    signal.throwIfAborted();
+    const cancelled = new Promise<never>((_, reject) => {
+      onAbort = () => reject(signal.reason);
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
+    const request = (async () => {
+      const response = await fetch(url, { ...init, signal });
+      const body = await response.arrayBuffer();
+      signal.throwIfAborted();
+      return new Response([204, 205, 304].includes(response.status) ? null : body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    })();
+    return await Promise.race([request, cancelled]);
+  } finally {
+    clearTimeout(timeout);
+    if (onAbort) signal.removeEventListener('abort', onAbort);
+  }
+};
 
 /**
  * Returns a configured Shopify Storefront API client, or throws a clear
@@ -35,6 +71,8 @@ export function getStorefrontClient(): StorefrontApiClient {
     storeDomain,
     apiVersion: process.env.SHOPIFY_STOREFRONT_API_VERSION || DEFAULT_API_VERSION,
     publicAccessToken,
+    customFetchApi: deadlineFetch,
+    retries: 0,
   });
 }
 

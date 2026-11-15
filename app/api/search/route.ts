@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { searchCollections } from '@/lib/shopify/collections';
 import { searchProducts } from '@/lib/shopify/products';
-
-const MAX_QUERY_LENGTH = 100;
+import {
+  MAX_SEARCH_QUERY_LENGTH,
+  MIN_SEARCH_QUERY_LENGTH,
+  normalizeSearchQuery,
+} from '@/lib/search-query';
 
 // This project's first Route Handler. Deliberately GET + query param, not
 // a Server Action — a live, debounced, cancelable-via-AbortSignal read is
@@ -23,9 +26,16 @@ const MAX_QUERY_LENGTH = 100;
 // the same way it already covers a products-side one; no separate
 // partial-success handling is added (see DECISIONS.md D-058/D-069).
 export async function GET(request: NextRequest) {
-  const query = (request.nextUrl.searchParams.get('q') ?? '').trim().slice(0, MAX_QUERY_LENGTH);
+  const query = normalizeSearchQuery(request.nextUrl.searchParams.get('q') ?? '');
 
-  if (!query) {
+  if (query.length > MAX_SEARCH_QUERY_LENGTH) {
+    return NextResponse.json(
+      { error: 'query_too_long', maxLength: MAX_SEARCH_QUERY_LENGTH },
+      { status: 400 },
+    );
+  }
+
+  if (query.length < MIN_SEARCH_QUERY_LENGTH) {
     return NextResponse.json({ products: [], collections: [] });
   }
 

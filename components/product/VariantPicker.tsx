@@ -1,4 +1,10 @@
-import { isOptionValueAvailable, type OptionSelections } from '@/lib/product/variants';
+import {
+  findMatchingVariant,
+  isSelectionComplete,
+  isOptionValueAvailable,
+  isOptionValueAvailableForSelections,
+  type OptionSelections,
+} from '@/lib/product/variants';
 import type { ProductOption, ProductVariant } from '@/lib/shopify/products';
 
 interface VariantPickerProps {
@@ -34,6 +40,10 @@ export function VariantPicker({
   selections,
   onChange,
 }: VariantPickerProps) {
+  const complete = isSelectionComplete(options, selections);
+  const matched = findMatchingVariant(variants, selections);
+  const unavailable = complete && !matched?.availableForSale;
+  const guidanceId = `${namePrefix}-availability`;
   return (
     <>
       {options.map((option) => (
@@ -44,9 +54,15 @@ export function VariantPicker({
           <div className="flex flex-wrap gap-2">
             {option.values.map((value) => {
               const available = isOptionValueAvailable(variants, option.name, value);
-              const inputId = `option-${namePrefix}-${option.id}-${value}`;
+              const contextual = isOptionValueAvailableForSelections(
+                variants,
+                option.name,
+                value,
+                selections,
+              );
+              const inputId = `option-${encodeURIComponent(namePrefix)}-${encodeURIComponent(option.id)}-${encodeURIComponent(value)}`;
               return (
-                <div key={value}>
+                <div key={value} className="min-w-0 max-w-full">
                   <input
                     type="radio"
                     id={inputId}
@@ -54,21 +70,57 @@ export function VariantPicker({
                     value={value}
                     checked={selections[option.name] === value}
                     disabled={!available}
+                    aria-describedby={
+                      !contextual && available ? `${inputId}-availability` : undefined
+                    }
                     onChange={() => onChange(option.name, value)}
                     className="peer sr-only"
                   />
                   <label
                     htmlFor={inputId}
-                    className="block cursor-pointer border border-esque-text-secondary px-4 py-2 text-utility uppercase tracking-metadata text-esque-text transition-colors duration-200 ease-esque peer-checked:border-esque-text peer-checked:bg-esque-text peer-checked:text-esque-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-esque-text peer-disabled:cursor-not-allowed peer-disabled:text-esque-text-muted peer-disabled:line-through peer-disabled:opacity-40"
+                    className="flex min-h-11 min-w-11 max-w-full cursor-pointer items-center justify-center border border-esque-text-secondary px-4 py-2 text-utility uppercase tracking-metadata text-esque-text [overflow-wrap:anywhere] transition-colors duration-200 ease-esque peer-checked:border-esque-text peer-checked:bg-esque-text peer-checked:text-esque-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-esque-text peer-disabled:cursor-not-allowed peer-disabled:text-esque-text-muted peer-disabled:line-through peer-disabled:opacity-40"
                   >
                     {value}
+                    {!contextual && available && (
+                      <span aria-hidden="true" className="ml-1 after:content-['*']" />
+                    )}
                   </label>
+                  {!contextual && available && (
+                    <span id={`${inputId}-availability`} className="sr-only">
+                      Unavailable with the other selected options. Change another option to choose
+                      this value.
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
         </fieldset>
       ))}
+      <div
+        id={guidanceId}
+        role="status"
+        aria-atomic="true"
+        className="text-utility text-esque-text"
+      >
+        {unavailable && (
+          <>
+            <p>{matched ? 'This combination is sold out.' : 'This combination is unavailable.'}</p>
+            <p>Change a size or color to continue.</p>
+          </>
+        )}
+      </div>
+      {options.some((option) =>
+        option.values.some(
+          (value) =>
+            isOptionValueAvailable(variants, option.name, value) &&
+            !isOptionValueAvailableForSelections(variants, option.name, value, selections),
+        ),
+      ) && (
+        <p className="text-utility text-esque-text-secondary">
+          * Unavailable with the other selected options. You can change either option.
+        </p>
+      )}
     </>
   );
 }

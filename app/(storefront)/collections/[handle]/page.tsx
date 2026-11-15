@@ -1,3 +1,4 @@
+import { CollectionPagination } from '@/components/catalog/CollectionPagination';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -6,7 +7,7 @@ import { CollectionTeaser } from './CollectionTeaser';
 import { CollectionView } from './CollectionView';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { DROP_ACCESS_COOKIE_NAME, hasUnlockedCollection } from '@/lib/access/cookies';
-import { getDropPhase } from '@/lib/collections/drop-phase';
+import { getDropPhase, getDropSnapshot } from '@/lib/collections/drop-phase';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { buildBreadcrumbJsonLd } from '@/lib/seo/structured-data';
 import { getCollection } from '@/lib/shopify/collections';
@@ -59,13 +60,19 @@ export async function generateMetadata({
 // (confirmed precedent: /products/[handle], /archive/[handle]). Reading
 // cookies() inside the `upcoming` branch below doesn't change this: the
 // route was never a static-generation candidate to begin with.
-export default async function CollectionPage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function CollectionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  searchParams: Promise<{ after?: string | string[] }>;
+}) {
   const { handle } = await params;
 
   const collection = await getCachedCollection(handle);
   if (!collection) notFound();
 
-  const phase = getDropPhase(collection);
+  const { phase, serverNow } = getDropSnapshot(collection);
   // This collection's real home is /archive/[handle]; never render it
   // twice under two URLs with different treatments.
   if (phase === 'archived') notFound();
@@ -88,6 +95,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
           handle={collection.handle}
           title={collection.title}
           dropDate={collection.dropDate}
+          serverNow={serverNow}
         />
       );
     }
@@ -98,7 +106,10 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
   // same reasoning as Archive's getArchivedCollection: the commerce data
   // is this page's entire reason for existing, so a real failure
   // correctly propagates to app/error.tsx.
-  const productsResult = await getProductListItemsByCollection(handle);
+  const query = await searchParams;
+  const after =
+    typeof query.after === 'string' && query.after.length <= 4096 ? query.after : undefined;
+  const productsResult = await getProductListItemsByCollection(handle, 24, after);
   const products = productsResult?.products ?? [];
 
   return (
@@ -121,6 +132,13 @@ export default async function CollectionPage({ params }: { params: Promise<{ han
         ])}
       />
       <CollectionView collection={collection} products={products} />
+      <CollectionPagination
+        pathname={`/collections/${encodeURIComponent(handle)}`}
+        after={after}
+        count={products.length}
+        hasNextPage={productsResult?.hasNextPage ?? false}
+        endCursor={productsResult?.endCursor}
+      />
     </>
   );
 }

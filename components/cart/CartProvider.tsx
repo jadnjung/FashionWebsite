@@ -46,6 +46,7 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
+const OPERATION_TIMEOUT_MS = 10_000;
 
 export function CartProvider({ demo, children }: { demo: boolean; children: ReactNode }) {
   const [cart, setCart] = useState(EMPTY_DEMO_CART);
@@ -59,6 +60,7 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
   const storageFailedRef = useRef(false);
   const retryOperationRef = useRef<CartOperation>({ type: 'restore' });
   const queuedRefreshRef = useRef(false);
+  const activeRequestRef = useRef<AbortController | null>(null);
 
   const mutate = useCallback(
     async function mutateCart(operation: CartOperation, background = false) {
@@ -69,6 +71,16 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
       // The local lock also covers rapid activations before React renders pending.
       if (busyRef.current) return false;
       busyRef.current = true;
+      const controller = new AbortController();
+      activeRequestRef.current = controller;
+      const timeout = window.setTimeout(() => {
+        controller.abort(new DOMException('Bag update timed out', 'TimeoutError'));
+      }, OPERATION_TIMEOUT_MS);
+      let onAbort: () => void;
+      const cancelled = new Promise<never>((_, reject) => {
+        onAbort = () => reject(controller.signal.reason);
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+      });
       if (!background) retryOperationRef.current = operation;
       setPending(true);
       if (!background) {
@@ -77,6 +89,7 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
       }
 
       async function execute() {
+        controller.signal.throwIfAborted();
         let raw: string | null = null;
         let lines = storedCartLines(cartRef.current);
         if (!storageFailedRef.current) {
@@ -87,15 +100,24 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
             setStorageWarning(true);
           }
           // Clear remains available when an old storage schema or corrupt value is present.
-          if (!storageFailedRef.current && operation.type !== 'clear') lines = readStoredCart(raw);
+          if (!storageFailedRef.current && operation.type !== 'clear') {
+            try {
+              lines = readStoredCart(raw);
+            } catch {
+              throw new Error('invalid_cart');
+            }
+          }
         }
         const response = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lines, operation }),
           cache: 'no-store',
+          signal: controller.signal,
         });
         const result = (await response.json()) as { cart?: DemoCart; error?: CartErrorCode };
+        // Some transports may complete after cancellation. They never commit stale state.
+        controller.signal.throwIfAborted();
         if (!response.ok || !result.cart || result.cart.mode !== 'demo') {
           setError(ERROR_MESSAGES[result.error ?? 'cart_failed'] ?? ERROR_MESSAGES.cart_failed);
           return false;
@@ -137,23 +159,39 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
 
       try {
         // Read, simulate, and persist under the same origin-wide lock to preserve multi-tab adds.
-        if (navigator.locks) return await navigator.locks.request(DEMO_CART_STORAGE_KEY, execute);
+        if (navigator.locks) {
+          return await Promise.race([
+            navigator.locks.request(DEMO_CART_STORAGE_KEY, { signal: controller.signal }, () =>
+              // Ending this callback releases the lock even if a transport ignores abort.
+              Promise.race([execute(), cancelled]),
+            ),
+            cancelled,
+          ]);
+        }
         setCrossTabWarning(true);
-        return await execute();
+        return await Promise.race([execute(), cancelled]);
       } catch (failure) {
+        if (controller.signal.aborted && controller.signal.reason?.name !== 'TimeoutError')
+          return false;
         setError(
-          failure instanceof SyntaxError ||
-            (failure instanceof Error && failure.message === 'invalid_cart')
-            ? ERROR_MESSAGES.invalid_cart
-            : ERROR_MESSAGES.cart_failed,
+          controller.signal.reason?.name === 'TimeoutError'
+            ? 'The demo bag took too long to update. Please try again.'
+            : failure instanceof Error && failure.message === 'invalid_cart'
+              ? ERROR_MESSAGES.invalid_cart
+              : ERROR_MESSAGES.cart_failed,
         );
         return false;
       } finally {
-        busyRef.current = false;
-        setPending(false);
-        if (queuedRefreshRef.current && !storageFailedRef.current) {
-          queuedRefreshRef.current = false;
-          queueMicrotask(() => void mutateCart({ type: 'restore' }, true));
+        window.clearTimeout(timeout);
+        controller.signal.removeEventListener('abort', onAbort!);
+        if (activeRequestRef.current === controller) {
+          activeRequestRef.current = null;
+          busyRef.current = false;
+          setPending(false);
+          if (queuedRefreshRef.current && !storageFailedRef.current) {
+            queuedRefreshRef.current = false;
+            queueMicrotask(() => void mutateCart({ type: 'restore' }, true));
+          }
         }
       }
     },
@@ -178,6 +216,10 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
     window.addEventListener('storage', syncStorage);
     return () => {
       active = false;
+      activeRequestRef.current?.abort();
+      activeRequestRef.current = null;
+      busyRef.current = false;
+      queuedRefreshRef.current = false;
       window.removeEventListener('storage', syncStorage);
     };
   }, [demo, mutate]);

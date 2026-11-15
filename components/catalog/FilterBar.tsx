@@ -4,91 +4,136 @@ import { Input } from '@/components/ui/Input';
 import {
   SORT_OPTIONS,
   buildFilterHref,
+  hasActiveFilters,
   type CatalogFilters,
   type CatalogSearchParams,
 } from '@/lib/catalog/filters';
+import type { CatalogFacets } from '@/lib/catalog/products';
 
 interface FilterBarProps {
   pathname: string;
   searchParams: CatalogSearchParams;
   filters: CatalogFilters;
+  facets?: CatalogFacets;
+  facetEndCursor?: string | null;
+  isFacetContinuation?: boolean;
 }
 
-// DESIGN_SYSTEM.md §51 — a compact, horizontal filter control above the
-// grid. Every control here is a plain Link or a native GET <form> — no
-// client component, no onChange/onSubmit handler. This is a deliberate
-// architectural choice (see the design spec's Architecture section):
-// works with JavaScript disabled, adds zero client-side bundle weight, and
-// reuses Button/Input rather than inventing new form primitives.
-// DECISIONS.md D-024 defers the mobile bottom-sheet treatment §51 also
-// describes until Size/Color/Collection expand the control set enough to
-// justify hiding it behind a sheet.
-export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
-  const hasAvailabilityOrPrice =
-    filters.available || filters.minPrice !== undefined || filters.maxPrice !== undefined;
+const LINK_CLASS =
+  'inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text';
 
+// Apply commits matching changes together and resets the continuation cursor.
+export function FilterBar({
+  pathname,
+  searchParams,
+  filters,
+  facets,
+  facetEndCursor,
+  isFacetContinuation,
+}: FilterBarProps) {
+  const groups = [
+    {
+      name: 'size',
+      label: 'Size',
+      selected: filters.sizes ?? [],
+      options: [...new Set([...(facets?.sizes ?? []), ...(filters.sizes ?? [])])].map((value) => ({
+        value,
+        label: value,
+      })),
+    },
+    {
+      name: 'color',
+      label: 'Color',
+      selected: filters.colors ?? [],
+      options: [...new Set([...(facets?.colors ?? []), ...(filters.colors ?? [])])].map(
+        (value) => ({ value, label: value }),
+      ),
+    },
+    {
+      name: 'collection',
+      label: 'Collection',
+      selected: filters.collections ?? [],
+      options: [
+        ...new Map(
+          [
+            ...(filters.collections ?? []).map((handle) => ({ handle, title: handle })),
+            ...(facets?.collections ?? []),
+          ].map((collection) => [collection.handle, collection]),
+        ).values(),
+      ].map(({ handle, title }) => ({
+        value: handle,
+        label: title,
+      })),
+    },
+  ];
   return (
-    <div className="flex flex-col gap-6 border-b border-esque-surface pb-6 md:flex-row md:flex-wrap md:items-end md:justify-between">
-      {/* WCAG 2.2 AA (2.5.8): each link measured 62.7x19.5px — under the
-          24px minimum on the vertical axis. This is a dedicated row of
-          only these links (no taller sibling governing the row), the same
-          situation as Footer.tsx's legal/support nav, not the "In Stock
-          Only" checkbox label's below (which sits alongside Input/Button
-          already taller than 24px). Full Footer treatment: `inline-block
-          py-2` per link grows the clickable box without changing the
-          visible text size, and `-my-2` on the nav offsets the added
-          padding so the row's footprint looks unchanged. */}
-      <nav aria-label="Sort" className="-my-2 flex flex-wrap gap-4">
-        {SORT_OPTIONS.map((option) => {
-          const active = option.value === filters.sort;
-          return (
-            <Link
-              key={option.value}
-              href={buildFilterHref(pathname, searchParams, { sort: option.value })}
-              aria-current={active ? 'true' : undefined}
-              // DESIGN_SYSTEM.md §5 — green indicates selection; a sparing,
-              // genuine use of forest here rather than decoration. The
-              // focus ring stays --color-esque-text per D-010 regardless.
-              className={`inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-metadata transition-colors duration-200 ease-esque focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text ${
-                active
-                  ? 'text-esque-text underline decoration-esque-forest underline-offset-4'
-                  : 'text-esque-text-secondary hover:text-esque-text'
-              }`}
-            >
-              {option.label}
-            </Link>
-          );
-        })}
+    <div className="flex min-w-0 flex-col gap-4 border-b border-esque-surface pb-6">
+      <nav aria-label="Sort" className="flex flex-wrap gap-x-4">
+        {SORT_OPTIONS.map((option) => (
+          <Link
+            key={option.value}
+            href={buildFilterHref(pathname, searchParams, { sort: option.value })}
+            aria-current={option.value === filters.sort ? 'true' : undefined}
+            className={`${LINK_CLASS} ${option.value === filters.sort ? 'text-esque-text underline decoration-esque-forest underline-offset-4' : ''}`}
+          >
+            {option.label}
+          </Link>
+        ))}
       </nav>
-
       <form
         method="get"
         action={pathname}
-        className="grid grid-cols-2 items-end gap-3 md:flex md:flex-wrap md:gap-4"
+        className="grid min-w-0 grid-cols-2 items-end gap-3 md:flex md:flex-wrap md:gap-4"
       >
-        {/* Preserves the active sort so applying availability/price doesn't reset it. */}
         <input type="hidden" name="sort" value={filters.sort} />
-        {/* WCAG 2.2 AA (2.5.8): an independent review measured this label's
-            rendered box at 141x19.5px — under the 24x24 minimum on the
-            vertical axis even though clicking anywhere in it (checkbox or
-            text) toggles the checkbox via native label association. `py-1`
-            grows the clickable box without changing the checkbox's own
-            visual size (matching Footer.tsx's established technique for the
-            same criterion) — no compensating negative margin needed here,
-            unlike Footer's single tight row: this label sits in a `flex
-            items-end` row alongside Input/Button, both already taller than
-            24px, so the row's own footprint is already governed by them. */}
+        {searchParams.optionsAfter && (
+          <input
+            type="hidden"
+            name="optionsAfter"
+            value={
+              Array.isArray(searchParams.optionsAfter)
+                ? searchParams.optionsAfter[0]
+                : searchParams.optionsAfter
+            }
+          />
+        )}
+        {groups.map((group) => (
+          <details key={group.name} className="col-span-2 min-w-0 self-start md:w-48">
+            <summary className={`${LINK_CLASS} cursor-pointer`}>
+              {group.label}
+              {group.selected.length ? ` (${group.selected.length})` : ''}
+            </summary>
+            <fieldset className="max-h-60 overflow-y-auto border border-esque-surface p-2">
+              <legend className="sr-only">{group.label}</legend>
+              {group.options.length ? (
+                group.options.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex min-h-11 min-w-0 items-center gap-2 py-2 text-utility text-esque-text [overflow-wrap:anywhere]"
+                  >
+                    <input
+                      type="checkbox"
+                      name={group.name}
+                      value={option.value}
+                      defaultChecked={group.selected.includes(option.value)}
+                      className="h-4 w-4 shrink-0 accent-esque-forest"
+                    />
+                    {option.label}
+                  </label>
+                ))
+              ) : (
+                <p className="py-2 text-utility text-esque-text-secondary">No options available.</p>
+              )}
+            </fieldset>
+          </details>
+        ))}
         <label className="col-span-2 flex min-h-11 items-center gap-2 py-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
           <input
             type="checkbox"
             name="available"
             value="1"
             defaultChecked={filters.available}
-            // accent-color (not a custom appearance-none control) tints the
-            // native checkbox with the brand's forest green — DESIGN_SYSTEM.md
-            // §5's sparing selection-state use of green — without building a
-            // bespoke widget for a single simple boolean control.
-            className="h-4 w-4 accent-esque-forest focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+            className="h-4 w-4 accent-esque-forest"
           />
           In Stock Only
         </label>
@@ -102,7 +147,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
           defaultValue={filters.minPrice ?? ''}
           className="w-full md:w-24"
         />
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Input
             label="Max Price"
             name="maxPrice"
@@ -115,10 +160,7 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
             aria-describedby={filters.maxPriceDropped ? 'max-price-dropped-note' : undefined}
           />
           {filters.maxPriceDropped && (
-            <p
-              id="max-price-dropped-note"
-              className="text-utility uppercase tracking-metadata text-esque-text-secondary"
-            >
+            <p id="max-price-dropped-note" className="text-utility text-esque-text-secondary">
               Max price below min — ignored.
             </p>
           )}
@@ -126,25 +168,68 @@ export function FilterBar({ pathname, searchParams, filters }: FilterBarProps) {
         <Button type="submit" variant="secondary" className="col-span-2">
           APPLY
         </Button>
-        {hasAvailabilityOrPrice && (
-          // WCAG 2.2 AA (2.5.8): measured at 112.7x19.5px — under the 24px
-          // minimum on the vertical axis. `py-1`, matching the "In Stock
-          // Only" label above, no compensating margin: this link sits in
-          // the same `flex items-end` row as that label and the
-          // Input/Button, both already taller than 24px, so the row's own
-          // footprint is already governed by them.
+        {hasActiveFilters(filters, 'featured') && (
           <Link
             href={buildFilterHref(pathname, searchParams, {
               available: undefined,
               minPrice: undefined,
               maxPrice: undefined,
+              size: undefined,
+              color: undefined,
+              collection: undefined,
             })}
-            className="col-span-2 inline-flex min-h-11 items-center py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+            className={`${LINK_CLASS} col-span-2`}
           >
             Clear Filters
           </Link>
         )}
       </form>
+      <nav
+        aria-label="Filter option pages"
+        className="flex flex-wrap items-center gap-x-4 text-utility text-esque-text-secondary"
+      >
+        <p>Filter options from this catalog section.</p>
+        {isFacetContinuation && (
+          <Link
+            href={buildFilterHref(pathname, searchParams, {
+              optionsAfter: undefined,
+              after: Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after,
+            })}
+            className={LINK_CLASS}
+          >
+            First filter options
+          </Link>
+        )}
+        {facetEndCursor && (
+          <Link
+            href={buildFilterHref(pathname, searchParams, {
+              optionsAfter: facetEndCursor,
+              after: Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after,
+            })}
+            className={LINK_CLASS}
+          >
+            More filter options
+          </Link>
+        )}
+      </nav>
+      <ul aria-label="Active filters" className="flex min-w-0 flex-wrap gap-x-4">
+        {groups.flatMap((group) =>
+          group.selected.map((value) => (
+            <li key={`${group.name}-${value}`} className="min-w-0">
+              <Link
+                href={buildFilterHref(pathname, searchParams, {
+                  [group.name]: group.selected.filter((entry) => entry !== value),
+                })}
+                className={`${LINK_CLASS} [overflow-wrap:anywhere]`}
+                aria-label={`Remove ${group.label.toLowerCase()} ${value}`}
+              >
+                {group.label}{' '}
+                {group.options.find((option) => option.value === value)?.label ?? value} ×
+              </Link>
+            </li>
+          )),
+        )}
+      </ul>
     </div>
   );
 }

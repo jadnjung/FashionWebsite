@@ -42,9 +42,15 @@ export interface PageMetadataInput {
   description: string;
   /** Canonical path, no query string — e.g. '/tops', '/tops/hoodies', '/products/hoodie-01'. */
   path: string;
+  image?: { url: string; alt: string; width?: number; height?: number };
 }
 
-export function buildPageMetadata({ title, description, path }: PageMetadataInput): Metadata {
+export function buildPageMetadata({
+  title,
+  description,
+  path,
+  image,
+}: PageMetadataInput): Metadata {
   return {
     title,
     description,
@@ -57,7 +63,12 @@ export function buildPageMetadata({ title, description, path }: PageMetadataInpu
       type: 'website',
       locale: 'en_US',
       images: [
-        { url: OG_IMAGE_PATH, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: OG_IMAGE_ALT },
+        image ?? {
+          url: OG_IMAGE_PATH,
+          width: OG_IMAGE_WIDTH,
+          height: OG_IMAGE_HEIGHT,
+          alt: OG_IMAGE_ALT,
+        },
       ],
     },
   };

@@ -3,6 +3,7 @@ import {
   findMatchingVariant,
   getInitialSelections,
   isOptionValueAvailable,
+  isOptionValueAvailableForSelections,
   isProductSoldOut,
   isSelectionComplete,
 } from '@/lib/product/variants';
@@ -48,6 +49,25 @@ const SIZE_COLOR_VARIANTS: ProductVariant[] = [
     ],
   },
 ];
+
+test('contextual availability respects other selections without blocking option recovery', () => {
+  expect(
+    isOptionValueAvailableForSelections(SIZE_COLOR_VARIANTS, 'Size', 'M', {
+      Color: 'Black Forest',
+    }),
+  ).toBe(false);
+  expect(
+    isOptionValueAvailableForSelections(SIZE_COLOR_VARIANTS, 'Size', 'S', {
+      Color: 'Black Forest',
+    }),
+  ).toBe(true);
+  expect(
+    isOptionValueAvailableForSelections(SIZE_COLOR_VARIANTS, 'Color', 'Black Forest', {
+      Size: 'M',
+    }),
+  ).toBe(false);
+  expect(isOptionValueAvailable(SIZE_COLOR_VARIANTS, 'Color', 'Black Forest')).toBe(true);
+});
 
 describe('getInitialSelections', () => {
   test('auto-selects a single-value option that is not Size', () => {

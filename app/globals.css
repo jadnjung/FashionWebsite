@@ -474,3 +474,25 @@ input[type='search']::-webkit-search-cancel-button {
     padding-bottom: calc(var(--mobile-purchase-height, 7rem) + 1rem);
   }
 }
+
+/* Customer and catalog content can contain long names and option values. */
+main :where(h1, h2, h3, p, a, label) {
+  overflow-wrap: anywhere;
+}
+main :where(article, section, fieldset) {
+  min-width: 0;
+}
+dialog {
+  overscroll-behavior: contain;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+html {
+  scroll-padding-top: 5.5rem;
+}
+
+dialog :where(h1, h2, h3, p, a, label) {
+  overflow-wrap: anywhere;
+}
+dialog :where(h1, h2, h3) {
+  min-width: 0;
+}

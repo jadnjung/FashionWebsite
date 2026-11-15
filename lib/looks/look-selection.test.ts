@@ -1,11 +1,25 @@
 import { describe, expect, test } from 'vitest';
 import { isLookAddValid, type LookItemSelectionState } from '@/lib/looks/look-selection';
-import type { ProductOption } from '@/lib/shopify/products';
+import type { ProductOption, ProductVariant } from '@/lib/shopify/products';
 
 const SIZE_OPTION: ProductOption[] = [{ id: 'opt1', name: 'Size', values: ['S', 'M', 'L'] }];
+const VARIANT: ProductVariant = {
+  id: 'm',
+  title: 'M',
+  availableForSale: true,
+  quantityAvailable: 0,
+  price: { amount: '10', currencyCode: 'USD' },
+  selectedOptions: [{ name: 'Size', value: 'M' }],
+};
 
 function item(overrides: Partial<LookItemSelectionState> = {}): LookItemSelectionState {
-  return { included: true, options: SIZE_OPTION, selections: { Size: 'M' }, ...overrides };
+  return {
+    included: true,
+    options: SIZE_OPTION,
+    variants: [VARIANT],
+    selections: { Size: 'M' },
+    ...overrides,
+  };
 }
 
 describe('isLookAddValid', () => {
@@ -27,5 +41,16 @@ describe('isLookAddValid', () => {
 
   test('false for an empty item list', () => {
     expect(isLookAddValid([])).toBe(false);
+  });
+
+  test('rejects a complete sold-out or missing combination', () => {
+    expect(isLookAddValid([item({ variants: [{ ...VARIANT, availableForSale: false }] })])).toBe(
+      false,
+    );
+    expect(isLookAddValid([item({ selections: { Size: 'S' } })])).toBe(false);
+  });
+
+  test('excludes an unavailable piece and accepts explicitly sellable zero stock', () => {
+    expect(isLookAddValid([item(), item({ included: false, variants: [] })])).toBe(true);
   });
 });

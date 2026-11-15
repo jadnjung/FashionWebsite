@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { GET } from './route';
 import * as collectionsModule from '@/lib/shopify/collections';
 import * as productsModule from '@/lib/shopify/products';
@@ -18,6 +18,7 @@ function request(url: string): NextRequest {
 }
 
 describe('GET /api/search', () => {
+  beforeEach(() => vi.clearAllMocks());
   test('no q param short-circuits to an empty result without calling searchProducts/searchCollections', async () => {
     const searchProducts = vi.mocked(productsModule.searchProducts);
     const searchCollections = vi.mocked(collectionsModule.searchCollections);
@@ -38,6 +39,23 @@ describe('GET /api/search', () => {
     await expect(response.json()).resolves.toEqual({ products: [], collections: [] });
     expect(searchProducts).not.toHaveBeenCalled();
     expect(searchCollections).not.toHaveBeenCalled();
+  });
+
+  test('a single character follows the same minimum as the interface', async () => {
+    const response = await GET(request('http://localhost/api/search?q=x'));
+    await expect(response.json()).resolves.toEqual({ products: [], collections: [] });
+    expect(productsModule.searchProducts).not.toHaveBeenCalled();
+    expect(collectionsModule.searchCollections).not.toHaveBeenCalled();
+  });
+
+  test.each([99, 100])('accepts a supported %i-character query unchanged', async (length) => {
+    vi.mocked(productsModule.searchProducts).mockResolvedValue([]);
+    vi.mocked(collectionsModule.searchCollections).mockResolvedValue([]);
+    const query = 'a'.repeat(length);
+    const response = await GET(request(`http://localhost/api/search?q=${query}`));
+    expect(response.status).toBe(200);
+    expect(productsModule.searchProducts).toHaveBeenCalledWith(query);
+    expect(collectionsModule.searchCollections).toHaveBeenCalledWith(query);
   });
 
   test('a real q param is trimmed and passed to both searchProducts and searchCollections, response echoes both results', async () => {
@@ -79,17 +97,19 @@ describe('GET /api/search', () => {
     });
   });
 
-  test('a q param longer than 100 characters is truncated before being passed to searchProducts/searchCollections', async () => {
+  test('an overlong query returns an intentional validation error without running either search', async () => {
     const searchProducts = vi.mocked(productsModule.searchProducts);
     const searchCollections = vi.mocked(collectionsModule.searchCollections);
     searchProducts.mockResolvedValue([]);
     searchCollections.mockResolvedValue([]);
     const longQuery = 'a'.repeat(150);
 
-    await GET(request(`http://localhost/api/search?q=${longQuery}`));
+    const response = await GET(request(`http://localhost/api/search?q=${longQuery}`));
 
-    expect(searchProducts).toHaveBeenCalledWith('a'.repeat(100));
-    expect(searchCollections).toHaveBeenCalledWith('a'.repeat(100));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'query_too_long', maxLength: 100 });
+    expect(searchProducts).not.toHaveBeenCalled();
+    expect(searchCollections).not.toHaveBeenCalled();
   });
 
   // The load-bearing concurrency assertion for this route's Promise.all

@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { getCollectionHref, getDropPhase, isCollectionUpcoming } from './drop-phase';
+import {
+  getCollectionHref,
+  getDropPhase,
+  getDropSnapshot,
+  isCollectionUpcoming,
+} from './drop-phase';
 
 const NOW = new Date('2026-10-18T12:00:00Z');
 
@@ -83,5 +88,18 @@ describe('getCollectionHref', () => {
     expect(
       getCollectionHref({ ...BASE, handle: 'collection-002', dropDate: '2099-01-01T00:00:00Z' }),
     ).toBe('/collections/collection-002');
+  });
+});
+
+test('countdown anchor and release classification share the same clock at the boundary', () => {
+  const dropDate = '2026-11-20T12:00:00Z';
+  const target = new Date(dropDate).getTime();
+  expect(getDropSnapshot({ ...BASE, dropDate }, new Date(target - 1))).toEqual({
+    phase: 'upcoming',
+    serverNow: target - 1,
+  });
+  expect(getDropSnapshot({ ...BASE, dropDate }, new Date(target))).toEqual({
+    phase: 'current',
+    serverNow: target,
   });
 });

@@ -3,47 +3,47 @@ import { BUILT_CATEGORY_HREFS } from '@/lib/catalog/taxonomy';
 import { LEGAL_PAGES } from '@/lib/legal/pages';
 import { NAVIGATION } from '@/lib/navigation-data';
 import { SITE_URL } from '@/lib/seo/site';
+import { getProducts } from '@/lib/shopify/products';
+import { getCollections } from '@/lib/shopify/collections';
+import { getDropPhase } from '@/lib/collections/drop-phase';
 
-// BUILT_CATEGORY_HREFS: only NAVIGATION entries that correspond to a route
-// actually built this far into the roadmap — a NAVIGATION entry with no
-// matching route would 404 if included here. /collections (ROADMAP.md
-// Phase 11, DECISIONS.md D-067) and /about (DECISIONS.md D-070) now ship as
-// real routes and are included below via BUILT_CATEGORY_HREFS like any
-// other built category — not as a second, separately-hardcoded path
-// literal, which would risk listing either twice. Relocated to
-// lib/catalog/taxonomy.ts (DECISIONS.md D-058) so search's category
-// matching reads the same single source of truth rather than a second,
-// independently-drifting copy — a deliberate, documented tradeoff rather
-// than teaching NAVIGATION itself which of its entries are "live", which
-// would be a bigger change than this pass needs (see DECISIONS.md D-052).
-
-// Static routes only. Product PDPs (/products/[handle]) need enumerable
-// Shopify product handles, which needs a real store — the same D-016/
-// D-023-class limitation every prior phase has hit and documented rather
-// than guessed around. /access is deliberately excluded: it's a UI gate,
-// not indexable content (its own metadata already sets robots: {index:
-// false}, matching DECISIONS.md D-005's "gate is a UI experience, not an
-// SEO wall" — the *catalog* stays crawlable, the gate itself needn't be).
-//
-// The six /legal/* pages and /contact (ROADMAP.md Phase 12, DECISIONS.md
-// D-054) are included and indexable like the category pages above, even
-// though their content is a labeled draft pending legal review — D-005's
-// "gate is a UI experience, not an SEO wall" already accepts the whole
-// catalog being crawlable pre-launch, and a customer searching "Esque
-// return policy" is exactly the kind of query PROJECT.md §79's SEO
-// requirements exist to serve. LEGAL_PAGES is the same list Footer.tsx
-// renders its links from, so the two can't silently drift.
-export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categoryPaths = NAVIGATION.filter((entry) => BUILT_CATEGORY_HREFS.has(entry.href)).flatMap(
-    (entry) => [entry.href, ...(entry.subcategories?.map((s) => s.href) ?? [])],
+    (entry) => [entry.href, ...(entry.subcategories?.map((item) => item.href) ?? [])],
   );
-  const legalPaths = LEGAL_PAGES.map((page) => page.href);
-  const paths = ['/', ...categoryPaths, ...legalPaths, '/contact', '/archive'];
-
-  return paths.map((path) => ({
-    url: `${SITE_URL}${path}`,
-    lastModified,
-  }));
+  const paths = new Set([
+    '/',
+    ...categoryPaths,
+    ...LEGAL_PAGES.map((page) => page.href),
+    '/contact',
+    '/archive',
+  ]);
+  const configured =
+    process.env.PREVIEW_DEMO_MODE === '1' ||
+    Boolean(process.env.SHOPIFY_STORE_DOMAIN && process.env.SHOPIFY_STOREFRONT_API_TOKEN);
+  if (configured) {
+    let after: string | undefined;
+    do {
+      const page = await getProducts({ first: 100, after });
+      page.products.forEach((product) => paths.add(`/products/${product.handle}`));
+      if (!page.hasNextPage) break;
+      if (!page.endCursor || page.endCursor === after)
+        throw new Error('Product sitemap cursor did not advance.');
+      after = page.endCursor;
+    } while (after);
+    after = undefined;
+    do {
+      const page = await getCollections(100, after);
+      for (const collection of page.collections) {
+        const phase = getDropPhase(collection);
+        if (phase === 'upcoming') continue;
+        paths.add(`/${phase === 'archived' ? 'archive' : 'collections'}/${collection.handle}`);
+      }
+      if (!page.hasNextPage) break;
+      if (!page.endCursor || page.endCursor === after)
+        throw new Error('Collection sitemap cursor did not advance.');
+      after = page.endCursor;
+    } while (after);
+  }
+  return [...paths].map((path) => ({ url: new URL(path, SITE_URL).href }));
 }

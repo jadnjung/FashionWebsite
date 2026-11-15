@@ -5,6 +5,7 @@ import {
   GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY,
   GET_PREDICTIVE_SEARCH_QUERY,
   GET_PRODUCT_QUERY,
+  GET_PRODUCT_VARIANTS_QUERY,
   GET_PRODUCTS_BY_COLLECTION_QUERY,
   GET_PRODUCTS_QUERY,
 } from '@/lib/shopify/queries/products';
@@ -19,6 +20,7 @@ import {
   getPreviewProductListItemsByCollection,
   getPreviewProductsByCollection,
 } from '@/lib/shopify/preview-demo-fixtures';
+import { previewPage } from '@/lib/shopify/pagination';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -48,6 +50,7 @@ export interface ProductVariant {
   quantityAvailable: number | null;
   price: { amount: string; currencyCode: string };
   selectedOptions: { name: string; value: string }[];
+  image?: ProductImage | null;
 }
 
 export interface ProductDetail {
@@ -103,7 +106,29 @@ export async function getProduct(handle: string): Promise<ProductDetail | null> 
 
   const product = data?.product;
   if (!product) return null;
-  return toProductDetail(product);
+  return completeProductDetail(product);
+}
+
+/** A failed continuation must fail the product request, never mark omitted choices unavailable. */
+export async function completeProductDetail(product: ProductDetailNode): Promise<ProductDetail> {
+  const variants = [...product.variants.edges];
+  let pageInfo = product.variants.pageInfo;
+  const seen = new Set<string>();
+  while (pageInfo?.hasNextPage) {
+    const after = pageInfo.endCursor;
+    if (!after || seen.has(after)) throw new Error('Shopify variant pagination did not advance.');
+    seen.add(after);
+    const { data, errors } = await getStorefrontClient().request(GET_PRODUCT_VARIANTS_QUERY, {
+      variables: { handle: product.handle, after },
+    });
+    if (errors) throw toRequestError(errors);
+    if (!data?.product) throw new Error('Shopify product changed during variant retrieval.');
+    variants.push(...data.product.variants.edges);
+    pageInfo = data.product.variants.pageInfo;
+    if (!pageInfo) throw new Error('Shopify variant continuation metadata is missing.');
+  }
+  const unique = [...new Map(variants.map((edge) => [edge.node.id, edge])).values()];
+  return toProductDetail({ ...product, variants: { edges: unique } });
 }
 
 /**
@@ -137,12 +162,19 @@ export interface ProductDetailNode {
     optionValues: ReadonlyArray<{ id: string; name: string }>;
   }>;
   variants: {
+    pageInfo?: { hasNextPage: boolean; endCursor?: string | null };
     edges: ReadonlyArray<{
       node: {
         id: string;
         title: string;
         availableForSale: boolean;
         quantityAvailable?: number | null;
+        image?: {
+          url: string;
+          altText?: string | null;
+          width?: number | null;
+          height?: number | null;
+        } | null;
         price: { amount: string; currencyCode: string };
         selectedOptions: Array<{ name: string; value: string }>;
       };
@@ -184,6 +216,16 @@ export function toProductDetail(product: ProductDetailNode): ProductDetail {
       quantityAvailable: node.quantityAvailable ?? null,
       price: node.price,
       selectedOptions: node.selectedOptions,
+      ...(node.image
+        ? {
+            image: {
+              url: node.image.url,
+              altText: node.image.altText ?? null,
+              width: node.image.width ?? null,
+              height: node.image.height ?? null,
+            },
+          }
+        : {}),
     })),
   };
 }
@@ -217,7 +259,8 @@ export async function getProductsByCollection(
   if (process.env.PREVIEW_DEMO_MODE === '1') {
     const products = getPreviewProductsByCollection(handle);
     if (!products) return null;
-    return { products, hasNextPage: false, endCursor: null };
+    const page = previewPage(products, first, after);
+    return { products: page.items, hasNextPage: page.hasNextPage, endCursor: page.endCursor };
   }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_PRODUCTS_BY_COLLECTION_QUERY, {
@@ -289,7 +332,8 @@ export async function getProductListItemsByCollection(
   if (process.env.PREVIEW_DEMO_MODE === '1') {
     const products = getPreviewProductListItemsByCollection(handle);
     if (!products) return null;
-    return { products, hasNextPage: false, endCursor: null };
+    const page = previewPage(products, first, after);
+    return { products: page.items, hasNextPage: page.hasNextPage, endCursor: page.endCursor };
   }
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_COLLECTION_PRODUCT_LIST_ITEMS_QUERY, {
@@ -359,7 +403,7 @@ export async function getClosetProducts(
   if (process.env.PREVIEW_DEMO_MODE === '1') {
     const products = getPreviewProductsByCollection(handle);
     if (!products) return null;
-    return products.map((product) => ({
+    return products.slice(0, first).map((product) => ({
       id: product.id,
       handle: product.handle,
       title: product.title,
@@ -554,11 +598,11 @@ export async function getProducts(
         : options.reverse
           ? [...base].reverse()
           : base;
-    const page = sorted.slice(0, options.first ?? 24);
+    const page = previewPage(sorted, options.first ?? 24, options.after);
     return {
-      products: page,
-      hasNextPage: false,
-      endCursor: null,
+      products: page.items,
+      hasNextPage: page.hasNextPage,
+      endCursor: page.endCursor,
     };
   }
   const client = getStorefrontClient();

@@ -39,90 +39,31 @@ test.describe('whole-site gate removed', () => {
   });
 });
 
-test.describe('access gate — request access', () => {
-  // /access *is* the request-access form directly now — there is no
-  // sibling password screen to reveal it from (AccessForm/EntranceMotion
-  // are both deleted), so every test here navigates straight to it.
-  test('renders the request-access form with its fields and consent checkbox', async ({ page }) => {
+test.describe('request access', () => {
+  test('shows email and consent without taking initial focus', async ({ page }) => {
     await page.goto('/access');
-    await expect(page.getByRole('heading', { level: 1, name: 'ESQUE' })).toBeVisible();
-    await expect(page.getByLabel('FIRST NAME')).toBeVisible();
     await expect(page.getByLabel('EMAIL', { exact: true })).toBeVisible();
-    await expect(
-      page.getByText('I agree to receive Esque emails, including access and collection updates.'),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'REQUEST ACCESS' })).toBeVisible();
+    await expect(page.getByLabel('EMAIL', { exact: true })).not.toBeFocused();
+    await expect(page.getByLabel('FIRST NAME')).toHaveCount(0);
   });
-
-  test('the server rejects an unchecked consent box even when the client-side required check is bypassed', async ({
-    page,
-  }) => {
-    // Native `required` on the consent checkbox is only a first line of
-    // defense (client-side checks are not authorization) — submitting with
-    // it left unchecked would normally be blocked by the browser itself
-    // before submitRequestAccess ever runs, which would prove nothing about
-    // the server. Removing the attribute simulates a client that doesn't
-    // enforce it (e.g. a modified client, or one reimplementing the form),
-    // so this actually exercises the server's own validation branch and
-    // asserts its returned state renders — without navigating away and
-    // without hitting the error boundary.
+  test('server validation describes and focuses the invalid field', async ({ page }) => {
     await page.goto('/access');
-    await page.getByLabel('FIRST NAME').fill('Sam');
     await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
-    await page.evaluate(() => {
-      document.querySelector('input[name="consent"]')?.removeAttribute('required');
-    });
-
+    await page.locator('input[name="consent"]').evaluate((el) => el.removeAttribute('required'));
     await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
-
     await expect(accessErrorAlert(page)).toHaveText('Consent is required to request access.');
-    await expect(page).toHaveURL(/\/access$/);
+    await expect(page.locator('input[name="consent"]')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('input[name="consent"]')).toBeFocused();
   });
-
-  // DECISIONS.md D-050 — three fields can each independently error here, so
-  // the fix must mark exactly the one field the returned state actually
-  // names, not all three. A whitespace-only first name (rather than an empty
-  // one) reaches the server without needing to bypass the native `required`
-  // attribute — the browser's own required check only rejects a truly empty
-  // value.
-  test('marks only the actually-invalid field aria-invalid, describing it by the error message', async ({
-    page,
-  }) => {
+  test('an unavailable email service preserves the form for recovery', async ({ page }) => {
     await page.goto('/access');
-    const firstName = page.getByLabel('FIRST NAME');
-    const email = page.getByLabel('EMAIL', { exact: true });
-    await firstName.fill('   ');
-    await email.fill('sam@example.com');
-    await page.getByText('I agree to receive Esque emails').click();
-    await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
-
-    const alert = accessErrorAlert(page);
-    await expect(alert).toHaveText('First name is required.');
-    await expect(firstName).toHaveAttribute('aria-invalid', 'true');
-    await expect(firstName).toHaveAttribute('aria-describedby', 'request-access-error');
-    await expect(alert).toHaveAttribute('id', 'request-access-error');
-    // The other, actually-valid field must not be marked invalid too —
-    // misinformation would be worse than no association at all.
-    await expect(email).not.toHaveAttribute('aria-invalid');
-  });
-
-  test('submitting with valid input but Klaviyo not configured surfaces the error boundary honestly', async ({
-    page,
-  }) => {
-    // KLAVIYO_PRIVATE_API_KEY/KLAVIYO_LIST_ID are intentionally unset in
-    // this test run (mirroring the real current project state — no
-    // Klaviyo account exists yet, per the design spec's explicit scope).
-    // subscribeToAccessList throws, which is a genuine failure per
-    // actions.ts's own documented distinction — surfacing the existing,
-    // already-tested error.tsx boundary is the correct, honest behavior,
-    // not a workaround.
-    await page.goto('/access');
-    await page.getByLabel('FIRST NAME').fill('Sam');
     await page.getByLabel('EMAIL', { exact: true }).fill('sam@example.com');
     await page.getByText('I agree to receive Esque emails').click();
     await page.getByRole('button', { name: 'REQUEST ACCESS' }).click();
-
-    await expect(page.getByRole('heading', { name: 'SOMETHING WENT WRONG.' })).toBeVisible();
+    await expect(accessErrorAlert(page)).toHaveText(
+      'Your request could not be submitted. Please try again.',
+    );
+    await expect(page.getByLabel('EMAIL', { exact: true })).toHaveValue('sam@example.com');
   });
 });
 

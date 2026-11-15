@@ -4,8 +4,7 @@ import { FilterBar } from '@/components/catalog/FilterBar';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
 import { JsonLd } from '@/components/seo/JsonLd';
 import {
-  buildProductSearchQuery,
-  getSortVariables,
+  buildFilterHref,
   hasActiveFilters,
   parseCatalogFilters,
   type CatalogSearchParams,
@@ -18,7 +17,7 @@ import {
   getSubcategoryProductType,
   type CategorySlug,
 } from '@/lib/catalog/taxonomy';
-import { getProducts } from '@/lib/shopify/products';
+import { getCatalogPage } from '@/lib/catalog/products';
 import { buildBreadcrumbJsonLd, type BreadcrumbItem } from '@/lib/seo/structured-data';
 
 interface CategoryListingProps {
@@ -73,18 +72,19 @@ export async function CategoryListing({
 
   const defaultSort = DEFAULT_SORT_BY_CATEGORY[category];
   const filters = parseCatalogFilters(searchParams, defaultSort);
-  const { sortKey, reverse } = getSortVariables(filters.sort);
-
-  const { products } = await getProducts({
-    query: buildProductSearchQuery({
-      productTypes,
-      available: filters.available,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-    }),
-    sortKey,
-    reverse,
-  });
+  const after = Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after;
+  const optionsAfter = Array.isArray(searchParams.optionsAfter)
+    ? searchParams.optionsAfter[0]
+    : searchParams.optionsAfter;
+  const {
+    products,
+    facets,
+    hasNextPage,
+    endCursor,
+    isContinuation,
+    facetEndCursor,
+    isFacetContinuation,
+  } = await getCatalogPage(productTypes, filters, after, optionsAfter);
 
   const pathname = subcategory ? `/${category}/${subcategory}` : `/${category}`;
   const filtersActive = hasActiveFilters(filters, defaultSort);
@@ -108,14 +108,47 @@ export async function CategoryListing({
       <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
         {label}
       </h1>
-      <FilterBar pathname={pathname} searchParams={searchParams} filters={filters} />
+      <details className="border-y border-esque-elevated py-2">
+        <summary className="min-h-11 cursor-pointer py-3 text-utility uppercase tracking-metadata text-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text">
+          Filter and sort
+          {filtersActive && (
+            <span className="ml-2 text-esque-text-secondary">
+              (
+              {(filters.sizes?.length ?? 0) +
+                (filters.colors?.length ?? 0) +
+                (filters.collections?.length ?? 0) +
+                Number(filters.available) +
+                Number(filters.minPrice !== undefined) +
+                Number(filters.maxPrice !== undefined)}{' '}
+              active)
+            </span>
+          )}
+        </summary>
+        <div className="pt-4">
+          <FilterBar
+            pathname={pathname}
+            searchParams={searchParams}
+            filters={filters}
+            facets={facets}
+            facetEndCursor={facetEndCursor}
+            isFacetContinuation={isFacetContinuation}
+          />
+        </div>
+      </details>
+      <p id="catalog-results" role="status" className="text-utility text-esque-text-secondary">
+        {products.length} {products.length === 1 ? 'piece' : 'pieces'} on this page.
+      </p>
       {products.length === 0 ? (
         // Two distinct zero-result states (design spec): a genuinely empty
         // category vs. filtered down to zero — hasActiveFilters is the
         // single source of truth for which copy/affordance applies.
         <div className="flex flex-col items-center gap-4 py-24 text-center">
           <p className="font-display text-heading-3 uppercase text-esque-text">
-            {filtersActive ? 'NOTHING MATCHES.' : 'NOTHING HERE YET.'}
+            {hasNextPage
+              ? 'NO MATCHES IN THIS SECTION.'
+              : filtersActive
+                ? 'NOTHING MATCHES.'
+                : 'NOTHING HERE YET.'}
           </p>
           {filtersActive && (
             // WCAG 2.2 AA (2.5.8): measured at under the 24px minimum on
@@ -141,6 +174,29 @@ export async function CategoryListing({
         // very likely the LCP element.
         <ProductGrid products={products} priorityFirstImage />
       )}
+      <nav
+        aria-label="Product pages"
+        className="flex flex-wrap items-center gap-6 text-utility text-esque-text"
+      >
+        {isContinuation && (
+          <Link
+            href={buildFilterHref(pathname, searchParams, { after: undefined })}
+            className="inline-flex min-h-11 items-center underline"
+          >
+            First page
+          </Link>
+        )}
+        {hasNextPage && endCursor ? (
+          <Link
+            href={`${buildFilterHref(pathname, searchParams, { after: endCursor })}#catalog-results`}
+            className="inline-flex min-h-11 items-center underline"
+          >
+            Next products
+          </Link>
+        ) : (
+          products.length > 0 && <p>End of results.</p>
+        )}
+      </nav>
     </div>
   );
 }

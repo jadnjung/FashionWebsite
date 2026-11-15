@@ -45,6 +45,7 @@ function initialSelectionMap(products: ProductDetail[]): LookSelectionMap {
         // unavailable, the one case it exists to prevent.
         included: !isProductSoldOut(product.variants),
         options: product.options,
+        variants: product.variants,
         selections: getInitialSelections(product.options),
       },
     ]),
@@ -189,7 +190,7 @@ export function ShopTheLookPanel({
                   key={product.handle}
                   className="flex flex-col gap-3 border-b border-esque-elevated pb-6"
                 >
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <label className="flex min-h-11 cursor-pointer items-start gap-3">
                     <input
                       type="checkbox"
                       checked={item.included}
@@ -273,7 +274,7 @@ export function ShopTheLookPanel({
                       ? { handle: product.handle, variantId: variant.id, quantity: 1 }
                       : null;
                   });
-                if (items.some((item) => item === null)) return;
+                if (items.some((item) => item === null) || items.length === 0) return;
                 setPurchaseUnavailable(true);
                 void cart.addItems(items.filter((item) => item !== null));
               }}
@@ -294,7 +295,7 @@ export function ShopTheLookPanel({
               <p className="text-utility text-esque-text">
                 {products.every((product) => !selectionMap[product.handle].included)
                   ? 'Select at least one piece to continue.'
-                  : 'Select all options to continue.'}
+                  : 'Choose available options for each included piece to continue.'}
               </p>
             )}
           </div>

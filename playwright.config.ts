@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './tests/support/verify-server-mode.ts',
+  metadata: { previewMode: 'unconfigured' },
   testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -57,38 +59,49 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } },
     },
   ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    // Obviously-fake test fixtures, not secrets. @next/env does not override
-    // a key already present in process.env (verified against the installed
-    // Next 16.3.1 behavior), so these win even for a developer who has real
-    // values set in their own .env.local. Playwright merges this into the
-    // child process's env on top of the inherited one (verified against the
-    // installed 1.62.1 behavior), so PATH etc. still resolve normally.
-    //
-    // ESQUE_ACCESS_PASSWORD/ESQUE_EARLY_ACCESS_PASSWORD (the whole-site
-    // gate's general/early-access passwords) were removed here — the gate
-    // itself is deleted (DECISIONS.md's gate-removal entry), so nothing in
-    // this codebase reads either name anymore. The drop-gate that replaced
-    // it (ESQUE_DROP_ACCESS_CODE) needs no fixture here: every e2e test that
-    // reaches /collections/[handle] in this Shopify-unconfigured environment
-    // hits the generic error boundary before the code-check logic is ever
-    // reached, so there is nothing for a fixture value to unlock in this
-    // suite today.
-    env: {
-      // Pinned empty (not omitted) for the same reason as above:
-      // getKlaviyoConfig() treats '' as unconfigured, same
-      // as unset, so this keeps access-gate.spec.ts's "Klaviyo not
-      // configured" test exercising the not-configured path deterministically
-      // — instead of, the moment a developer's own .env.local gains real
-      // Klaviyo credentials, silently switching to the real-API-call path
-      // and POSTing sam@example.com into a live marketing list on every
-      // local E2E run.
-      KLAVIYO_PRIVATE_API_KEY: '',
-      KLAVIYO_LIST_ID: '',
-    },
-  },
+  webServer:
+    process.env.PLAYWRIGHT_EXTERNAL_SERVER === '1'
+      ? undefined
+      : {
+          command: 'node scripts/run-browser-server.mjs',
+          url: 'http://localhost:3000',
+          reuseExistingServer: false,
+          timeout: 240_000,
+          // Obviously-fake test fixtures, not secrets. @next/env does not override
+          // a key already present in process.env (verified against the installed
+          // Next 16.3.1 behavior), so these win even for a developer who has real
+          // values set in their own .env.local. Playwright merges this into the
+          // child process's env on top of the inherited one (verified against the
+          // installed 1.62.1 behavior), so PATH etc. still resolve normally.
+          //
+          // ESQUE_ACCESS_PASSWORD/ESQUE_EARLY_ACCESS_PASSWORD (the whole-site
+          // gate's general/early-access passwords) were removed here — the gate
+          // itself is deleted (DECISIONS.md's gate-removal entry), so nothing in
+          // this codebase reads either name anymore. The drop-gate that replaced
+          // it (ESQUE_DROP_ACCESS_CODE) needs no fixture here: every e2e test that
+          // reaches /collections/[handle] in this Shopify-unconfigured environment
+          // hits the generic error boundary before the code-check logic is ever
+          // reached, so there is nothing for a fixture value to unlock in this
+          // suite today.
+          env: {
+            PREVIEW_DEMO_MODE: '',
+            ESQUE_DROP_ACCESS_CODE: '',
+            // Pinned empty (not omitted) for the same reason as above:
+            // getKlaviyoConfig() treats '' as unconfigured, same
+            // as unset, so this keeps access-gate.spec.ts's "Klaviyo not
+            // configured" test exercising the not-configured path deterministically
+            // — instead of, the moment a developer's own .env.local gains real
+            // Klaviyo credentials, silently switching to the real-API-call path
+            // and POSTing sam@example.com into a live marketing list on every
+            // local E2E run.
+            SHOPIFY_STORE_DOMAIN: '',
+            SHOPIFY_STOREFRONT_API_TOKEN: '',
+            NEXT_PUBLIC_GA4_MEASUREMENT_ID: '',
+            NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: '',
+            NEXT_PUBLIC_SUPPORT_EMAIL: '',
+            NEXT_PUBLIC_PREVIEW_ANALYTICS: '',
+            KLAVIYO_PRIVATE_API_KEY: '',
+            KLAVIYO_LIST_ID: '',
+          },
+        },
 });

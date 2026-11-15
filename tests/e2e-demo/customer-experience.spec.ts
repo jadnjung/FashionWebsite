@@ -40,7 +40,7 @@ for (const viewport of [
 ]) {
   test(`catalog and product detail remain usable at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/new');
+    await page.goto('/new?sort=featured');
     await expect(page.getByRole('heading', { name: 'NEW', exact: true })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -56,7 +56,9 @@ for (const viewport of [
     await sizeGuide.click();
     const dialog = page.getByRole('dialog', { name: 'Size Guide' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('ESQUE PLACEHOLDER — MEASUREMENTS')).toBeVisible();
+    await expect(
+      dialog.getByText('Synthetic demo measurements. Provisional values for illustration only.'),
+    ).toBeVisible();
     const box = await dialog.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeGreaterThanOrEqual(0);

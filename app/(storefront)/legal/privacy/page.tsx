@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
       <PolicySection title="Information We Collect">
         <p>Information you provide directly:</p>
         <ul className="list-disc pl-5">
-          <li>First name and email address, submitted through Request Access.</li>
+          <li>Email address, submitted through Request Access.</li>
           <li>Marketing consent, recorded when you check the Request Access consent box.</li>
           <li>If you contact support: your email address and the contents of your message.</li>
           <li>
@@ -56,41 +56,40 @@ export default function PrivacyPolicyPage() {
         <p>Information collected automatically:</p>
         <ul className="list-disc pl-5">
           <li>
-            A cookie that remembers you&apos;ve entered Esque, so you are not asked for the access
-            password on every visit (see Cookies below).
+            A collection-specific cookie that can remember valid early access to an upcoming
+            collection (see Cookies below).
           </li>
           <li>Standard web server logs (such as IP address and browser type).</li>
           <li>
-            Once analytics instrumentation is added to the site (see Cookies below), aggregate usage
-            information such as pages viewed and products browsed.
+            When analytics is configured (see Cookies below), aggregate usage information such as
+            pages viewed and products browsed.
           </li>
         </ul>
       </PolicySection>
 
       <PolicySection title="Cookies &amp; Similar Technologies">
         <p>
-          Esque currently uses one strictly necessary cookie: it records that you&apos;ve entered
-          the site and remembers that for about 30 days, so returning visitors are not asked to
-          re-enter the access password every time. This cookie is required for the site&apos;s
-          access experience to function and is not used for advertising.
+          Upcoming collections can use a collection-specific access cookie after a valid code is
+          entered. The ordinary storefront is accessible without a whole-site password. Access
+          cookies support collection access and are separate from advertising.
         </p>
         <p>
-          Esque also stores a short list of recently viewed products directly in your browser (not
-          on Esque&apos;s servers), so it can show you items you looked at earlier. You can clear
-          this at any time by clearing your browser&apos;s site data.
+          Recently viewed products, saved items, and the demonstration bag use browser storage.
+          These features retain shopping choices on this device. When storage is unavailable, some
+          choices remain available only for the current visit. Clear your browser site data to
+          remove stored choices.
         </p>
         <p>
-          Esque&apos;s planned analytics stack is Google Analytics 4, Google Search Console, and
-          Shopify Analytics. As of this draft, analytics instrumentation has not yet been added to
-          the site, so no analytics cookies are currently set. This section will be updated with the
-          specific cookies used, and a consent mechanism where legally required, once that work
-          ships.
+          Google Analytics instrumentation is enabled only when a measurement ID is configured.
+          Shopify services and analytics depend on the connected store. The final policy will
+          describe the configured services, their cookies, retention, and any required consent
+          choices before launch.
         </p>
       </PolicySection>
 
       <PolicySection title="How We Use Information">
         <ul className="list-disc pl-5">
-          <li>To deliver the current access password and respond to Request Access submissions.</li>
+          <li>To process consented requests for future collection updates.</li>
           <li>
             To send collection announcements, early-access invitations, and other marketing email —
             only to visitors who&apos;ve given consent, and only through Esque&apos;s email

@@ -2,7 +2,71 @@
 
 Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 46 items, including 21 additions from the follow-up audit. Shopify is the commerce platform referenced in this document.
 
-Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. All items below start open. The requested deliverable is this improvement inventory. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
+Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
+
+## Implementation record updated November 15, 2026
+
+The following statuses describe the local implementation pass. The original numbered descriptions preserve the discovery evidence. Integrated verification is recorded in the execution plan, including failures corrected during the pass and remaining device or external-service evidence. [Execution and validation record](./superpowers/plans/2026-11-14-backlog-completion.md)
+
+| Item | Local status | Implemented outcome or remaining evidence |
+| --- | --- | --- |
+| 01 | Implemented | Guarded storage acquisition, validated bounded v1 history, session fallback and legacy regression tests. |
+| 02 | Implemented | Included outfit pieces resolve sellable variants before atomic addition, with local guidance and recovery. |
+| 03 | Implemented | Wrapping and constrained containers cover cards, navigation, overlays, saved content and product controls. |
+| 04 | Implemented | Readable menu, search and category hover treatments with normal/reduced-motion browser assertions. |
+| 05 | Implemented | Contextual availability guidance preserves recoverable choices across the shared picker. |
+| 06 | Implemented | 44px option labels verified in the independent multi-width walkthrough. |
+| 07 | Implemented with synthetic data | Garment-specific charts, inch/cm conversion, measurement instructions and missing-chart guidance. |
+| 08 | Implemented | Native GET facets, chips, same-variant matching, independent progressive option discovery and bounded reads. |
+| 09 | Implemented | Category, current collection and archive product continuation retain cursors and explain page counts. |
+| 10 | Implemented | Thirty canonical fixtures include default, sparse, absent media, long labels, unknown inventory and101-variant cases. |
+| 11 | Implemented | Shared image fallback across cards, stack, bag and history, with fullscreen retry coverage. |
+| 12 | Implemented and regression-covered | Populated search recovery and acknowledged delayed-response ownership tests. |
+| 13 | Implemented and regression-covered | Lock waits, disconnected/malformed updates, unavailable Web Locks and late completion checks. |
+| 14 | Technical descriptions updated | Privacy/accessibility copy reflects current storage, collection access and conditional analytics. Final policy approval remains an owner dependency. |
+| 15 | Implemented | Owned isolated test servers pin external integrations. Explicit external reuse verifies mode, production rendering and isolation profile. |
+| 16 | Implemented | Production build/start harness and two-mode smoke command support repeatable optimized-browser checks. |
+| 17 | Measurement tooling implemented | Three-sample cold mobile measurement command records LCP, CLS, transferred scripts and Search, variant, gallery and bag completion timing. The execution plan tracks the measurement run. |
+| 18 | Manual evidence pending | Automated device/reflow and expert keyboard checks are available. Actual browser magnification, screen-reader speech and physical-device testing still require direct evidence. |
+| 19 | Automated improvements implemented | Search uses one concise persistent status region. State-specific browser checks and expert review cover the changed journeys. Screen-reader speech verification remains pending. |
+| 20 | Implemented | Opt-in local browser event capture verifies named events, counts and Demo semantics. Obvious personal data in Search is redacted. |
+| 21 | Implemented | Actual SDK HTTP tests cover variables, normalization, errors, cancellation, response-body deadlines and continuation. |
+| 22 | Implemented | Demo subscription success/failure, consent validation, retained input, focused recovery and accurate acknowledgement wording. |
+| 23 | Implemented with illustrative assets | One licensed source supplies coherent CSS gallery crops with matching fullscreen treatment. Existing category-aware closet geometry remains provisional. |
+| 24 | Implemented and browser-verified | Removed the root streamed loading boundary and isolated optional recommendations. Primary product content and original gallery links remain readable with scripts disabled. |
+| 25 | Report-only evaluation implemented | Optional local policy supports compatibility inspection. The execution record tracks observed results and enforcement tradeoffs. |
+| 26 | Implemented | Ten-second bag deadline includes lock waiting, fetch and decoding, with safe cancellation and late-commit rejection. |
+| 27 | Implemented | Wishlist products refresh independently with per-item deadlines, freshness and retry. |
+| 28 | Implemented | Known missing saved products retain snapshots/removal while purchase links and Quick Add are suppressed. |
+| 29 | Implemented | Recommendation loading/failure is isolated under Suspense. A route-level regression checks primary construction and local recovery. |
+| 30 | Implemented | Validated variant URLs support reload, history, copied destinations and bag-to-product restoration. |
+| 31 | Implemented | Live product/look continuation retrieves later variants. Actual SDK regressions protect the101st variant and cursor failures. |
+| 32 | Implemented | Ordinary same-product Search navigation closes the overlay, preserving modified activation and Quick Add. |
+| 33 | Implemented | Visible breadcrumbs use the known product taxonomy and ordinary category destinations. |
+| 34 | Implemented | Support promises follow configuration, with useful draft policy destinations in the unconfigured state. |
+| 35 | Implemented | Countdown advances supplied server time using monotonic elapsed time, refreshes at completion and keeps authorization server-side. |
+| 36 | Implemented | Locked collections expose a real page heading. |
+| 37 | Implemented | Product metadata uses the product image with a brand fallback. |
+| 38 | Implemented | Dark color scheme and browser theme metadata define native-control presentation. |
+| 39 | Implemented | Request Access retains initial reading context and focuses invalid fields or the completed outcome deliberately. |
+| 40 | Implemented | Explicit selected-color image navigation preserves manual gallery browsing and unmapped fallback. |
+| 41 | Implemented | Product/collection sitemap enumeration follows continuation and excludes upcoming collection pages, with exact exclusion assertions. |
+| 42 | Implemented | Empty-state membership checks exclude sort-only changes. |
+| 43 | Implemented | Closet CLOSE and Escape restore the relevant garment focus target. |
+| 44 | Implemented | A persistent pause choice controls automatic closet sway and rotation. |
+| 45 | Implemented | Live reduced-motion subscriptions update closet and cursor behavior during the visit. |
+| 46 | Implemented | Shared length rules preserve composed input and keep UI, transport and event intent consistent, with privacy redaction at the analytics boundary. |
+
+### Additional issues found during implementation
+
+- Bounded matching scans and independent option pagination address catalog request amplification, disappearing later facets and selected-value loss. Collection membership discovery follows continuation beyond 250 memberships under the shared deadline.
+- Current collection browsing now continues beyond its first 24 products. The homepage keeps six representative closet garments and links into the full collection browsing journey.
+- Native submission resets were clearing Request Access values after a recoverable failure. The form now preserves entered email and consent for retry.
+- Gallery detail crops now retain the same treatment in the fullscreen viewer. Decorative failed hover images preserve the healthy primary image.
+- The expanded mobile filter controls originally pushed the first product to approximately 906–950px. A compact native Filter and sort disclosure restores the product-first hierarchy while preserving GET submission and no-JavaScript operation.
+- Analytics now redacts obvious email addresses, phone numbers and URLs entered into free-text Search.
+
+The local history implementation retains valid v1 records and a bounded list. Timestamp-based expiry remains an optional schema extension. Final photography, measurements, business policy approval, live transactions, actual email delivery and account connections retain their original owner/service dependencies.
 
 ## Start with the four reproduced issues
 
@@ -382,7 +446,7 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 
 ### 24. Investigate resilience when JavaScript is delayed or unavailable
 
-**Recorded framework limitation.** The product response contains server-rendered images and links inside a streamed boundary. Existing validation found that the route’s content stays hidden until JavaScript reveals it. [Server-markup test](../tests/e2e-demo/product-gallery.spec.ts#L103), [readiness record](./superpowers/plans/2026-11-13-storefront-readiness.md#implementation-and-review-record), [loading boundary](../app/loading.tsx)
+**Recorded framework limitation.** The product response contains server-rendered images and links inside a streamed boundary. Existing validation found that the route’s content stays hidden until JavaScript reveals it. [Server-markup test](../tests/e2e-demo/product-gallery.spec.ts#L103), [readiness record](./superpowers/plans/2026-11-13-storefront-readiness.md#implementation-and-review-record), [root layout](../app/layout.tsx)
 
 - Demonstrate disabled JavaScript, failed script loading, and slow hydration using local fixtures.
 - Investigate supported framework/rendering approaches that keep product information and navigation readable. Explain scripting requirements for interactive enhancements where necessary.

@@ -20,7 +20,6 @@ const PIECES = [
 async function gotoReadyCloset(page: Page) {
   // Software shader compilation belongs to functional coverage, with its own
   // runner budget. Customer performance is measured without these overrides.
-  test.slow();
   // CI uses software WebGL to exercise the real scene. Override capability
   // metadata only in these functional tests, separately from fallback tests.
   await page.addInitScript(() => {
@@ -60,6 +59,8 @@ async function gotoReadyCloset(page: Page) {
 }
 
 test.describe('Collection Closet (Demo Mode)', () => {
+  test.describe.configure({ mode: 'default' });
+  test.slow();
   test('keeps shopping responsive when WebGL 2 is software-rendered', async ({ page }) => {
     await page.addInitScript(() => {
       Object.defineProperties(navigator, {
@@ -138,9 +139,7 @@ test.describe('Collection Closet (Demo Mode)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('hangs every piece of the current collection, each with an accessible button', async ({
-    page,
-  }) => {
+  test('hangs the curated hero pieces, each with an accessible button', async ({ page }) => {
     const hero = await gotoReadyCloset(page);
     await expect(hero.locator('canvas')).toHaveCount(1);
     for (const name of PIECES) {
@@ -167,7 +166,9 @@ test.describe('Collection Closet (Demo Mode)', () => {
       '/products/preview-velvet-evening-jacket',
     );
     // The headline and ENTER COLLECTION step aside (and leave the tab order).
-    await expect(hero.getByRole('link', { name: 'ENTER COLLECTION' })).toBeHidden();
+    await expect(hero.getByRole('link', { name: 'ENTER COLLECTION' })).toBeHidden({
+      timeout: 15_000,
+    });
 
     await page.keyboard.press('Escape');
     await expect(closet).toHaveAttribute('data-closet-selected', 'false');
@@ -182,12 +183,16 @@ test.describe('Collection Closet (Demo Mode)', () => {
     await expect(panel).toHaveAttribute('aria-live', 'polite');
     await expect(panel).toBeEmpty();
 
-    await hero.getByRole('button', { name: /^Silk Cami Layering Top, \$/ }).focus();
+    const trigger = hero.getByRole('button', { name: /^Silk Cami Layering Top, \$/ });
+    await trigger.focus();
     await page.keyboard.press('Enter');
     await expect(panel).toContainText('Silk Cami Layering Top');
     await expect(panel).toContainText('$84.00');
 
-    await panel.getByRole('button', { name: 'CLOSE' }).click();
+    const close = panel.getByRole('button', { name: 'CLOSE' });
+    await close.focus();
+    await page.keyboard.press('Enter');
+    await expect(trigger).toBeFocused();
     await expect(hero.locator('[data-closet]')).toHaveAttribute('data-closet-selected', 'false');
     await expect(panel).toBeEmpty();
   });
@@ -197,6 +202,36 @@ test.describe('Collection Closet (Demo Mode)', () => {
     const hero = await gotoReadyCloset(page);
     await hero.getByRole('button', { name: /^Fluid Knit Long-Sleeve, \$/ }).focus();
     await page.keyboard.press('Enter');
+    await expect(hero.getByRole('heading', { name: 'Fluid Knit Long-Sleeve' })).toBeVisible();
+  });
+
+  test('pause persists through selection and live reduced-motion changes', async ({ page }) => {
+    const hero = await gotoReadyCloset(page);
+    const closet = hero.locator('[data-closet]');
+    const pause = hero.getByRole('button', { name: 'Pause closet movement', exact: true });
+    await pause.focus();
+    await pause.press('Enter');
+    const resume = hero.getByRole('button', { name: 'Resume closet movement', exact: true });
+    await expect(resume).toHaveAttribute('aria-pressed', 'true');
+    await expect(closet).toHaveAttribute('data-closet-motion', 'paused', { timeout: 15_000 });
+    const trigger = hero.getByRole('button', { name: /^Fluid Knit Long-Sleeve, \$/ });
+    await trigger.focus();
+    await trigger.press('Enter');
+    await expect(closet).toHaveAttribute('data-closet-motion', 'paused', { timeout: 15_000 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(closet).toHaveAttribute('data-closet-motion', 'reduced', { timeout: 15_000 });
+    await expect(
+      hero.getByRole('button', { name: 'Closet movement reduced', exact: true }),
+    ).toBeDisabled();
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect(closet).toHaveAttribute('data-closet-motion', 'paused', { timeout: 15_000 });
+    await expect(trigger).toBeFocused();
+    await resume.click();
+    await expect(closet).toHaveAttribute('data-closet-motion', 'playing', { timeout: 15_000 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(closet).toHaveAttribute('data-closet-motion', 'reduced', { timeout: 15_000 });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect(closet).toHaveAttribute('data-closet-motion', 'playing', { timeout: 15_000 });
     await expect(hero.getByRole('heading', { name: 'Fluid Knit Long-Sleeve' })).toBeVisible();
   });
 

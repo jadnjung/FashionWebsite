@@ -318,7 +318,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                   // specifics). 64px, not a smaller on-scale value, is what
                   // verified clean across 10+ repeated live runs at
                   // 1440x900 against a production build.
-                  className="font-display text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
+                  className="font-display min-w-0 [overflow-wrap:anywhere] text-display-l tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary hover:underline hover:decoration-esque-forest hover:underline-offset-8 scroll-mt-16 scroll-mb-16"
                 >
                   {category.label}
                 </Link>
@@ -344,7 +344,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                     // A 44px target leaves room for deliberate touch activation.
                     // scroll-mt-16/scroll-mb-16 — see the category Link's own
                     // comment above for why.
-                    className="flex h-11 w-11 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary hover:underline hover:decoration-esque-forest hover:underline-offset-8 scroll-mt-16 scroll-mb-16"
                   >
                     <ChevronIcon expanded={isExpanded} />
                   </button>
@@ -392,7 +392,7 @@ export function FullScreenMenu({ open, onClose, triggerRef }: FullScreenMenuProp
                         // result group, which this list's markup mirrors.
                         // scroll-mt-16/scroll-mb-16 — see the top-level
                         // category Link's own comment above for why.
-                        className="inline-flex min-h-11 items-center font-display text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-forest scroll-mt-16 scroll-mb-16"
+                        className="inline-flex min-h-11 items-center font-display [overflow-wrap:anywhere] text-heading-3 uppercase tracking-display text-esque-text transition-colors duration-200 ease-esque hover:text-esque-text-secondary hover:underline hover:decoration-esque-forest hover:underline-offset-8 scroll-mt-16 scroll-mb-16"
                       >
                         {subcategory.label}
                       </Link>

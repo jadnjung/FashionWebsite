@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { trackEvent } from '@/lib/analytics/gtag';
@@ -13,7 +13,9 @@ const initialState: RequestAccessState = { success: false };
 // there is no whole-site gate left to return to, and /access now lives
 // inside the storefront shell, so Header's own navigation already
 // provides a way elsewhere.
-export function RequestAccessForm() {
+export function RequestAccessForm({ demo = false }: { demo?: boolean }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
   const [state, formAction, pending] = useActionState(submitRequestAccess, initialState);
 
   // Access Funnel: "Request Access opens" (PROJECT.md §82). Previously
@@ -25,6 +27,14 @@ export function RequestAccessForm() {
     trackEvent('request_access_open', {});
   }, []);
 
+  useEffect(() => {
+    if (state.success) {
+      successRef.current?.focus();
+      return;
+    }
+    if (state.error) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
+
   if (state.success) {
     return (
       // role="status" — DECISIONS.md D-051: this success screen replaces the
@@ -32,10 +42,19 @@ export function RequestAccessForm() {
       // role="alert" already handles elsewhere in this file/AccessForm.tsx),
       // so a screen-reader user submitting the form hears the outcome
       // without needing to notice the visual change themselves.
-      <div role="status" className="flex flex-col items-center gap-2 text-center">
-        <p className="font-display text-heading-2 tracking-display text-esque-text">ACCESS SENT.</p>
+      <div
+        ref={successRef}
+        tabIndex={-1}
+        role="status"
+        className="flex flex-col items-center gap-2 text-center"
+      >
+        <p className="font-display text-heading-2 tracking-display text-esque-text">
+          {demo ? 'PREVIEW COMPLETE.' : 'REQUEST RECEIVED.'}
+        </p>
         <p className="text-utility uppercase tracking-metadata text-esque-text-secondary">
-          CHECK YOUR EMAIL.
+          {demo
+            ? 'Your demonstration request is complete.'
+            : 'Your subscription request has been submitted for future collection updates.'}
         </p>
       </div>
     );
@@ -54,12 +73,15 @@ export function RequestAccessForm() {
 
   return (
     <form
+      ref={formRef}
       action={formAction}
+      onReset={(event) => event.preventDefault()}
+      aria-busy={pending}
       // Access Funnel: "Request Access conversion attempt" (PROJECT.md
       // §82) — fires on every real submission attempt, regardless of
       // eventual server-side validation outcome, which is exactly what
       // "attempt" means. Deliberately carries no properties: the submitted
-      // firstName/email/consent values must never reach an analytics
+      // email/consent values must never reach an analytics
       // payload (CLAUDE.md's Analytics section) — dispatchAnalyticsEvent's
       // PII denylist would strip them anyway, but not reading them here at
       // all is the more honest, defense-in-depth choice. Does not call
@@ -69,24 +91,13 @@ export function RequestAccessForm() {
       className="flex w-full max-w-xs flex-col gap-4 text-center"
     >
       <Input
-        label="FIRST NAME"
-        name="firstName"
-        required
-        autoComplete="given-name"
-        // DECISIONS.md D-051 — autofocusing the first field on every mount
-        // is a wanted response to the deliberate action of visiting /access
-        // (there is no longer a sibling screen this form toggles in from,
-        // but the same "arriving at this screen is always deliberate"
-        // reasoning holds for navigating here directly).
-        autoFocus
-        {...errorFieldProps('firstName')}
-      />
-      <Input
         label="EMAIL"
         name="email"
         type="email"
         required
         autoComplete="email"
+        spellCheck={false}
+        maxLength={254}
         {...errorFieldProps('email')}
       />
       {/* WCAG 2.2 AA (2.5.8): an independent review measured this checkbox's
@@ -134,9 +145,23 @@ export function RequestAccessForm() {
           {state.error}
         </p>
       )}
+      {demo && (
+        <div className="flex flex-col gap-2 text-left text-utility text-esque-text-secondary">
+          <p>Demo request with a simulated outcome.</p>
+          <label htmlFor="preview-outcome">Preview outcome</label>
+          <select
+            id="preview-outcome"
+            name="previewOutcome"
+            className="min-h-11 border border-esque-text-secondary bg-esque-black px-3 text-esque-text"
+          >
+            <option value="success">Successful request</option>
+            <option value="unavailable">Service unavailable</option>
+          </select>
+        </div>
+      )}
       <div className="flex items-center justify-center gap-4">
         <Button type="submit" variant="primary" disabled={pending}>
-          REQUEST ACCESS
+          {pending ? 'SUBMITTING…' : 'REQUEST ACCESS'}
         </Button>
       </div>
     </form>

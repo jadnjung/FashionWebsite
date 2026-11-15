@@ -197,3 +197,16 @@ describe('dispatchAnalyticsEvent', () => {
     expect(sink).toHaveBeenCalled();
   });
 });
+
+it('redacts obvious personal data and URLs typed into Search', () => {
+  for (const search_term of [
+    'person@example.com',
+    '+1 (415) 555-1234',
+    'https://example.com/private?token=secret',
+  ]) {
+    expect(sanitizeEventProperties({ search_term, result_count: 0 })).toEqual({
+      search_term: '[redacted]',
+      result_count: 0,
+    });
+  }
+});

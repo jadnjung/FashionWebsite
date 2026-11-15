@@ -17,7 +17,7 @@ interface CollectionViewProps {
 // full PROJECT.md §35 editorial collection-page experience.
 export function CollectionView({ collection, products }: CollectionViewProps) {
   return (
-    <div className="flex flex-col gap-8 px-4 py-12 md:px-8">
+    <div id="collection-results" className="flex flex-col gap-8 px-4 py-12 md:px-8">
       <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
         {collection.title}
       </h1>

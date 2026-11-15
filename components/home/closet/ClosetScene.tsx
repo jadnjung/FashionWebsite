@@ -47,6 +47,7 @@ interface ClosetSceneProps {
   products: ClosetProduct[];
   state: ClosetState;
   reducedMotion: boolean;
+  paused: boolean;
   gesture: ClosetGesture;
   onHover: (handle: string) => void;
   onUnhover: (handle: string) => void;
@@ -83,7 +84,7 @@ function getClosetLayout(width: number, height: number, count: number): ClosetLa
 }
 
 export function ClosetScene(props: ClosetSceneProps) {
-  const { products, state, reducedMotion, gesture } = props;
+  const { products, state, reducedMotion, paused, gesture } = props;
   const size = useThree((s) => s.size);
   const layout = useMemo(
     () => getClosetLayout(size.width, size.height, products.length),
@@ -144,6 +145,7 @@ export function ClosetScene(props: ClosetSceneProps) {
           layout={layout}
           state={state}
           reducedMotion={reducedMotion}
+          paused={paused}
           gesture={gesture}
           onHover={props.onHover}
           onUnhover={props.onUnhover}
@@ -169,6 +171,7 @@ function ClosetItem({
   layout,
   state,
   reducedMotion,
+  paused,
   gesture,
   onHover,
   onUnhover,
@@ -226,7 +229,7 @@ function ClosetItem({
     node.scale.setScalar(damp(node.scale.x, targetScale));
 
     if (isSelected) {
-      if (!reducedMotion) gesture.tickAutoRotate(delta);
+      if (!reducedMotion && !paused) gesture.tickAutoRotate(delta);
       node.rotation.y = gesture.yaw;
       node.rotation.z = damp(node.rotation.z, 0);
     } else {
@@ -235,6 +238,11 @@ function ClosetItem({
       const baseYaw = isHovered ? HOVER_YAW : ROD_YAW;
       const turns = Math.round((node.rotation.y - baseYaw) / (Math.PI * 2));
       node.rotation.y = damp(node.rotation.y, baseYaw + turns * Math.PI * 2);
+      if (reducedMotion) {
+        node.rotation.z = 0;
+        return;
+      }
+      if (paused) return;
       const swing = sway.current;
       swing.amplitude = MathUtils.damp(
         swing.amplitude,
@@ -249,7 +257,7 @@ function ClosetItem({
         delta,
       );
       swing.phase += swing.speed * delta;
-      const tilt = reducedMotion ? 0 : Math.sin(swing.phase) * swing.amplitude;
+      const tilt = Math.sin(swing.phase) * swing.amplitude;
       node.rotation.z = damp(node.rotation.z, tilt);
     }
   });
