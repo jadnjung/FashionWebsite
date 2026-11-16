@@ -6,6 +6,7 @@ import {
   parseCartLines,
   type CartOperation,
   type CartLine,
+  type CartLineInput,
   type DemoCart,
 } from '@/lib/cart/model';
 
@@ -14,8 +15,13 @@ export type { CartLineInput } from '@/lib/cart/model';
 
 /** Stateless demo replacements are safe to retry. Shopify cart writes remain unbuilt. */
 export function buildDemoCart(input: unknown): DemoCart {
+  return buildValidatedDemoCart(parseCartLines(input));
+}
+
+/** Raw saved and incoming requests are bounded before combining their validated references. */
+function buildValidatedDemoCart(items: CartLineInput[]): DemoCart {
   const grouped = new Map<string, CartLine>();
-  for (const item of parseCartLines(input)) {
+  for (const item of items) {
     const product = getPreviewProductDetail(item.handle);
     const variant = product?.variants.find((candidate) => candidate.id === item.variantId);
     if (!product || !variant?.availableForSale)
@@ -38,7 +44,7 @@ export function buildDemoCart(input: unknown): DemoCart {
       quantity,
       quantityMax,
       title: product.title,
-      image: product.images[0] ?? null,
+      image: variant.image ?? product.images[0] ?? null,
       selectedOptions: variant.selectedOptions,
       unitPrice: variant.price,
       productMinPrice: product.minPrice,
@@ -46,6 +52,7 @@ export function buildDemoCart(input: unknown): DemoCart {
     });
   }
   const lines = [...grouped.values()];
+  if (lines.length > 50) throw new CartValidationError('cart_full');
   const subtotalMinor = lines.reduce(
     (sum, line) => sum + Number(line.lineTotal.amount.replace('.', '')),
     0,
@@ -102,7 +109,7 @@ export function applyDemoCartOperation(input: unknown, value: unknown): DemoCart
   }
   let next: DemoCart;
   if (operation.type === 'add') {
-    next = buildDemoCart([...lines, ...parseCartLines(operation.items)]);
+    next = buildValidatedDemoCart([...lines, ...parseCartLines(operation.items)]);
   } else if (
     operation.type === 'quantity' &&
     typeof operation.variantId === 'string' &&
@@ -116,6 +123,8 @@ export function applyDemoCartOperation(input: unknown, value: unknown): DemoCart
   } else {
     throw new CartValidationError('invalid_cart');
   }
-  parseCartLines([...cartLineInputs(next), ...restored.recoveryLines]);
+  if (next.lines.length + restored.recoveryLines.length > 50) {
+    throw new CartValidationError('cart_full');
+  }
   return { ...next, recoveryLines: restored.recoveryLines };
 }

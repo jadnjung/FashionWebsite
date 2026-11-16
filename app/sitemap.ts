@@ -7,6 +7,8 @@ import { getProducts } from '@/lib/shopify/products';
 import { getCollections } from '@/lib/shopify/collections';
 import { getDropPhase } from '@/lib/collections/drop-phase';
 
+export const revalidate = 60;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categoryPaths = NAVIGATION.filter((entry) => BUILT_CATEGORY_HREFS.has(entry.href)).flatMap(
     (entry) => [entry.href, ...(entry.subcategories?.map((item) => item.href) ?? [])],

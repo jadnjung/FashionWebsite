@@ -66,6 +66,16 @@ export function FilterBar({
       })),
     },
   ];
+  // Applied criteria replace native draft values on navigation. Cursor-only
+  // navigation keeps the current draft while revealing more filter options.
+  const formKey = JSON.stringify([
+    pathname,
+    filters.sort,
+    filters.available,
+    filters.minPrice ?? null,
+    filters.maxPrice ?? null,
+    ...groups.map((group) => [...group.selected].sort()),
+  ]);
   return (
     <div className="flex min-w-0 flex-col gap-4 border-b border-esque-surface pb-6">
       <nav aria-label="Sort" className="flex flex-wrap gap-x-4">
@@ -81,6 +91,7 @@ export function FilterBar({
         ))}
       </nav>
       <form
+        key={formKey}
         method="get"
         action={pathname}
         className="grid min-w-0 grid-cols-2 items-end gap-3 md:flex md:flex-wrap md:gap-4"

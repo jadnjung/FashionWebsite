@@ -39,7 +39,7 @@ export function CartFeedback({ active }: { active: boolean }) {
           TRY AGAIN
         </button>
       )}
-      {demo && !pending && !error && notice && (
+      {demo && !pending && (error || notice) && (
         <Link
           href="/bag"
           className="min-h-11 w-fit py-2 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-esque-text"

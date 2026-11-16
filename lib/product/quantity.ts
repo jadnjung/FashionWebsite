@@ -1,3 +1,17 @@
+import { DEMO_QUANTITY_LIMIT } from '@/lib/cart/model';
+
+/** Additional units allowed by known positive stock or the Demo bag's per-variant cap. */
+export function getRemainingQuantity(
+  quantityAvailable: number | null | undefined,
+  inBag: number,
+  demo: boolean,
+): number | undefined {
+  const stockMax =
+    quantityAvailable != null && quantityAvailable > 0 ? quantityAvailable : undefined;
+  const limit = demo ? Math.min(stockMax ?? DEMO_QUANTITY_LIMIT, DEMO_QUANTITY_LIMIT) : stockMax;
+  return limit === undefined ? undefined : Math.max(0, limit - inBag);
+}
+
 // Pure quantity-input resolution for the PDP's Quantity field — no React, no
 // DOM. Mirrors lib/product/variants.ts's "no jsdom/RTL in this repo, so real
 // behavioral coverage lives here" rationale (vitest.config.ts's environment

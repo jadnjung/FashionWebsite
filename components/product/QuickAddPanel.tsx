@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/components/cart/CartProvider';
 import { CartFeedback } from '@/components/cart/CartFeedback';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
+import { fetchJsonWithDeadline } from '@/lib/client-request';
 import { formatPrice } from '@/lib/product/price';
+import { getRemainingQuantity } from '@/lib/product/quantity';
 import {
   findMatchingVariant,
   getInitialSelections,
@@ -80,12 +83,14 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setFetchState({ status: 'loading' });
-      fetch(`/api/products/${handle}`, { signal: controller.signal })
-        .then((res) => {
-          if (!res.ok) throw new Error('quick add fetch failed');
-          return res.json() as Promise<{ product: ProductDetail | null }>;
-        })
+      fetchJsonWithDeadline<{ product: ProductDetail | null }>(
+        `/api/products/${encodeURIComponent(handle)}`,
+        controller.signal,
+      )
         .then(({ product }) => {
+          // Every commit belongs to this opening, including initialization.
+          // Body decoding may resolve after a close, Retry, or newer request.
+          if (controller.signal.aborted) return;
           if (!product) {
             setFetchState({ status: 'not-found' });
             return;
@@ -128,7 +133,12 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   const selectionComplete = loaded
     ? isSelectionComplete(loaded.product.options, selections)
     : false;
-  const canAddToBag = !soldOut && matchedVariant !== null && matchedVariant.availableForSale;
+  const inBag =
+    cart.cart.lines.find((line) => line.variantId === matchedVariant?.id)?.quantity ?? 0;
+  const remaining = getRemainingQuantity(matchedVariant?.quantityAvailable, inBag, cart.demo);
+  const atBagLimit = matchedVariant?.availableForSale === true && remaining === 0;
+  const canAddToBag =
+    !soldOut && matchedVariant !== null && matchedVariant.availableForSale && !atBagLimit;
 
   return (
     <dialog
@@ -247,6 +257,19 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
               >
                 ADD TO BAG
               </Button>
+              {atBagLimit && (
+                <div role="status" className="text-utility text-esque-text">
+                  <p>{inBag} already in your bag. This selection is at its bag limit.</p>
+                  {(!purchaseUnavailable || (!cart.notice && !cart.error)) && (
+                    <Link
+                      href="/bag"
+                      className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-esque-text"
+                    >
+                      VIEW BAG
+                    </Link>
+                  )}
+                </div>
+              )}
               {!selectionComplete && (
                 // text-esque-text, not -secondary — see
                 // ProductPurchasePanel.tsx's identical comment on this same

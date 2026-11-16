@@ -41,7 +41,7 @@ describe('buildProductJsonLd', () => {
       url: 'http://localhost:3000/products/hoodie-01',
       offers: {
         '@type': 'Offer',
-        url: 'http://localhost:3000/products/hoodie-01',
+        url: 'http://localhost:3000/products/hoodie-01?variant=gid%3A%2F%2Fshopify%2FProductVariant%2F1',
         priceCurrency: 'USD',
         price: '120.00',
         availability: 'https://schema.org/InStock',
@@ -72,7 +72,64 @@ describe('buildProductJsonLd', () => {
     const result = buildProductJsonLd(
       makeProduct({ variants: [makeVariant({ availableForSale: false })] }),
     );
-    expect(result.offers.availability).toBe('https://schema.org/OutOfStock');
+    expect(result.offers?.availability).toBe('https://schema.org/OutOfStock');
+  });
+
+  test('advertises the cheapest sellable variant with its own currency and destination', () => {
+    const result = buildProductJsonLd(
+      makeProduct({
+        minPrice: { amount: '100.00', currencyCode: 'USD' },
+        variants: [
+          makeVariant({
+            availableForSale: false,
+            price: { amount: '100.00', currencyCode: 'USD' },
+          }),
+          makeVariant({
+            id: 'available-expensive',
+            price: { amount: '180.00', currencyCode: 'CAD' },
+          }),
+          makeVariant({
+            id: 'available-lowest',
+            quantityAvailable: 0,
+            price: { amount: '150.00', currencyCode: 'CAD' },
+          }),
+        ],
+      }),
+    );
+    expect(result.offers).toEqual({
+      '@type': 'Offer',
+      url: 'http://localhost:3000/products/hoodie-01?variant=available-lowest',
+      priceCurrency: 'CAD',
+      price: '150.00',
+      availability: 'https://schema.org/InStock',
+    });
+  });
+
+  test('advertises the cheapest actual sold-out variant when none are sellable', () => {
+    const result = buildProductJsonLd(
+      makeProduct({
+        variants: [
+          makeVariant({
+            availableForSale: false,
+            price: { amount: '180.00', currencyCode: 'USD' },
+          }),
+          makeVariant({
+            id: 'sold-out-lowest',
+            availableForSale: false,
+            price: { amount: '140.00', currencyCode: 'USD' },
+          }),
+        ],
+      }),
+    );
+    expect(result.offers).toMatchObject({
+      price: '140.00',
+      availability: 'https://schema.org/OutOfStock',
+      url: 'http://localhost:3000/products/hoodie-01?variant=sold-out-lowest',
+    });
+  });
+
+  test('omits an offer when the product has no actual variants', () => {
+    expect(buildProductJsonLd(makeProduct({ variants: [] }))).not.toHaveProperty('offers');
   });
 
   test('reports InStock when at least one variant is available', () => {
@@ -84,7 +141,7 @@ describe('buildProductJsonLd', () => {
         ],
       }),
     );
-    expect(result.offers.availability).toBe('https://schema.org/InStock');
+    expect(result.offers?.availability).toBe('https://schema.org/InStock');
   });
 
   test('never fabricates review or aggregateRating — this codebase has no reviews feature', () => {

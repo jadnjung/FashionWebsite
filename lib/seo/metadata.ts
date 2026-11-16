@@ -3,13 +3,13 @@
 // that mirrors title/description explicitly. See DECISIONS.md D-052 for
 // the full reasoning; the two load-bearing points:
 //
-// 1. Canonical is always the bare path — no query string. Category pages
+// 1. Canonical uses the route's normalized content URL. Category pages
 //    carry Sort/Availability/Price filter params (lib/catalog/filters.ts,
 //    DECISIONS.md D-024) that vary the rendered product list without
 //    creating genuinely distinct content; per current Google guidance on
 //    consolidating duplicate/near-duplicate URLs, the filtered variants
-//    should point back to the one canonical, parameter-free URL rather
-//    than each self-canonicalizing.
+//    point back to the parameter-free category URL. Default-order inventory
+//    continuation pages retain their validated cursor (lib/seo/catalog.ts).
 // 2. openGraph is fully re-declared per page, not partially inherited.
 //    Next.js's metadata merging replaces a parent segment's entire
 //    openGraph object the moment a child segment declares its own —
@@ -40,7 +40,7 @@ import {
 export interface PageMetadataInput {
   title: string;
   description: string;
-  /** Canonical path, no query string — e.g. '/tops', '/tops/hoodies', '/products/hoodie-01'. */
+  /** Normalized canonical path, including a validated continuation query when applicable. */
   path: string;
   image?: { url: string; alt: string; width?: number; height?: number };
 }

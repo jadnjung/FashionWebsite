@@ -3,14 +3,19 @@ import { CategoryListing } from '@/components/catalog/CategoryListing';
 import type { CatalogSearchParams } from '@/lib/catalog/filters';
 import { getCategoryLabel } from '@/lib/catalog/taxonomy';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { getCatalogCanonicalPath } from '@/lib/seo/catalog';
 
-// Canonical is the bare path regardless of any Sort/Availability/Price
-// filter params this route accepts (DECISIONS.md D-052).
-export const metadata: Metadata = buildPageMetadata({
-  title: `${getCategoryLabel('bottoms')} — Esque`,
-  description: 'Shop Bottoms from the current Esque collection.',
-  path: '/bottoms',
-});
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<CatalogSearchParams>;
+}): Promise<Metadata> {
+  return buildPageMetadata({
+    title: `${getCategoryLabel('bottoms')} — Esque`,
+    description: 'Shop Bottoms from the current Esque collection.',
+    path: getCatalogCanonicalPath('bottoms', await searchParams),
+  });
+}
 
 export default async function BottomsPage({
   searchParams,

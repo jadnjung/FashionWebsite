@@ -93,4 +93,16 @@ describe('parseDropAccessEventCookie', () => {
       ),
     ).toBe('collection-002');
   });
+
+  it.each(['%', '%E0%A4%A', '%FF'])('ignores malformed signal encoding %s', (value) => {
+    expect(parseDropAccessEventCookie(`${DROP_ACCESS_EVENT_COOKIE_NAME}=${value}`)).toBeNull();
+  });
+
+  it('preserves valid encoded Unicode in a collection signal', () => {
+    expect(
+      parseDropAccessEventCookie(
+        `${DROP_ACCESS_EVENT_COOKIE_NAME}=${encodeURIComponent('été-002')}`,
+      ),
+    ).toBe('été-002');
+  });
 });

@@ -71,11 +71,8 @@ export function ProductGalleryControls({
     const dialog = dialogRef.current;
     if (!viewerOpen || !dialog) return;
     dialog.showModal();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       dialog.close();
-      document.body.style.overflow = previousOverflow;
     };
   }, [viewerOpen]);
 
@@ -251,12 +248,8 @@ export function ProductGalleryControls({
               </div>
             </div>
             <div
-              ref={imageViewportRef}
               style={{ containerType: 'size' }}
-              role="region"
-              aria-label="Product image"
-              tabIndex={0}
-              className={`min-h-0 flex-1 overflow-auto bg-esque-surface focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-esque-text ${zoomed ? 'touch-auto' : '[touch-action:pan-y_pinch-zoom]'}`}
+              className={`min-h-0 flex-1 bg-esque-surface ${zoomed ? 'touch-auto' : '[touch-action:pan-y_pinch-zoom]'}`}
               onTouchStart={(event) => {
                 if (!zoomed) handleTouchStart(event, viewerIndex);
               }}
@@ -272,6 +265,7 @@ export function ProductGalleryControls({
                 image={viewerImage}
                 productTitle={productTitle}
                 zoomed={zoomed}
+                viewportRef={imageViewportRef}
                 onRetry={() => imageViewportRef.current?.focus({ preventScroll: true })}
               />
             </div>

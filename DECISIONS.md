@@ -1800,3 +1800,31 @@ Local browser servers pin external commerce, email and analytics connections dur
 Demo Request Access returns an explicit simulated outcome. Live requests acknowledge subscription submission and retain input after recoverable service failure. Local analytics capture verifies the existing event contract, including the distinction between purchase intent and simulated bag success. The optional CSP profile remains report-only while compatibility is evaluated.
 
 The implementation, review and validation record is maintained in [the backlog completion plan](./docs/superpowers/plans/2026-11-14-backlog-completion.md).
+
+## D-095 — Discovery freshness, continuation canonicals and variant offers
+
+November 16, 2026.
+
+The homepage and sitemap use route-level `revalidate = 60`. After a cached result becomes eligible, a request can receive the stale result while regeneration runs. A successful render replaces it. Uncaught regeneration errors retain the previous successful result and retry on a later request. This defines a request-driven refresh interval. Publication-to-visibility time includes request arrival and regeneration. [Next.js ISR behavior](https://nextjs.org/docs/app/guides/incremental-static-regeneration)
+
+Homepage discovery helpers retain their existing independent fallback behavior. A handled upstream failure can therefore publish a static hero or omit an optional scene until another successful refresh. Sitemap retrieval errors propagate so a partial enumeration cannot replace the prior complete sitemap. Cart APIs and collection authorization retain their existing request-time boundaries.
+
+Local evidence combines the optimized build's 60-second prerender entries, observed cache transitions and regenerated output files, a controlled release after build, publication tests, and failure/recovery tests. The homepage advertises a 60-second shared-cache lifetime. Sitemap responses use `must-revalidate, max-age=0` while Next.js applies its internal 60-second route cache. Hosted cache propagation and real store publication latency require deployment evidence. The completion record states these boundaries.
+
+Default-order, unfiltered category continuations use their validated query-scoped cursor in the canonical and Open Graph URL. Current collection and archive continuations retain their normalized cursor. Tracking and facet-option pagination parameters are omitted. Malformed Demo cursors restart at the first page consistently in rendering and metadata. Live Shopify cursors remain opaque and bounded. The existing parameter-free canonical policy for filters and alternative orders remains in effect. This refines D-024 and D-053 for distinct inventory pages. [Google pagination guidance](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)
+
+Product JSON-LD selects the cheapest sellable variant, or the cheapest actual variant when all are sold out. Its price, currency, availability and variant destination describe that same variant. Products without variants omit the offer. Existing Shopify sellability rules continue to permit sellable zero-stock variants. [Google Offer properties](https://developers.google.com/search/docs/appearance/structured-data/product-snippet#offer)
+
+## D-096 — Shopping recovery ownership and accessible modal behavior
+
+November 16, 2026.
+
+Cart retry state represents a failed operation. Acknowledged mutations clear it. Background synchronization preserves an unresolved foreground action and its feedback. Demo inputs remain bounded to 50 references per request, while the final merged bag allows 50 lines including recovery references. Adding units to an existing line at that boundary is valid. A new line beyond capacity returns `cart_full` with bag-management guidance. Selected-variant images take precedence over product-primary media.
+
+Purchase controls subtract units already in the bag from known positive availability and the Demo per-variant cap. Exhausted selections offer bag management and alternative choices. Server-side validation remains authoritative. Unknown stock and sellable zero-stock behavior retain D-028's contract.
+
+Search and Quick Add bound the full browser request, including JSON decoding, to ten seconds after the request begins. Search's existing debounce precedes that budget. Cancellation removes ownership, and older responses cannot commit into a newer session. Current successful Quick Add openings retain D-060's fresh-selection initialization.
+
+Applied filter criteria and sort identify the native form instance. Committed changes reset draft controls to the URL. Cursor-only navigation preserves controls that remain rendered. A draft option absent from the next facet page still needs separate persistence work, recorded as backlog item 72.
+
+CSS derives background scroll locking from all open dialogs and navigation overlays, including nested Quick Add inside Search. Image panning remains inside the viewer, while loading and recovery controls stay anchored to its visible frame. Forced colors disable the custom cursor with a live preference subscription and immediate CSS fallback. Form-level service errors focus recovery when submission still owns focus. Deliberate focus movement during the request is preserved.

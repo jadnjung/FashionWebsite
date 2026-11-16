@@ -6,6 +6,7 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } 
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { Button } from '@/components/ui/Button';
 import { trackEvent } from '@/lib/analytics/gtag';
+import { fetchJsonWithDeadline } from '@/lib/client-request';
 import { searchCategories } from '@/lib/catalog/taxonomy';
 import { getCollectionHref } from '@/lib/collections/drop-phase';
 import type { CollectionSummary } from '@/lib/shopify/collections';
@@ -214,14 +215,10 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setSearchResultsState({ status: 'loading', query: trimmedQuery });
-      fetch(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, { signal: controller.signal })
-        .then((res) => {
-          if (!res.ok) throw new Error('search request failed');
-          return res.json() as Promise<{
-            products: ProductListItem[];
-            collections: CollectionSummary[];
-          }>;
-        })
+      fetchJsonWithDeadline<{
+        products: ProductListItem[];
+        collections: CollectionSummary[];
+      }>(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, controller.signal)
         .then(({ products, collections }) => {
           if (controller.signal.aborted) return;
           setSearchResultsState({ status: 'loaded', query: trimmedQuery, products, collections });

@@ -9,16 +9,11 @@
 // already-fetched Shopify data) is the one used; review/aggregateRating
 // are never fabricated. See DECISIONS.md D-052.
 //
-// offers.availability's value is one of schema.org's ItemAvailability
-// enum members (confirmed current set: BackOrder, Discontinued, InStock,
-// InStoreOnly, LimitedAvailability, OnlineOnly, OutOfStock, PreOrder,
-// PreSale, SoldOut) — this codebase only ever has enough real signal to
-// distinguish InStock/OutOfStock (lib/product/variants.ts's
-// isProductSoldOut, the same function ProductPurchasePanel already uses),
-// so only those two are ever emitted.
+// Each Offer uses one actual variant's price, currency and sellability.
+// A zero quantity remains sellable when Shopify permits backorders.
 
-import { isProductSoldOut } from '@/lib/product/variants';
-import type { ProductDetail, ProductVariant } from '@/lib/shopify/products';
+import { getProductVariantHref } from '@/lib/product/variant-url';
+import type { ProductDetail } from '@/lib/shopify/products';
 import { SITE_URL } from '@/lib/seo/site';
 
 export interface BreadcrumbItem {
@@ -40,16 +35,16 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
   };
 }
 
-/** Overall product availability across every variant — never per-variant, since Offer below represents the product as a whole via its minPrice. */
-function getOverallAvailability(variants: ProductVariant[]): string {
-  return isProductSoldOut(variants)
-    ? 'https://schema.org/OutOfStock'
-    : 'https://schema.org/InStock';
-}
-
 export function buildProductJsonLd(product: ProductDetail) {
   const url = `${SITE_URL}/products/${product.handle}`;
   const image = product.images[0]?.url;
+  const available = product.variants.filter((variant) => variant.availableForSale);
+  const candidates = available.length ? available : product.variants;
+  const variant = candidates.reduce<(typeof candidates)[number] | undefined>(
+    (lowest, candidate) =>
+      !lowest || Number(candidate.price.amount) < Number(lowest.price.amount) ? candidate : lowest,
+    undefined,
+  );
 
   return {
     '@context': 'https://schema.org',
@@ -63,12 +58,18 @@ export function buildProductJsonLd(product: ProductDetail) {
     ...(product.description ? { description: product.description } : {}),
     ...(image ? { image } : {}),
     url,
-    offers: {
-      '@type': 'Offer',
-      url,
-      priceCurrency: product.minPrice.currencyCode,
-      price: product.minPrice.amount,
-      availability: getOverallAvailability(product.variants),
-    },
+    ...(variant
+      ? {
+          offers: {
+            '@type': 'Offer',
+            url: `${SITE_URL}${getProductVariantHref(product.handle, variant.id)}`,
+            priceCurrency: variant.price.currencyCode,
+            price: variant.price.amount,
+            availability: variant.availableForSale
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+          },
+        }
+      : {}),
   };
 }

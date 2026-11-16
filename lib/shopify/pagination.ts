@@ -10,3 +10,10 @@ export function previewPage<T>(items: readonly T[], first: number, after?: strin
     endCursor: page.length ? `preview:${offset + page.length}` : null,
   };
 }
+/** Shopify cursors stay opaque. Demo cursors must identify a positive offset. */
+export function getPaginationCursor(value: string | string[] | undefined): string | undefined {
+  if (typeof value !== 'string' || !value || value.length > 4096) return undefined;
+  if (process.env.PREVIEW_DEMO_MODE !== '1') return value;
+  if (!/^preview:[1-9]\d*$/.test(value)) return undefined;
+  return Number.isSafeInteger(Number(value.slice(8))) ? value : undefined;
+}

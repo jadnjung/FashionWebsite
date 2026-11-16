@@ -16,7 +16,20 @@ const initialState: RequestAccessState = { success: false };
 export function RequestAccessForm({ demo = false }: { demo?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const successRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const focusMovedRef = useRef(false);
   const [state, formAction, pending] = useActionState(submitRequestAccess, initialState);
+
+  useEffect(() => {
+    if (!pending) return;
+    function handleFocus(event: FocusEvent) {
+      if (event.target !== document.body && event.target !== document.documentElement) {
+        focusMovedRef.current = true;
+      }
+    }
+    document.addEventListener('focusin', handleFocus);
+    return () => document.removeEventListener('focusin', handleFocus);
+  }, [pending]);
 
   // Access Funnel: "Request Access opens" (PROJECT.md §82). Previously
   // fired from AccessForm's now-deleted REQUEST ACCESS toggle button;
@@ -32,7 +45,11 @@ export function RequestAccessForm({ demo = false }: { demo?: boolean }) {
       successRef.current?.focus();
       return;
     }
-    if (state.error) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    if (state.error) {
+      const invalidField = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      if (invalidField) invalidField.focus();
+      else if (!focusMovedRef.current) errorRef.current?.focus();
+    }
   }, [state]);
 
   if (state.success) {
@@ -87,7 +104,10 @@ export function RequestAccessForm({ demo = false }: { demo?: boolean }) {
       // all is the more honest, defense-in-depth choice. Does not call
       // preventDefault, so the actual form action submission proceeds
       // exactly as before.
-      onSubmit={() => trackEvent('request_access_attempt', {})}
+      onSubmit={() => {
+        focusMovedRef.current = false;
+        trackEvent('request_access_attempt', {});
+      }}
       className="flex w-full max-w-xs flex-col gap-4 text-center"
     >
       <Input
@@ -138,9 +158,11 @@ export function RequestAccessForm({ demo = false }: { demo?: boolean }) {
         // bright red UI. Matches DropAccessForm.tsx's incorrect-code
         // message for consistency (see DECISIONS.md D-021).
         <p
+          ref={errorRef}
+          tabIndex={-1}
           id="request-access-error"
           role="alert"
-          className="text-utility uppercase tracking-metadata text-esque-text"
+          className="text-utility uppercase tracking-metadata text-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
         >
           {state.error}
         </p>

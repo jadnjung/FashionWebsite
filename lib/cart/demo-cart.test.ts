@@ -6,6 +6,7 @@ import {
   restoreDemoCart,
   type CartLineInput,
 } from '@/lib/cart/demo-cart';
+import { getPreviewProductDetail } from '@/lib/shopify/preview-demo-fixtures';
 
 const crewneck: CartLineInput = {
   handle: 'preview-featherweight-crewneck',
@@ -14,6 +15,90 @@ const crewneck: CartLineInput = {
 };
 
 describe('demo cart boundary', () => {
+  it('uses selected variant media with product and missing-image fallbacks', () => {
+    const media = getPreviewProductDetail('preview-variant-media')!;
+    for (const variant of media.variants) {
+      const line = { handle: media.handle, variantId: variant.id, quantity: 1 };
+      const expected = variant.image ?? media.images[0];
+      expect(buildDemoCart([line]).lines[0].image).toEqual(expected);
+      expect(restoreDemoCart([line]).lines[0].image).toEqual(expected);
+      expect(
+        applyDemoCartOperation([line], {
+          type: 'quantity',
+          variantId: variant.id,
+          quantity: 2,
+        }).lines[0].image,
+      ).toEqual(expected);
+    }
+    const missing = getPreviewProductDetail('preview-missing-media')!;
+    expect(
+      buildDemoCart([
+        {
+          handle: missing.handle,
+          variantId: missing.variants[0].id,
+          quantity: 1,
+        },
+      ]).lines[0].image,
+    ).toBeNull();
+  });
+
+  it('merges additions at 50 distinct lines while bounding requests and final cart size', () => {
+    const product = getPreviewProductDetail('preview-many-variants')!;
+    const lines = product.variants.slice(0, 50).map((variant) => ({
+      handle: product.handle,
+      variantId: variant.id,
+      quantity: 1,
+    }));
+    for (const count of [49, 50]) {
+      const cart = applyDemoCartOperation(lines.slice(0, count), {
+        type: 'add',
+        items: [lines[0], lines[0]],
+      });
+      expect(cart.lines).toHaveLength(count);
+      expect(cart.lines[0].quantity).toBe(3);
+    }
+    expect(() =>
+      applyDemoCartOperation(lines, {
+        type: 'add',
+        items: [{ ...lines[0], variantId: product.variants[50].id }],
+      }),
+    ).toThrow('cart_full');
+    expect(() =>
+      applyDemoCartOperation(lines, {
+        type: 'add',
+        items: Array.from({ length: 51 }, () => lines[0]),
+      }),
+    ).toThrow('invalid_cart');
+    expect(() =>
+      applyDemoCartOperation(lines, {
+        type: 'add',
+        items: [{ ...lines[0], quantity: 8 }],
+      }),
+    ).toThrow('quantity_unavailable');
+    expect(buildDemoCart(lines).lines[0].quantity).toBe(1);
+  });
+
+  it('counts saved recovery references toward the final line limit', () => {
+    const product = getPreviewProductDetail('preview-many-variants')!;
+    const lines = product.variants.slice(0, 49).map((variant) => ({
+      handle: product.handle,
+      variantId: variant.id,
+      quantity: 1,
+    }));
+    const recovery = { ...crewneck, variantId: 'unavailable', quantity: 1 };
+    expect(
+      applyDemoCartOperation([...lines, recovery], {
+        type: 'add',
+        items: [lines[0]],
+      }).recoveryLines,
+    ).toHaveLength(1);
+    expect(() =>
+      applyDemoCartOperation([...lines, recovery], {
+        type: 'add',
+        items: [{ ...lines[0], variantId: product.variants[49].id }],
+      }),
+    ).toThrow('cart_full');
+  });
   it('returns canonical selected variant details and exact minor-unit totals', () => {
     const cart = buildDemoCart([crewneck]);
     expect(cart.totalQuantity).toBe(2);

@@ -371,6 +371,19 @@ button:focus-visible {
   opacity: 0;
 }
 
+/* Restore the native pointer immediately while React removes the decorative
+   cursor and its listener after a live system-color preference change. */
+@media (forced-colors: active) {
+  .esque-cursor-none,
+  .esque-cursor-none * {
+    cursor: auto;
+  }
+
+  .esque-custom-cursor {
+    display: none;
+  }
+}
+
 /* Shared-element product image morph (grid -> PDP, interactive model -> PDP)
    — DESIGN_SYSTEM.md §69 "Shared Product Transitions", INTERACTIONS.md
    §10/§13, PROJECT.md §28/§69. React's <ViewTransition name=... share="morph"
@@ -485,6 +498,12 @@ main :where(article, section, fieldset) {
 dialog {
   overscroll-behavior: contain;
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+/* The last open surface owns the lock, including Quick Add nested in Search.
+   Dialog/overlay scroll containers remain independently scrollable. */
+html:has(dialog[open], .esque-menu[data-open='true'], .esque-search-overlay[data-open='true']),
+body:has(dialog[open], .esque-menu[data-open='true'], .esque-search-overlay[data-open='true']) {
+  overflow: hidden;
 }
 html {
   scroll-padding-top: 5.5rem;

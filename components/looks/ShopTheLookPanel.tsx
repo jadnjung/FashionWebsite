@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/components/cart/CartProvider';
@@ -9,6 +10,7 @@ import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { isLookAddValid, type LookItemSelectionState } from '@/lib/looks/look-selection';
 import { formatPrice } from '@/lib/product/price';
+import { getRemainingQuantity } from '@/lib/product/quantity';
 import {
   findMatchingVariant,
   getInitialSelections,
@@ -123,7 +125,18 @@ export function ShopTheLookPanel({
     }));
   }
 
-  const canAddLook = isLookAddValid(products.map((product) => selectionMap[product.handle]));
+  const atBagLimit = products.some((product) => {
+    const item = selectionMap[product.handle];
+    const variant = findMatchingVariant(product.variants, item.selections);
+    const inBag = cart.cart.lines.find((line) => line.variantId === variant?.id)?.quantity ?? 0;
+    return (
+      item.included &&
+      variant?.availableForSale &&
+      getRemainingQuantity(variant.quantityAvailable, inBag, cart.demo) === 0
+    );
+  });
+  const canAddLook =
+    !atBagLimit && isLookAddValid(products.map((product) => selectionMap[product.handle]));
 
   return (
     <dialog
@@ -185,6 +198,14 @@ export function ShopTheLookPanel({
               const soldOut = isProductSoldOut(product.variants);
               const matchedVariant = findMatchingVariant(product.variants, item.selections);
               const displayPrice = matchedVariant?.price ?? product.minPrice;
+              const inBag =
+                cart.cart.lines.find((line) => line.variantId === matchedVariant?.id)?.quantity ??
+                0;
+              const remaining = getRemainingQuantity(
+                matchedVariant?.quantityAvailable,
+                inBag,
+                cart.demo,
+              );
               return (
                 <div
                   key={product.handle}
@@ -248,6 +269,12 @@ export function ShopTheLookPanel({
                       />
                     )
                   )}
+                  {item.included && matchedVariant?.availableForSale && remaining === 0 && (
+                    <p role="status" className="text-utility text-esque-text">
+                      {inBag} already in your bag. This selection is at its bag limit. Change its
+                      options or exclude this piece to add the other pieces.
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -281,13 +308,21 @@ export function ShopTheLookPanel({
             >
               ADD LOOK
             </Button>
+            {atBagLimit && (!purchaseUnavailable || (!cart.notice && !cart.error)) && (
+              <Link
+                href="/bag"
+                className="inline-flex min-h-11 w-fit items-center text-utility underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-esque-text"
+              >
+                VIEW BAG
+              </Link>
+            )}
             {cart.demo && (
               <p className="text-utility text-esque-text-secondary">
                 Demo bag. Checkout is unavailable.
               </p>
             )}
             <CartFeedback active={purchaseUnavailable} />
-            {!canAddLook && (
+            {!canAddLook && !atBagLimit && (
               // text-esque-text, not -secondary — see
               // ProductPurchasePanel.tsx's identical comment on this same class
               // of helper copy (both of this panel's own variants, not just

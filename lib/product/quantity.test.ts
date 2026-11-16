@@ -1,5 +1,23 @@
 import { describe, expect, test } from 'vitest';
-import { resolveQuantity } from '@/lib/product/quantity';
+import { getRemainingQuantity, resolveQuantity } from '@/lib/product/quantity';
+
+describe('getRemainingQuantity', () => {
+  test('subtracts the quantity already in the bag from known stock', () => {
+    expect(getRemainingQuantity(8, 6, true)).toBe(2);
+    expect(getRemainingQuantity(8, 8, true)).toBe(0);
+    expect(getRemainingQuantity(8, 10, true)).toBe(0);
+    expect(getRemainingQuantity(8, 6, false)).toBe(2);
+  });
+
+  test('preserves unknown and continue-selling stock while applying the demo cap', () => {
+    for (const stock of [null, undefined, 0, -1]) {
+      expect(getRemainingQuantity(stock, 2, false)).toBeUndefined();
+      expect(getRemainingQuantity(stock, 98, true)).toBe(1);
+    }
+    expect(getRemainingQuantity(150, 98, true)).toBe(1);
+    expect(getRemainingQuantity(150, 98, false)).toBe(52);
+  });
+});
 
 // This covers resolveQuantity's own pure clamping behavior. It does NOT by
 // itself prove the clear-then-retype sequence bug stays fixed — that bug was

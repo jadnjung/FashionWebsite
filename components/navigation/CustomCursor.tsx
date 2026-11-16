@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { hasFinePointerAndHover, isLowPerformanceDevice } from '@/lib/motion/media';
 import { useReducedMotion } from '@/lib/motion/use-reduced-motion';
 
@@ -12,14 +12,25 @@ const FORM_FIELD_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 // instead (globals.css) and the dot steps aside, exactly like form fields.
 const NATIVE_CURSOR_SELECTOR = `${FORM_FIELD_SELECTOR}, dialog[open]`;
 const ACTIVE_CLASS = 'esque-cursor-none';
+const FORCED_COLORS_QUERY = '(forced-colors: active)';
+
+function subscribeForcedColors(onChange: () => void) {
+  const media = window.matchMedia(FORCED_COLORS_QUERY);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+
+function getForcedColors() {
+  return window.matchMedia(FORCED_COLORS_QUERY).matches;
+}
 
 // DESIGN_SYSTEM.md §22-23, INTERACTIONS.md §7 — desktop-only custom cursor
 // with an explicit accessibility fallback. Renders nothing at all (the OS
 // cursor is left completely untouched) unless every one of: a fine,
-// hover-capable pointer (excludes touch/hybrid), motion is not reduced, and
-// the device doesn't report an obviously low-power profile — DESIGN_SYSTEM
-// §23's exact four-item disable list (the fourth, form inputs, is handled
-// per-frame below rather than as an eligibility gate). Even when eligible,
+// hover-capable pointer (excludes touch/hybrid), motion is not reduced,
+// forced colors are inactive, and the device doesn't report an obviously
+// low-power profile. Form inputs are handled per-frame below.
+// Even when eligible,
 // the OS cursor is never hidden until a real pointermove has actually been
 // observed (`initialized`) — DESIGN_SYSTEM §23's explicit rule. See
 // DECISIONS.md D-040.
@@ -32,12 +43,11 @@ const ACTIVE_CLASS = 'esque-cursor-none';
 // actually changes (tracked via refs), so re-renders happen only on
 // meaningful transitions, not on every pixel of movement.
 //
-// Scoped to the storefront shell only (mounted by ShellClient) — the
-// access gate keeps its own existing, already-shipped EntranceMotion
-// pointer treatment instead (see the design spec's Non-Goals).
+// Scoped to the storefront shell, mounted by ShellClient.
 export function CustomCursor() {
   const reducedMotion = useReducedMotion();
-  return reducedMotion ? null : <PointerCursor />;
+  const forcedColors = useSyncExternalStore(subscribeForcedColors, getForcedColors, () => true);
+  return reducedMotion || forcedColors ? null : <PointerCursor />;
 }
 
 function PointerCursor() {

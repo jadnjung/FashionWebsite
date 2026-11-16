@@ -22,10 +22,11 @@ import {
 
 const ERROR_MESSAGES: Record<CartErrorCode, string> = {
   invalid_cart: 'The demo bag could not be read. Clear the bag to start again.',
+  cart_full: 'The demo bag is full. Remove a piece before adding another.',
   variant_unavailable:
     'A selected demo variant is unavailable. Update your selection or remove the piece.',
   quantity_unavailable:
-    'The selected quantity exceeds demo availability. Choose a smaller quantity.',
+    'The selected quantity exceeds demo availability. Review your bag or change your selection.',
   cart_unconfigured: 'Purchasing is not available yet.',
   cart_failed: 'The demo bag could not be updated. Please try again.',
 };
@@ -58,7 +59,7 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
   const cartRef = useRef(EMPTY_DEMO_CART);
   const busyRef = useRef(false);
   const storageFailedRef = useRef(false);
-  const retryOperationRef = useRef<CartOperation>({ type: 'restore' });
+  const retryOperationRef = useRef<CartOperation | null>(null);
   const queuedRefreshRef = useRef(false);
   const activeRequestRef = useRef<AbortController | null>(null);
 
@@ -81,11 +82,21 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
         onAbort = () => reject(controller.signal.reason);
         controller.signal.addEventListener('abort', onAbort, { once: true });
       });
-      if (!background) retryOperationRef.current = operation;
       setPending(true);
       if (!background) {
+        retryOperationRef.current = null;
         setError(null);
         setNotice('');
+      }
+
+      function fail(message: string) {
+        // A storage refresh must preserve an unresolved shopper action and its feedback.
+        if (background && retryOperationRef.current && retryOperationRef.current.type !== 'restore')
+          return false;
+        retryOperationRef.current = operation;
+        setError(message);
+        setNotice('');
+        return false;
       }
 
       async function execute() {
@@ -119,8 +130,7 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
         // Some transports may complete after cancellation. They never commit stale state.
         controller.signal.throwIfAborted();
         if (!response.ok || !result.cart || result.cart.mode !== 'demo') {
-          setError(ERROR_MESSAGES[result.error ?? 'cart_failed'] ?? ERROR_MESSAGES.cart_failed);
-          return false;
+          return fail(ERROR_MESSAGES[result.error ?? 'cart_failed'] ?? ERROR_MESSAGES.cart_failed);
         }
 
         // Browsers without Web Locks detect a concurrent write before persisting.
@@ -134,8 +144,7 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
             currentRaw = raw;
           }
           if (currentRaw !== raw) {
-            setError('The demo bag changed in another tab. Please try again.');
-            return false;
+            return fail('The demo bag changed in another tab. Please try again.');
           }
         }
         cartRef.current = result.cart;
@@ -153,6 +162,10 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
             storageFailedRef.current = true;
             setStorageWarning(true);
           }
+        }
+        if (!background || retryOperationRef.current?.type === 'restore') {
+          retryOperationRef.current = null;
+          setError(null);
         }
         return true;
       }
@@ -173,14 +186,13 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
       } catch (failure) {
         if (controller.signal.aborted && controller.signal.reason?.name !== 'TimeoutError')
           return false;
-        setError(
+        return fail(
           controller.signal.reason?.name === 'TimeoutError'
             ? 'The demo bag took too long to update. Please try again.'
             : failure instanceof Error && failure.message === 'invalid_cart'
               ? ERROR_MESSAGES.invalid_cart
               : ERROR_MESSAGES.cart_failed,
         );
-        return false;
       } finally {
         window.clearTimeout(timeout);
         controller.signal.removeEventListener('abort', onAbort!);
@@ -237,7 +249,10 @@ export function CartProvider({ demo, children }: { demo: boolean; children: Reac
     [mutate],
   );
   const clear = useCallback(() => mutate({ type: 'clear' }), [mutate]);
-  const retry = useCallback(() => mutate(retryOperationRef.current), [mutate]);
+  const retry = useCallback(() => {
+    const operation = retryOperationRef.current;
+    return operation ? mutate(operation) : Promise.resolve(false);
+  }, [mutate]);
 
   return (
     <CartContext

@@ -1,8 +1,35 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 71 numbered items. The latest broad audit added items 59–71 after the preceding 12-item expansion. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 72 numbered items. The latest broad audit added items 59–71, and implementation review added item 72. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
+
+## Remediation update November 16, 2026
+
+The 16 items in the five requested groups are implemented and locally verified. Final checks passed 567 unit tests, 216 affected-scope Demo browser cases with 14 intended skips, 24 graphics cases, and 605 unconfigured production cases with 15 intended skips. The older audit tables and numbered descriptions preserve their original discovery evidence. The dated execution record holds the broader run, corrected failures, repeated shopping journeys and evidence boundaries. [Shopping reliability and production validation](./superpowers/plans/2026-11-16-shopping-reliability-and-production.md)
+
+| Item | Implemented behavior | Regression evidence |
+| --- | --- | --- |
+| 59 | Retry represents the failed operation. Background refreshes preserve unresolved foreground intent and feedback. | Eight retry scenarios covering acknowledged mutations, initial restore, timeout, delayed responses and queued refreshes. |
+| 52 | Invalid optional grant-cookie encoding returns no signal and is cleared. Valid encoded handles retain their event behavior. | Parser edge cases and fresh-context storefront, navigation and single-consumption checks. |
+| 47 | Applied URL criteria and sort reset native form controls. Removed chips and Clear Filters stay removed on Apply. | Multiselect, price, availability, sorting, history, retained-option pagination and no-JavaScript GET submission. Item 72 tracks absent draft options separately. |
+| 49 | Quick Add success commits only for its current opening/request. Current successful openings retain fresh-selection initialization. | An old abort-ignoring decoder cannot replace newer selections or availability. |
+| 48 | Search and Quick Add reach recovery after a ten-second request/JSON budget. Superseding and closing requests cancel ownership. | Header stalls, decoder stalls, transport failures, Retry and delayed completion. |
+| 54 | Service-level form errors focus useful recovery when submission retains focus ownership. | Keyboard failure/retry, retained values, deliberate focus movement, existing field and success behavior. |
+| 66 | Forced colors restore the native pointer initially and during live preference changes. | Forced-colors and ordinary/reduced-motion pointer checks. |
+| 67 | Loading and Retry controls stay anchored to the visible viewer while the image pans independently. | Ordinary/cropped imagery, zoom, pan, resize, repeated retry and focus restoration. |
+| 68 | Open native dialogs and navigation overlays coordinate a background scroll lock through CSS. | Size Guide, looks, Menu/Search internal scrolling and nested Quick Add inside Search. |
+| 60 | Purchase controls account for units already in the bag. Exhausted selections offer bag management or alternative choices. | PDP remaining capacity, mobile controls, Quick Add, look exclusion and server rejection guidance. |
+| 61 | An existing variant can gain units at the 50-line boundary. A distinct line beyond capacity returns useful recovery. | Canonical unit/API cases cover merging, recovery references, stock limits and oversized raw requests. |
+| 62 | Bag imagery prefers the selected variant and falls back to product media. | Different variant media, unmapped fallback, quantity updates and reload. |
+| 63 | Offer price, currency, sellability and destination come from one actual variant. | Cheapest available/sold-out cases, absent variants and server JSON-LD/API agreement. |
+| 64 | Distinct default-order inventory continuations have normalized canonicals. Filter and alternative-sort policy stays explicit. | Scoped/stale/malformed cursors, tracking removal, current collection/archive continuation and HTTP HTML checks. |
+| 65 | Homepage and sitemap become eligible for request-driven regeneration after 60 seconds. | Actual controlled release after build, cache/output regeneration, publication/removal and failure/recovery tests. Hosted publication latency remains external evidence. |
+| 69 | Both CI browser suites explicitly select optimized builds with the existing isolated launcher. | Local production-mode markers and both configured suites. Hosted CI results require the published workflow run. |
+
+The 320px multi-digit bag header regression exposed during this pass is also corrected by reducing mobile MENU padding while retaining its touch target. Native browser magnification, screen-reader speech, physical devices and connected-service verification retain their existing evidence requirements. The daily audit stays paused.
+
+Items 50, 51, 53, 55–58, 70–72 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
 
 ## Broad audit at revision aa2c594
 
@@ -41,7 +68,7 @@ Browser checks used the isolated Demo production server, Next.js 16.3.1 and Chro
 
 ## New open items from the audit at revision 412476b
 
-This audit added items 47–58 on November 15, 2026. The table records their current evidence and priority. Their detailed specifications follow item 46. Application fixes remain future work. The completed implementations and earlier audit observations retain their dated records below.
+This audit added items 47–58 on November 15, 2026. The table records the audit baseline evidence and priority. Their detailed specifications follow item 46. The remediation update above records subsequent fixes. Earlier audit observations retain their dated records below.
 
 | Item | Priority | Open finding or improvement | Evidence |
 | --- | --- | --- | --- |
@@ -1014,6 +1041,16 @@ These items describe open work found after the original implementation pass. Eac
 - **Improvement.** Document which destinations and product facts are public during the upcoming phase. Align release copy, discovery and the corresponding server behavior with that decision.
 - **Complete when.** The agreed visibility matrix is explicit, local fixtures cover every listed destination, and release transitions match it. Preserve public browsing and the documented distinction between brand access and actual customer/order authorization.
 - **Owner.** product-manager, ecommerce-merchandiser, backend-engineer, security-engineer and qa-engineer. Live publishing behavior still requires separate store evidence.
+
+### 72. Preserve unapplied options across filter-option pages
+
+**P2. Browser confirmed during implementation review on November 16, 2026.** Open `/new?sort=featured`, open Size, check Size 1, then choose More filter options before Apply. The checked control disappears on the next facet page and the draft is absent from submission. A direct browser probe recorded `draftBefore=true`, `draftControlAfter=0` and no applied size parameter. Applied URL selections are retained by the server. [Native option controls](../components/catalog/FilterBar.tsx), [Facet pagination](../lib/catalog/products.ts)
+
+- **Customer impact.** A draft choice can disappear while discovering additional filter options.
+- **Local demonstration.** Choose an option unique to the first facet page, continue to later pages, add another choice, and Apply. Repeat with Back/Forward and Clear Filters.
+- **Improvement.** Define draft persistence across facet-page replacement while preserving committed URL synchronization and progressive GET submission. Item 47's form identity preserves controls that remain rendered.
+- **Complete when.** All intended draft choices survive option discovery and submit once. Explicit removal, clearing, committed criteria changes and no-JavaScript behavior remain predictable. Record the chosen state/persistence strategy.
+- **Owner.** frontend-engineer and qa-engineer. This pre-existing behavior was exposed by the new regression review and remains open.
 
 ## Feature packages for a more polished demo
 

@@ -9,6 +9,7 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { DROP_ACCESS_COOKIE_NAME, hasUnlockedCollection } from '@/lib/access/cookies';
 import { getDropPhase, getDropSnapshot } from '@/lib/collections/drop-phase';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { getPaginationCursor } from '@/lib/shopify/pagination';
 import { buildBreadcrumbJsonLd } from '@/lib/seo/structured-data';
 import { getCollection } from '@/lib/shopify/collections';
 import { getProductListItemsByCollection } from '@/lib/shopify/products';
@@ -22,8 +23,10 @@ const getCachedCollection = cache(getCollection);
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams: Promise<{ after?: string | string[] }>;
 }): Promise<Metadata> {
   const { handle } = await params;
   const collection = await getCachedCollection(handle);
@@ -48,10 +51,12 @@ export async function generateMetadata({
     }
   }
 
+  const after = getPaginationCursor((await searchParams).after);
+  const pathname = `/collections/${encodeURIComponent(handle)}`;
   return buildPageMetadata({
     title: `${collection.title} — Esque`,
     description: collection.description || `${collection.title}, an Esque collection.`,
-    path: `/collections/${handle}`,
+    path: after ? `${pathname}?${new URLSearchParams({ after })}` : pathname,
   });
 }
 
@@ -107,8 +112,7 @@ export default async function CollectionPage({
   // is this page's entire reason for existing, so a real failure
   // correctly propagates to app/error.tsx.
   const query = await searchParams;
-  const after =
-    typeof query.after === 'string' && query.after.length <= 4096 ? query.after : undefined;
+  const after = getPaginationCursor(query.after);
   const productsResult = await getProductListItemsByCollection(handle, 24, after);
   const products = productsResult?.products ?? [];
 

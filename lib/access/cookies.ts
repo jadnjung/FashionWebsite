@@ -92,5 +92,10 @@ export function parseDropAccessEventCookie(cookieString: string): string | null 
   const match = cookieString.match(
     new RegExp(`(?:^|;\\s*)${DROP_ACCESS_EVENT_COOKIE_NAME}=([^;]*)`),
   );
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
+  try {
+    return match?.[1] ? decodeURIComponent(match[1]) : null;
+  } catch {
+    // Optional analytics signals can contain invalid percent-encoded bytes.
+    return null;
+  }
 }

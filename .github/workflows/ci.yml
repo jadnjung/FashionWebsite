@@ -46,13 +46,18 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium webkit
 
       - run: pnpm test:e2e
+        env:
+          PLAYWRIGHT_PRODUCTION: '1'
 
       # Demo Mode suite (playwright.demo.config.ts): populated-catalog tests,
       # including the 3D Collection Closet. Runs after the main suite, whose
-      # dev server has exited — Next 16 allows one `next dev` per directory.
+      # isolated production server has exited. Each launcher builds its own
+      # optimized output with its mode-specific, pinned environment.
       # `!cancelled()` so a main-suite failure still reports this suite too.
       - run: pnpm test:e2e:demo
         if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_PRODUCTION: '1'
 
       - uses: actions/upload-artifact@v7
         if: failure()

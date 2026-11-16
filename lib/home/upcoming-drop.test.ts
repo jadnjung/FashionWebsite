@@ -30,6 +30,30 @@ const UPCOMING = {
 };
 
 describe('getUpcomingDrop', () => {
+  test('fresh reads reflect a timed release, published collection changes and recovery', async () => {
+    vi.useFakeTimers();
+    const read = vi.spyOn(collectionsModule, 'getCollections');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      vi.setSystemTime(new Date('2026-11-20T11:59:59Z'));
+      read.mockResolvedValue({ collections: [UPCOMING], hasNextPage: false, endCursor: null });
+      expect((await getUpcomingDrop())?.handle).toBe(UPCOMING.handle);
+      vi.setSystemTime(new Date('2026-11-20T12:01:00Z'));
+      expect(await getUpcomingDrop()).toBeNull();
+      read.mockRejectedValueOnce(new Error('Synthetic temporary failure'));
+      expect(await getUpcomingDrop()).toBeNull();
+      expect(log).toHaveBeenCalled();
+      read.mockResolvedValue({
+        collections: [{ ...UPCOMING, handle: 'next-release', dropDate: '2026-12-01T12:00:00Z' }],
+        hasNextPage: false,
+        endCursor: null,
+      });
+      expect((await getUpcomingDrop())?.handle).toBe('next-release');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test('resolves to the upcoming collection among a mixed list', async () => {
     vi.spyOn(collectionsModule, 'getCollections').mockResolvedValue({
       collections: [CURRENT, ARCHIVED, UPCOMING],

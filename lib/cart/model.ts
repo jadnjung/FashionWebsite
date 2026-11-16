@@ -35,6 +35,7 @@ export type CartErrorCode =
   | 'invalid_cart'
   | 'variant_unavailable'
   | 'quantity_unavailable'
+  | 'cart_full'
   | 'cart_unconfigured'
   | 'cart_failed';
 

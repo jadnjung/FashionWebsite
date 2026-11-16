@@ -197,7 +197,7 @@ export function Header({
           aria-expanded={menuOpen}
           aria-controls="esque-full-screen-menu"
           onClick={onMenuOpen}
-          className={tightUtilityButton}
+          className="min-h-11 px-1! md:px-6!"
         >
           MENU
         </Button>

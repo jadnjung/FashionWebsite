@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useCart } from '@/components/cart/CartProvider';
 import { CartFeedback } from '@/components/cart/CartFeedback';
 import { Button } from '@/components/ui/Button';
@@ -10,8 +11,7 @@ import { VariantPicker } from '@/components/product/VariantPicker';
 import { WishlistToggle } from '@/components/product/WishlistToggle';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { formatPrice } from '@/lib/product/price';
-import { resolveQuantity } from '@/lib/product/quantity';
-import { DEMO_QUANTITY_LIMIT } from '@/lib/cart/model';
+import { getRemainingQuantity, resolveQuantity } from '@/lib/product/quantity';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
 import { getVariantSelections } from '@/lib/product/variant-url';
 import type { SizeChart } from '@/lib/product/size-guide';
@@ -147,31 +147,18 @@ export function ProductPurchasePanel({
         getScarcityStatus(matchedVariant.quantityAvailable, matchedVariant.availableForSale),
       )
     : null;
+  // Only known positive stock bounds additions. Unknown stock and sellable
+  // zero-stock variants retain their existing behavior (D-028).
+  const inBag =
+    cart.cart.lines.find((line) => line.variantId === matchedVariant?.id)?.quantity ?? 0;
+  const quantityMax = getRemainingQuantity(matchedVariant?.quantityAvailable, inBag, cart.demo);
+  const atBagLimit = matchedVariant?.availableForSale === true && quantityMax === 0;
   const canAddToBag =
-    !soldOut && selectionComplete && matchedVariant !== null && matchedVariant.availableForSale;
-  // Real Shopify inventory, when known AND actually a usable upper bound.
-  // "No variant matched yet", `quantityAvailable: null` (unknown real-world
-  // inventory, DECISIONS.md D-028), and a non-positive quantityAvailable
-  // all resolve to `undefined` ("no known bound") rather than clamping the
-  // field to 0 or a negative number. The non-positive case matters because
-  // `quantityAvailable` and `availableForSale` are independent Shopify
-  // signals, not one: a variant with "continue selling when out of stock"
-  // enabled can be `availableForSale: true` with `quantityAvailable: 0`,
-  // and `canAddToBag` below already treats `availableForSale` — not
-  // `quantityAvailable` — as the authoritative purchasability signal.
-  // Capping the Quantity field to 0 in that case would contradict the
-  // variant's own availableForSale: true and make a genuinely purchasable
-  // field unusable. For a matched variant that's actually unavailable
-  // (availableForSale: false), Add to Bag is already disabled by
-  // canAddToBag regardless of this value, so leaving the field uncapped
-  // there is harmless. See lib/product/quantity.ts's doc comment.
-  const stockMax =
-    matchedVariant?.quantityAvailable != null && matchedVariant.quantityAvailable > 0
-      ? matchedVariant.quantityAvailable
-      : undefined;
-  const quantityMax = cart.demo
-    ? Math.min(stockMax ?? DEMO_QUANTITY_LIMIT, DEMO_QUANTITY_LIMIT)
-    : stockMax;
+    !soldOut &&
+    selectionComplete &&
+    matchedVariant !== null &&
+    matchedVariant.availableForSale &&
+    !atBagLimit;
 
   // Re-resolves the committed quantity whenever the matched variant's real
   // upper bound changes — e.g. switching from a well-stocked variant to a
@@ -367,7 +354,8 @@ export function ProductPurchasePanel({
           label="Quantity"
           type="number"
           min={1}
-          max={quantityMax}
+          max={atBagLimit ? 1 : quantityMax}
+          disabled={atBagLimit}
           name="quantity"
           value={quantityInput}
           onChange={(event) => {
@@ -400,6 +388,24 @@ export function ProductPurchasePanel({
           >
             ADD TO BAG
           </Button>
+          {matchedVariant?.availableForSale && inBag > 0 && quantityMax !== undefined && (
+            <div role="status" className="text-utility text-esque-text">
+              <p>
+                {inBag} already in your bag.{' '}
+                {atBagLimit
+                  ? 'This selection is at its bag limit.'
+                  : `You can add up to ${quantityMax} more.`}
+              </p>
+              {atBagLimit && (!purchaseUnavailable || (!cart.notice && !cart.error)) && (
+                <Link
+                  href="/bag"
+                  className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-esque-text"
+                >
+                  VIEW BAG
+                </Link>
+              )}
+            </div>
+          )}
           {cart.demo && (
             <p className="text-utility text-esque-text-secondary">
               Demo bag. Checkout is unavailable.
@@ -446,19 +452,33 @@ export function ProductPurchasePanel({
             <span className="shrink-0 text-utility">
               {matchedVariant ? 'Selected' : 'From'} {formatPrice(displayPrice)}
             </span>
-            <Button
-              type="button"
-              variant="primary"
-              className="min-w-0 flex-1 aria-disabled:cursor-wait aria-disabled:opacity-40"
-              disabled={soldOut}
-              aria-disabled={cart.pending}
-              aria-busy={cart.pending}
-              onClick={handleStickyAction}
-            >
-              {soldOut ? 'SOLD OUT' : canAddToBag ? 'ADD SELECTED ITEM' : 'CHOOSE OPTIONS'}
-            </Button>
+            {atBagLimit ? (
+              <Link
+                href="/bag"
+                className="flex min-h-11 min-w-0 flex-1 items-center justify-center bg-esque-text px-6 py-3 text-esque-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+              >
+                VIEW BAG
+              </Link>
+            ) : (
+              <Button
+                type="button"
+                variant="primary"
+                className="min-w-0 flex-1 aria-disabled:cursor-wait aria-disabled:opacity-40"
+                disabled={soldOut}
+                aria-disabled={cart.pending}
+                aria-busy={cart.pending}
+                onClick={handleStickyAction}
+              >
+                {soldOut ? 'SOLD OUT' : canAddToBag ? 'ADD SELECTED ITEM' : 'CHOOSE OPTIONS'}
+              </Button>
+            )}
           </div>
           <div className="w-full">
+            {atBagLimit && (
+              <p role="status" className="text-utility">
+                This selection is at its bag limit. Adjust the quantity in your bag.
+              </p>
+            )}
             <CartFeedback active={purchaseUnavailable} />
           </div>
         </div>

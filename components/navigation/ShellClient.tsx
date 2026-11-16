@@ -38,11 +38,8 @@ export function ShellClient({
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   // Access Funnel: "drop-gate unlock" — the collection-scoped analog of the
-  // deleted whole-site gate's access_granted. ShellClient mounts on every
-  // storefront page, including the one a successful drop-code redirects
-  // back to (app/(storefront)/collections/[handle]/actions.ts's
-  // validateDropAccessCode), so this is the natural place to observe "did
-  // the visitor just unlock a drop." The real unlock cookie
+  // deleted whole-site gate's access_granted. Consume the initial signal
+  // when the shell mounts. The real unlock cookie
   // (DROP_ACCESS_COOKIE_NAME) is httpOnly (unreadable here by design);
   // that action additionally sets a short-lived, non-httpOnly signal
   // cookie on success specifically for this. Read and immediately cleared
@@ -50,9 +47,9 @@ export function ShellClient({
   // storefront page view.
   useEffect(() => {
     const handle = parseDropAccessEventCookie(document.cookie);
-    if (!handle) return;
-    trackEvent('drop_access_granted', { collection_handle: handle });
+    // Clear invalid signals too, so corrupt optional state cannot linger.
     document.cookie = `${DROP_ACCESS_EVENT_COOKIE_NAME}=; Max-Age=0; path=/`;
+    if (handle) trackEvent('drop_access_granted', { collection_handle: handle });
   }, []);
 
   return (

@@ -22,7 +22,7 @@ import {
   GET_PRODUCT_COLLECTIONS_QUERY,
 } from '@/lib/shopify/queries/catalog';
 import { GET_PRODUCT_VARIANTS_QUERY } from '@/lib/shopify/queries/products';
-import { previewPage } from '@/lib/shopify/pagination';
+import { getPaginationCursor, previewPage } from '@/lib/shopify/pagination';
 import type { ProductSortKeys } from '@/lib/shopify/storefront.types';
 
 const CANDIDATE_BATCH_SIZE = 24;
@@ -82,11 +82,22 @@ function decodeCursor(value: string | undefined, scope: string): string | undefi
   try {
     const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString());
     if (Array.isArray(parsed) && parsed[0] === scope && typeof parsed[1] === 'string')
-      return parsed[1];
+      return getPaginationCursor(parsed[1]);
   } catch {
     // Invalid or stale URL cursors restart at the first page.
   }
   return undefined;
+}
+
+/** Uses the listing's own scope and decoder so restarted pages share its canonical. */
+export function getCatalogContinuationCursor(
+  productTypes: string[] | null,
+  filters: CatalogFilters,
+  cursor: string | undefined,
+): string | undefined {
+  const scope = cursorScope([productTypes, filters]);
+  const decoded = decodeCursor(cursor, scope);
+  return decoded ? encodeCursor(scope, decoded) : undefined;
 }
 
 export async function getCatalogPage(

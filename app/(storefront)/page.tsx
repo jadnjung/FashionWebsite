@@ -8,6 +8,9 @@ import { getClosetCollection } from '@/lib/home/closet';
 import { getSelectedPieces } from '@/lib/home/selected-pieces';
 import { getHomepageLooks } from '@/lib/looks/looks';
 
+// Regenerate discovery output after one minute, including timed collection phases.
+export const revalidate = 60;
+
 // ROADMAP.md Phase 7/8 — the real homepage. Scene order matches PROJECT.md
 // §23 and DESIGN_SYSTEM.md §58's Mobile Homepage sequence exactly. Scene 07
 // (Archive Preview) is deliberately omitted — see the homepage design

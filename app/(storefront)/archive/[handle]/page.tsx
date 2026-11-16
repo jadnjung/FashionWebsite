@@ -7,6 +7,7 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { getArchivedCollection } from '@/lib/archive/collections';
 import { getProductsByCollection } from '@/lib/shopify/products';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { getPaginationCursor } from '@/lib/shopify/pagination';
 import { buildBreadcrumbJsonLd } from '@/lib/seo/structured-data';
 
 // Request-scoped memoization so generateMetadata and the page component
@@ -17,16 +18,20 @@ const getCachedArchivedCollection = cache(getArchivedCollection);
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams: Promise<{ after?: string | string[] }>;
 }): Promise<Metadata> {
   const { handle } = await params;
   const collection = await getCachedArchivedCollection(handle);
   if (!collection) notFound();
+  const after = getPaginationCursor((await searchParams).after);
+  const pathname = `/archive/${encodeURIComponent(handle)}`;
   return buildPageMetadata({
     title: `${collection.title} — Archive — Esque`,
     description: collection.description || `${collection.title}, a past Esque collection.`,
-    path: `/archive/${handle}`,
+    path: after ? `${pathname}?${new URLSearchParams({ after })}` : pathname,
   });
 }
 
@@ -42,8 +47,7 @@ export default async function ArchivedCollectionPage({
 }) {
   const { handle } = await params;
   const query = await searchParams;
-  const after =
-    typeof query.after === 'string' && query.after.length <= 4096 ? query.after : undefined;
+  const after = getPaginationCursor(query.after);
 
   // Parallelized, unlike the PDP's own second fetch: both calls here are
   // independent — each needs only `handle`, already known before either

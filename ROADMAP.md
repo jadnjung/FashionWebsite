@@ -4,15 +4,16 @@ Tracks Collection 001 / V1 build order, near-term follow-ups (V1.1), and deferre
 
 Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
-## Current Status (updated 2026-11-15)
+## Current Status (updated 2026-11-16)
 
 A quick orientation for a new session; the phase checklists below and [DECISIONS.md](./DECISIONS.md) hold the detail. Setting up on a new computer? See [README.md → New machine setup](./README.md#new-machine-setup).
 
 **Where things stand:**
 - **V1 storefront:** the front end is built through Phase 12 against Demo Mode fixtures. The Demo bag supports preview shopping flows (D-093). A real Shopify store and Vercel project still need provisioning for live cart, checkout, accounts, and deployment (D-016).
 - **Storefront readiness pass:** local implementations address the 46-item Demo backlog, with integrated production browser validation complete for the local automated scope. Evidence and outstanding manual/device checks are recorded in the [completion record](./docs/superpowers/plans/2026-11-14-backlog-completion.md).
+- **Shopping reliability follow-up:** the five requested groups cover items 47–49, 52, 54 and 59–69. Implementation, remaining audit work and current validation are recorded in the [backlog](./docs/website-improvement-backlog.md) and [execution record](./docs/superpowers/plans/2026-11-16-shopping-reliability-and-production.md). Facet-page draft persistence is recorded separately as open item 72.
 - **Previous milestone:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
-- **CI:** two Playwright suites (no-store and Demo Mode), plus format, lint, typecheck, unit tests and build. It was red from 2026-10-27 until D-090 fixed it.
+- **CI:** both Playwright suites select optimized, isolated builds, alongside format, lint, typecheck, unit tests and build. Hosted results are recorded in the published branch's workflow runs.
 
 **Owner tasks (not code):**
 - Create the Shopify store and the Vercel project (Phase 0).
