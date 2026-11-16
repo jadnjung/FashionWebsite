@@ -1,8 +1,29 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 46 items, including 21 additions from the follow-up audit. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 58 numbered items, including 12 additions from the latest audit. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
+
+## New open items from the audit at revision 412476b
+
+This audit added items 47–58 on November 15, 2026. The table records their current evidence and priority. Their detailed specifications follow item 46. Application fixes remain future work. The completed implementations and earlier audit observations retain their dated records below.
+
+| Item | Priority | Open finding or improvement | Evidence |
+| --- | --- | --- | --- |
+| 47 | P2 | Removed filter chips leave stale form choices that Apply restores | Browser reproduced |
+| 48 | P2 | Search and Quick Add need a deadline for stalled client requests | Search browser reproduction and both components inspected |
+| 49 | P2 | Late Quick Add success can reset choices from a newer opening | Browser reproduced with a delayed, abort-ignoring decoder |
+| 50 | P2 | Collection and archive indexes stop at the first 20 collections | Source confirmed |
+| 51 | P2 | Saved lists launch unbounded refreshes and refetch survivors after removal | Browser reproduced with 100 synthetic entries |
+| 52 | P2 | Malformed analytics-cookie encoding can break the storefront shell | Browser reproduced and actual parser probed |
+| 53 | P2 | A drop-granted signal added after shell mount is missed during client navigation | Browser signal-lifecycle reproduction |
+| 54 | P2 | Request Access service failures leave keyboard focus on the page body | Browser reproduced |
+| 55 | P2 | Purchase-intent analytics loses selected quantity | Source-confirmed information gap |
+| 56 | P3 | Accidental saved-item removal needs an Undo action | Enhancement proposal based on current removal flow |
+| 57 | P2 | Predictive Search needs a route to the remaining matches | Source-confirmed discovery limit and enhancement proposal |
+| 58 | P3 | Search should retain useful groups when one lookup fails | Enhancement proposal requiring a documented policy decision |
+
+The browser reproductions used Chromium 151.0.7922.34, the isolated production Demo build, synthetic contact values and browser-local data. The audit used a 390×844 viewport for filter, form and analytics checks, and 1280×900 for the Quick Add race. Saved-list and stalled-search probes used Chromium's default desktop viewport. It made no real subscriptions or purchases. The existing homepage performance investigations remain open with their earlier measurement evidence.
 
 ## Implementation record updated November 15, 2026
 
@@ -440,7 +461,7 @@ The current baseline includes gallery navigation, fullscreen image zoom, swipe h
 #### Further source findings for Request Access
 
 - The success screen says ACCESS SENT and CHECK YOUR EMAIL, while the server action only submits a subscription job. Define acknowledgement wording that matches the completed operation. A local mocked success can verify wording without claiming actual access-code delivery. [Success screen](../app/(storefront)/access/RequestAccessForm.tsx#L36), [subscription operation](../lib/klaviyo/subscribe.ts#L20)
-- First name is required and validated, but the subscription call receives only email. Decide whether that field serves an actual supported purpose. Reduce form effort or implement its deliberate data contract, with appropriate privacy wording. [Validation](../app/(storefront)/access/actions.ts#L51), [subscription input](../lib/klaviyo/subscribe.ts#L20)
+- First name is required and validated, but the subscription call receives only email. Decide whether that field serves an actual supported purpose. Reduce form effort or implement its deliberate data contract, with appropriate privacy wording. [Current validation](../app/(storefront)/access/actions.ts), [subscription input](../lib/klaviyo/subscribe.ts#L20)
 - During pending submission the button keeps REQUEST ACCESS as its label. Evaluate a concise submitting status and busy semantics so a slow response has an understandable outcome. Combine this with the existing local failure/retry scenario. [Submit control](../app/(storefront)/access/RequestAccessForm.tsx#L138)
 
 ## P3 design and resilience proposals
@@ -702,6 +723,130 @@ Reviewed on November 14, 2026 against website revision `d6cf965`, with documenta
 - **Improvement.** Define a shared supported length and normalization rule. Communicate the limit accessibly and apply it consistently without unexpected truncation during input composition.
 - **Complete when.** UI, local matching, transport, and allowed analytics properties represent the same intended query, including pasted and composed input.
 - **Owner.** frontend-engineer and data-analytics-engineer.
+
+## Additional findings from revision 412476b
+
+These items describe open work found after the original implementation pass. Each demonstration can use placeholder products, browser interception or synthetic SDK responses.
+
+### 47. Keep filter controls synchronized after URL navigation
+
+**P2. Browser confirmed.** Open `/new?size=M`, remove the Size M chip, then inspect the size checkbox. The URL loses `size`, while M remains checked. Activating Apply reintroduces `size=M`. The form uses `defaultChecked` and `defaultValue` on controls retained through client navigation. [Facet controls](../components/catalog/FilterBar.tsx#L118), [price fields](../components/catalog/FilterBar.tsx#L147)
+
+- **Customer impact.** A removed choice can return unexpectedly, and the visible form can disagree with the results and active-filter chips.
+- **Local demonstration.** Repeat chip removal and Clear Filters with size, color, availability and both price fields. Exercise sort links and browser Back/Forward after editing an unapplied control.
+- **Improvement.** Define how applied URL state and unapplied form edits interact. Synchronize the controls after committed navigation while preserving intentional edits during the current form session.
+- **Complete when.** Removed filters stay removed on the next Apply, all controls reflect the agreed URL state after navigation, and GET submission still works without JavaScript.
+- **Owner.** frontend-engineer and qa-engineer. Extend item 08's existing URL contract with this reproduced regression.
+
+### 48. Recover from stalled Search and Quick Add requests
+
+**P2. Search browser confirmed, shared source gap confirmed.** Holding `/api/search` pending left the overlay at Searching… after 12 seconds with no Retry control. Search and Quick Add abort when their effect is cleaned up, but neither sets a deadline for a request that remains current. The SDK's upstream timeout does not bound a stalled browser-to-site response. [Search request](../components/navigation/SearchOverlay.tsx#L214), [Quick Add request](../components/product/QuickAddPanel.tsx#L80)
+
+- **Customer impact.** An open shopping flow can remain in its loading state until the visitor changes the query or closes it.
+- **Local demonstration.** Hold response headers and, separately, the JSON body. Test Search and Quick Add, retry after the agreed deadline, and close or navigate while the operation is pending.
+- **Improvement.** Bound the complete client operation, expose an understandable recovery state, and distinguish a deliberate close from a timed-out request. Reuse the established cancellation approach where its behavior fits.
+- **Complete when.** Each current request reaches a useful outcome within its documented budget, Retry works, and late completion cannot replace the retried result. Verify headers, decoding and transport interruption separately.
+- **Owner.** frontend-engineer and qa-engineer. Item 26's bag deadline remains a separate implemented contract.
+
+### 49. Ignore late Quick Add success from an earlier opening
+
+**P2. Browser confirmed with an injected delayed decoder.** The first product request received a real Demo response, while its JSON promise was held beyond cancellation. After closing and reopening Quick Add, selecting M worked. Releasing the old response changed M from checked to unchecked. The success callback resets selections without checking whether its controller was aborted. [Product success callback](../components/product/QuickAddPanel.tsx#L88)
+
+- **Customer impact.** Old responses can erase a customer's current choices or replace fresher availability while the same panel is open again.
+- **Local demonstration.** Acknowledge request A and delay its decoder. Close, reopen, complete request B, select options, then release A. Repeat with retry and with changed synthetic inventory.
+- **Improvement.** Associate success, failure and selection initialization with the current request and panel session. Reject stale completion even when decoding ignores cancellation.
+- **Complete when.** The newer product, selections and purchase state remain intact after any older completion. Ordinary close/reopen behavior and keyboard focus continue to work.
+- **Owner.** frontend-engineer and qa-engineer.
+
+### 50. Continue the collection and archive indexes beyond 20 entries
+
+**P2. Source confirmed.** `/collections` consumes only `getCollections()`'s first page, whose default size is 20. The archive helper filters that same first page before discarding its continuation metadata. An archived collection on a later page can therefore be absent from the archive index, even when its detail route exists. [Collections index](../app/(storefront)/collections/CollectionsIndex.tsx#L36), [archive query](../lib/archive/collections.ts#L33), [collection page contract](../lib/shopify/collections.ts#L111)
+
+- **Customer impact.** Older or later-listed collections become undiscoverable through their indexes. A first page containing no archived collections can produce an empty-archive message despite later archived entries.
+- **Local demonstration.** Supply 21 and 45 synthetic collections, including an archived entry only on page two, mixed lifecycle phases and an intermediate page containing no archived entries.
+- **Improvement.** Preserve collection-level continuation and provide accessible navigation or another bounded discovery strategy. Filtering for archive membership must account for later source pages.
+- **Complete when.** Every eligible collection is reachable exactly once, empty messages reflect the searched scope, and continuation handles retry, repeated cursors and keyboard navigation. Preserve upcoming-drop access rules.
+- **Owner.** backend-engineer, frontend-engineer and qa-engineer. Item 09's product continuation does not cover collection-index pagination.
+
+### 51. Scale saved-item refreshes to larger lists
+
+**P2. Browser confirmed with synthetic data.** A valid local list of 100 entries generated 100 product requests on opening `/wishlist`. Removing one entry generated another 99 requests, for 199 total. The list has no entry bound, and its effect creates a controller and refresh promise for every item whenever `items` changes. [Refresh effect](../components/product/WishlistView.tsx#L43), [effect dependencies](../components/product/WishlistView.tsx#L114), [stored-list parsing](../lib/product/wishlist.ts#L130)
+
+- **Customer impact.** Larger saved lists cause request bursts, repeated loading announcements and unnecessary work after a simple removal. A service limit can turn that extra work into visible availability failures.
+- **Local demonstration.** Seed 1, 30, 100 and 500 valid entries. Count requested handles and concurrent work on initial load, one removal, an addition and retry of a single failure. Test slow and missing entries together.
+- **Improvement.** Bound concurrent work, retain still-valid results and refresh the affected handles. Define a supported list-size policy if needed while preserving existing saved records deliberately.
+- **Complete when.** Removing one item does not refetch every healthy survivor, retry targets the intended scope, and a documented concurrency budget holds. All saved entries remain reachable and independently recoverable.
+- **Owner.** frontend-engineer, backend-engineer and qa-engineer. Preserve item 27's independent-result behavior.
+
+### 52. Tolerate malformed analytics-cookie encoding
+
+**P2. Browser and parser confirmed.** With the synthetic cookie `esque_drop_access_event=%E0%A4%A`, the actual parser throws `URIError`. Loading `/new` in an isolated context produced that page error and the heading This page couldn’t load. The shell invokes `decodeURIComponent` during its mount effect without handling invalid encoding. [Cookie parser](../lib/access/cookies.ts#L91), [shell consumer](../components/navigation/ShellClient.tsx#L51)
+
+- **Customer impact.** A malformed optional measurement signal can interrupt the main storefront.
+- **Local demonstration.** Seed invalid percent encodings, empty values, valid encoded Unicode and an ordinary valid handle in separate browser contexts. No real access credential is required.
+- **Improvement.** Treat malformed analytics signals as invalid input and keep the storefront usable. Define deliberate clearing behavior so the same bad signal is not repeatedly processed.
+- **Complete when.** Invalid cookie values cause no uncaught errors or broken storefront, valid handles still produce their intended event, and the actual collection-access decision retains its server-side authority.
+- **Owner.** frontend-engineer, security-engineer and qa-engineer. This finding concerns the optional analytics signal.
+
+### 53. Consume drop-granted signals during client navigation
+
+**P2. Signal-lifecycle browser reproduction.** After the shell mounted, a synthetic valid grant signal was added and a normal client link opened `/bag`. No `drop_access_granted` event fired and the signal remained. Reloading consumed the same signal and emitted one event. The consumer effect runs only on shell mount. [Grant consumer](../components/navigation/ShellClient.tsx#L51), [grant-producing action](../app/(storefront)/collections/[handle]/actions.ts)
+
+- **Customer impact.** Successful access can be absent from the access funnel or attributed to a later reload. The customer's actual collection access is a separate server decision.
+- **Local demonstration.** Deliver a local synthetic grant during an already-mounted session, exercise the equivalent client-navigation lifecycle, and verify local event capture. Also cover a signal present on first load and repeated navigation after consumption.
+- **Improvement.** Observe the actual successful grant transition, emit once for that grant and clear the signal at the appropriate point. Preserve existing public browsing behavior.
+- **Complete when.** Initial-load and in-session grants each produce exactly one intended event. Ordinary navigation and reload do not duplicate an already-consumed grant. A real account connection is unnecessary for the local contract test.
+- **Owner.** frontend-engineer, data-analytics-engineer and qa-engineer. The browser probe covered the signal lifecycle; a mocked successful action should complete the integration regression.
+
+### 54. Return keyboard focus to useful recovery after a service failure
+
+**P2. Browser confirmed in Demo Request Access.** Submit a valid synthetic email and consent using Enter with Preview outcome set to Service unavailable. The error appears, but `document.activeElement` is BODY and there is no invalid field. The focus effect only finds an invalid field for errors. The submitting button is disabled during the operation. [Focus handling](../app/(storefront)/access/RequestAccessForm.tsx#L35), [submit control](../app/(storefront)/access/RequestAccessForm.tsx#L165)
+
+- **Customer impact.** Keyboard users lose their place when a service error needs a retry, despite their entered email and consent being retained.
+- **Local demonstration.** Submit by keyboard, return a delayed service failure, inspect focus and the next Tab destination, then retry successfully. Also test when the visitor deliberately moves focus while waiting.
+- **Improvement.** Define recovery focus for a form-level error. Move focus to the useful error or retry target when appropriate, while respecting deliberate navigation during the request.
+- **Complete when.** Failed submission leaves a clear announcement and reachable recovery target, safe input remains, field errors focus their field, and success retains its useful outcome focus.
+- **Owner.** frontend-engineer, ui-reviewer and qa-engineer. Extend item 22's service-failure verification with this exact keyboard regression.
+
+### 55. Include selected quantity in purchase-intent analytics
+
+**P2. Source-confirmed information gap.** The PDP resolves the selected quantity for `cart.addItems`, while the preceding `add_to_bag_click` payload carries the unit price and no quantity. The analytics item type has no quantity property. Intent for three units is therefore indistinguishable from intent for one unit in that payload. [Intent and cart call](../components/product/ProductPurchasePanel.tsx#L238), [analytics item contract](../lib/analytics/events.ts#L31)
+
+- **Customer and business impact.** Local funnel evidence cannot verify the quantity the shopper chose, and later reporting can confuse unit price with the intended line value.
+- **Local demonstration.** Select a synthetic $128 variant with quantities 1 and 3. Capture the existing intent event and compare it with the actual Demo mutation, including quantity normalization.
+- **Improvement.** Document unit price, normalized quantity and intent-value semantics. Extend the typed event contract and its local verification together. Preserve the established distinction between intent and commerce success.
+- **Complete when.** Captured quantity matches the committed intent, unit price remains explicit, value follows the documented rule, and retry does not create unintended duplicate attribution.
+- **Owner.** data-analytics-engineer, frontend-engineer and qa-engineer.
+
+### 56. Provide Undo for accidental saved-item removal
+
+**P3. Enhancement proposal.** Removing an item immediately updates the local list and announces removal. There is no Undo control in that flow. [Removal handler](../components/product/WishlistView.tsx#L116), [storage mutation](../lib/product/wishlist.ts#L193)
+
+- **Customer impact.** An accidental activation requires finding and saving the piece again, which is harder for a long title or a temporarily unavailable product.
+- **Local demonstration.** Remove a healthy piece, the final saved piece and a known missing piece. Exercise keyboard removal and blocked storage.
+- **Improvement.** Offer a concise, accessible Undo action with a documented lifetime and safe restoration behavior. Preserve the snapshot needed to restore a missing piece.
+- **Complete when.** Undo restores the right entry once, handles an entry independently re-added or removed elsewhere, works during session-only persistence, and leaves useful focus after the final-item empty state.
+- **Owner.** product-manager, ui-ux-designer, frontend-engineer and qa-engineer.
+
+### 57. Make matches beyond predictive Search reachable
+
+**P2. Source-confirmed discovery limit and enhancement proposal.** Product and collection predictive searches each default to six results. The API returns arrays without continuation metadata, and the overlay renders those arrays without a complete-results destination. Demo matching also slices at that limit. [Product search](../lib/shopify/products.ts#L661), [collection search](../lib/shopify/collections.ts#L167), [API response](../app/api/search/route.ts#L43)
+
+- **Customer impact.** A broad query can hide relevant matches beyond the preview with no direct way to continue that query.
+- **Local demonstration.** Search a synthetic term matching at least 7 and then 30 products, plus more than 6 collections. Confirm every intended match can be reached through the designed search journey.
+- **Improvement.** Keep a concise predictive preview and add a deliberate full-results or continuation path. Carry the query into a validated URL, make displayed counts honest about their scope and reuse bounded catalog patterns where suitable.
+- **Complete when.** Preview limits are understandable, later matches remain reachable without omissions, and query, browser history, keyboard focus and empty-result recovery work together.
+- **Owner.** product-manager, frontend-engineer, backend-engineer and qa-engineer. This extends Search discovery beyond item 12's failure recovery.
+
+### 58. Retain useful Search results when one lookup fails
+
+**P3. Enhancement proposal requiring a documented policy decision.** The API awaits product and collection lookup with `Promise.all`. A failure in either returns the combined error state. The current route explicitly documents this all-or-nothing policy. [Combined lookup and failure](../app/api/search/route.ts#L42)
+
+- **Customer impact.** A collection lookup failure can hide healthy product matches, and a product lookup failure can hide healthy collection matches. Local category suggestions have their own independent behavior.
+- **Local demonstration.** Return successful synthetic products with a collection error, then reverse the failure. Cover an empty successful group and a stalled failed group.
+- **Improvement.** Evaluate independent group states and scoped Retry while keeping genuine empty results distinguishable from failed lookups. Record any change to the existing search policy in DECISIONS.md before implementation.
+- **Complete when.** Healthy results remain usable, failed groups have useful recovery, late retries cannot replace a newer query, and result-count analytics follows the displayed scope.
+- **Owner.** product-manager, backend-engineer, frontend-engineer and data-analytics-engineer.
 
 ## Feature packages for a more polished demo
 
