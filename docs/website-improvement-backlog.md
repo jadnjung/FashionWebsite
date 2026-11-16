@@ -1,8 +1,43 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 58 numbered items, including 12 additions from the latest audit. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 71 numbered items. The latest broad audit added items 59–71 after the preceding 12-item expansion. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
+
+## Broad audit at revision aa2c594
+
+This pass reviewed UI, accessibility, commerce state, public API boundaries, analytics, content consistency, SEO, caching and delivery automation. It added 13 open items. Earlier findings retain their implementation status and evidence. The audit uses placeholder products and synthetic failures wherever execution is recorded.
+
+| Item | Priority | Open finding or improvement | Evidence |
+| --- | --- | --- | --- |
+| 59 | P2 | Retrying a failed background bag refresh can replay an acknowledged add | Two-tab browser reproduction and actual-source harness |
+| 60 | P2 | Inventory guidance ignores units already in the bag | Browser reproduced with an eight-unit Demo variant |
+| 61 | P2 | Adding to an existing variant fails at the 50-line cart boundary | Actual Demo cart functions executed with canonical fixtures |
+| 62 | P2 | Bag thumbnails ignore available selected-variant media | Actual Demo cart functions executed with the media fixture |
+| 63 | P2 | Product structured data can advertise an unavailable price as in stock | Actual builder executed with synthetic variants |
+| 64 | P2 | Distinct continuation pages canonicalize to their first page | HTTP confirmed, canonical-policy correction proposed |
+| 65 | P2 | Homepage and sitemap need an explicit lifecycle freshness policy | Demo build manifest, HTTP cache observations and source review |
+| 66 | P2 | Forced colors can make the custom pointer invisible | Browser reproduced |
+| 67 | P2 | Zoomed image failures place Retry outside the visible viewer | Desktop and phone viewport browser reproductions |
+| 68 | P2 | Size Guide permits scrolling the page behind its modal | Desktop browser reproduction |
+| 69 | P2 | CI builds production output but its browser commands default to development | Workflow and server-launcher source confirmed |
+| 70 | P3 | Fine-pointer WebKit shopping interactions lack a configured browser project | Test-configuration coverage proposal |
+| 71 | P3 | Upcoming-product visibility needs an explicit policy across direct destinations | Demo behavior confirmed, product decision pending |
+
+### Coverage and remaining evidence
+
+| Area | What this pass checked | Findings and boundaries |
+| --- | --- | --- |
+| Shopping and cart integrity | Canonical Demo operations, inventory limits, multi-tab refresh recovery, chosen variant media | 59–62. Live Shopify cart and payment behavior remain outside the implemented Demo contract. |
+| UI and accessibility | Forced colors, pointer visibility, gallery failure recovery, modal backdrop scrolling, four layout widths and keyboard selection | 66–68. Actual screen-reader speech, native magnification and physical touch remain pending under item 18. |
+| SEO and indexability | Product/Offer facts, canonical continuation, robots, sitemap, missing routes and personal-page indexing | 63–65. Sampled missing product, collection, archive and subcategory routes returned HTTP 404 with noindex. Bag and wishlist returned noindex. |
+| Security and server boundaries | Demo mode enforcement, public APIs, server actions, response errors, analytics privacy, redirects and collection access | 59 is the new confirmed state-integrity defect. Existing 52 remains open. No additional exploitable issue was confirmed in the reviewed boundary scope. |
+| Analytics and event meaning | Purchase-intent quantity contract and recovery operations against acknowledged user actions | Existing 53 and 55 remain open. Item 59 can change simulated quantity without a new customer add action. |
+| Performance and data freshness | Existing homepage measurements, lazy WebGL separation, production cache observations and background work | 65. Earlier mobile LCP, duplicate hero requests and continued paused drawing retain their measured follow-ups. No new Web Vitals benchmark was performed in this pass. |
+| Content and merchandising consistency | Price/stock agreement, variant image agreement, collection lifecycle and release destinations | 60, 62, 63 and 71. Final garment facts and policy approval keep their owner dependencies. |
+| Reliability and delivery automation | Recovery intent, exact cart boundaries, production-test selection and browser/input coverage | 59, 61, 69 and 70. Hosted deployment and physical-device behavior still need their own evidence. |
+
+Browser checks used the isolated Demo production server, Next.js 16.3.1 and Chromium 151.0.7922.34. The UI reviewer verified normal PDP and reduced-motion looks journeys at widths 390, 768, 1024 and 1440px. A passing sampled check records only its tested surface and state. The detailed items identify proposed decisions and source-only coverage separately from executed reproductions.
 
 ## New open items from the audit at revision 412476b
 
@@ -760,12 +795,12 @@ These items describe open work found after the original implementation pass. Eac
 
 ### 50. Continue the collection and archive indexes beyond 20 entries
 
-**P2. Source confirmed.** `/collections` consumes only `getCollections()`'s first page, whose default size is 20. The archive helper filters that same first page before discarding its continuation metadata. An archived collection on a later page can therefore be absent from the archive index, even when its detail route exists. [Collections index](../app/(storefront)/collections/CollectionsIndex.tsx#L36), [archive query](../lib/archive/collections.ts#L33), [collection page contract](../lib/shopify/collections.ts#L111)
+**P2. Source confirmed.** `/collections` consumes only `getCollections()`'s first page, whose default size is 20. The archive helper filters that same first page before discarding its continuation metadata. An archived collection on a later page can therefore be absent from the archive index, even when its detail route exists. The homepage current-collection and upcoming-drop helpers also inspect only that first collection page. [Collections index](../app/(storefront)/collections/CollectionsIndex.tsx#L36), [archive query](../lib/archive/collections.ts#L33), [collection page contract](../lib/shopify/collections.ts#L111), [homepage collection selection](../lib/home/closet.ts#L25), [homepage upcoming-drop selection](../lib/home/upcoming-drop.ts#L27)
 
 - **Customer impact.** Older or later-listed collections become undiscoverable through their indexes. A first page containing no archived collections can produce an empty-archive message despite later archived entries.
-- **Local demonstration.** Supply 21 and 45 synthetic collections, including an archived entry only on page two, mixed lifecycle phases and an intermediate page containing no archived entries.
+- **Local demonstration.** Supply 21 and 45 synthetic collections, including an archived entry only on page two, mixed lifecycle phases and an intermediate page containing no archived entries. Place the current and upcoming collections after the first source page and verify the homepage selectors too.
 - **Improvement.** Preserve collection-level continuation and provide accessible navigation or another bounded discovery strategy. Filtering for archive membership must account for later source pages.
-- **Complete when.** Every eligible collection is reachable exactly once, empty messages reflect the searched scope, and continuation handles retry, repeated cursors and keyboard navigation. Preserve upcoming-drop access rules.
+- **Complete when.** Every eligible collection is reachable exactly once, the homepage selectors find the intended later current/upcoming collections, empty messages reflect the searched scope, and continuation handles retry, repeated cursors and keyboard navigation. Preserve upcoming-drop access rules.
 - **Owner.** backend-engineer, frontend-engineer and qa-engineer. Item 09's product continuation does not cover collection-index pagination.
 
 ### 51. Scale saved-item refreshes to larger lists
@@ -848,6 +883,138 @@ These items describe open work found after the original implementation pass. Eac
 - **Complete when.** Healthy results remain usable, failed groups have useful recovery, late retries cannot replace a newer query, and result-count analytics follows the displayed scope.
 - **Owner.** product-manager, backend-engineer, frontend-engineer and data-analytics-engineer.
 
+## Findings from the broad audit at revision aa2c594
+
+### 59. Retry the failed bag operation without replaying acknowledged intent
+
+**P2. Browser confirmed and actual-source harness confirmed.** Tab A added crewneck M/Black once, then Tab B added the same variant once. Tab A's resulting background restore received a synthetic HTTP 503. Activating Try Again sent another add and changed stored quantity from 2 to 3. The retry reference retains the last foreground operation while a background failure can expose its own retry UI. [Operation tracking](../components/cart/CartProvider.tsx#L84), [background synchronization](../components/cart/CartProvider.tsx#L214), [retry replay](../components/cart/CartProvider.tsx#L240)
+
+- **Customer impact.** Recovering from a synchronization failure changes simulated quantities and totals beyond the two acknowledged additions.
+- **Local demonstration.** Use two browser tabs and intercept only the background restore after the second tab changes storage. Repeat after successful add, remove, quantity update and clear operations.
+- **Improvement.** Associate recovery with the operation that failed. Preserve a still-failed foreground intent deliberately when background synchronization overlaps it.
+- **Complete when.** Refresh retry performs the intended restore and keeps the two-add quantity at 2. Successful foreground mutations are not replayed by background recovery. Include timeout, HTTP failure and delayed-completion variants.
+- **Owner.** frontend-engineer, backend-engineer, security-engineer and qa-engineer. Extend item 13's existing multi-tab coverage with this exact regression.
+
+### 60. Account for units already in the bag when explaining inventory limits
+
+**P2. Browser confirmed in Demo Mode.** Add the full eight-unit allowance of crewneck M/Black, then attempt one additional unit from the PDP. The quantity field still allows 1–8 and Add to Bag remains enabled. The error says to choose a smaller quantity, even though the current value and minimum are both 1. Contextual View Bag is absent during the error. The header bag destination remains available. [Quantity maximum](../components/product/ProductPurchasePanel.tsx#L169), [inventory rejection](../lib/cart/demo-cart.ts#L30), [feedback actions](../components/cart/CartFeedback.tsx#L25)
+
+- **Customer impact.** The visitor receives guidance that cannot be satisfied in the current picker and can repeatedly retry the same impossible addition.
+- **Local demonstration.** Fill a variant's allowance in the Demo bag, return to its PDP or Quick Add, and attempt another unit. Cover partially used capacity and a multi-piece look containing that same variant.
+- **Improvement.** Explain the relationship between current stock and quantity already present. Offer a useful bag-management destination when no additional unit can be added. Keep the server authoritative for actual availability.
+- **Complete when.** The interface communicates remaining addable capacity or a clear correction after rejection. Error recovery does not ask for a value below the supported minimum. Successful additions and existing bag quantities remain correct.
+- **Owner.** frontend-engineer, product-manager and qa-engineer.
+
+### 61. Merge an existing cart variant correctly at the line-count limit
+
+**P2. Actual-source execution confirmed.** A cart containing 50 distinct variants from `preview-many-variants` builds successfully. Adding one unit to its first existing variant returns `invalid_cart`, even though the result would still contain 50 distinct lines and the variant has sufficient stock. The combined raw array is checked against the 50-entry bound before duplicate variants are grouped. [Input bound](../lib/cart/model.ts#L38), [grouping order](../lib/cart/demo-cart.ts#L17), [add operation](../lib/cart/demo-cart.ts#L114)
+
+- **Customer impact.** A supported bag cannot increase an existing line at its boundary. The generic invalid-cart guidance can suggest clearing an otherwise readable bag.
+- **Local demonstration.** Execute the actual helper with 49 and 50 valid distinct lines, add to an existing variant, then add a genuinely new distinct line. Include duplicate incoming entries and out-of-stock quantities.
+- **Improvement.** Distinguish request-size bounds from resulting distinct-line limits. Resolve additions safely before applying the intended result limit, while maintaining bounded input processing.
+- **Complete when.** Updating an existing variant succeeds within stock at 50 lines, a genuinely over-limit result receives intentional guidance, and failures preserve the acknowledged cart. Preserve atomic multi-item additions.
+- **Owner.** backend-engineer and qa-engineer.
+
+### 62. Show the selected variant's image in the bag
+
+**P2. Actual-source execution confirmed with the canonical media fixture.** For `preview-variant-media`, the M/Ecru variant supplies `/preview-demo/product-4.jpg`. Building its Demo line returns `/preview-demo/product-3.jpg`, the product's first gallery image. The selected option text remains Ecru. [Variant media fixture](../lib/shopify/preview-demo-fixtures.ts#L262), [cart line image](../lib/cart/demo-cart.ts#L43), [bag image](../components/cart/BagView.tsx#L36)
+
+- **Customer impact.** The bag can show a different color or view from the option the customer selected, weakening confidence in the order summary.
+- **Local demonstration.** Add each mapped color from the media fixture through PDP, Quick Add and a synthetic look. Include an unmapped variant and missing imagery.
+- **Improvement.** Prefer authoritative selected-variant media where available and retain a deliberate product-image fallback. Keep the image, selected option labels and variant link consistent.
+- **Complete when.** The bag thumbnail follows each mapped selected variant through reload and quantity updates, while missing media remains usable. Product identity and inventory authority are preserved.
+- **Owner.** frontend-engineer, backend-engineer, ecommerce-merchandiser and qa-engineer. Item 40's PDP color-image navigation remains a separate completed behavior.
+
+### 63. Keep structured offer price and availability consistent
+
+**P2. Actual builder execution confirmed.** A synthetic product with an unavailable USD 100 variant and an available USD 150 variant produces one Offer priced at USD 100 with InStock availability. No available variant supplies that offer. The builder combines product minimum price with availability across all variants. [Product Offer builder](../lib/seo/structured-data.ts#L65)
+
+- **Customer impact.** Search or other structured-data consumers can receive a purchasable price the storefront cannot actually offer.
+- **Local demonstration.** Add cheaper-unavailable, multiple-price, all-unavailable and zero-stock-but-sellable variants to the existing structured-data fixtures. Compare the rendered offer with the matching actual product choices.
+- **Improvement.** Represent real offer facts with a consistent price, currency, availability and destination. Review the original minimum-price policy against the richer variant model and current supported product schema guidance.
+- **Complete when.** Every advertised offer is internally consistent and traceable to authoritative product data. Tests cover variant price differences and preserve correct sold-out behavior. Review the chosen variant representation before changing schema type. [Google Product guidance](https://developers.google.com/search/docs/appearance/structured-data/product-snippet)
+- **Owner.** seo-performance-engineer, backend-engineer and ecommerce-merchandiser.
+
+### 64. Give distinct continuation pages an intentional canonical policy
+
+**P2. HTTP behavior confirmed, policy correction proposed.** Following Next products on `/new` returns six later products with HTTP 200 while its canonical stays `/new`. The current collection's continuation has the same first-page canonical behavior. The original parameter-free policy predates the newer continuation pages. [Page metadata builder](../lib/seo/metadata.ts#L57), [category metadata](../app/(storefront)/new/page.tsx#L15), [collection metadata](../app/(storefront)/collections/[handle]/page.tsx#L54)
+
+- **Customer and business impact.** Distinct inventory pages send a canonical signal identifying their first page as the preferred version, complicating discovery of later inventory.
+- **Local demonstration.** Inspect server-returned canonicals on the first, intermediate and last pages of categories, current collections and archives. Include filters, sort, invalid cursors and tracking parameters.
+- **Improvement.** Revisit the canonical policy for distinct paginated content. Preserve the intended treatment of ordinary sort/filter variations and normalize unsupported parameters deliberately.
+- **Complete when.** Every indexable continuation has the agreed distinct canonical, invalid continuation follows the appropriate first-page behavior, and internal navigation remains crawlable. Record the policy update in DECISIONS.md. [Google pagination guidance](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)
+- **Owner.** seo-performance-engineer, backend-engineer and qa-engineer.
+
+### 65. Define freshness for lifecycle-dependent homepage and sitemap output
+
+**P2. Demo cache behavior confirmed, live freshness policy proposed.** The optimized Demo build records `/` and `/sitemap.xml` as static with no timed revalidation. HTTP probes returned cache hits. Homepage response caching included a one-year shared-cache lifetime. The actual Shopify transport probe supplied no explicit no-store or timed revalidation setting. Live Shopify mutation freshness has not been demonstrated. [Homepage retrieval](../app/(storefront)/page.tsx#L19), [sitemap generation](../app/sitemap.ts#L10), [transport](../lib/shopify/client.ts#L34)
+
+- **Customer impact to verify.** Scheduled launches, collection archival, changed availability and newly published products can diverge from discovery output retained from an earlier generation.
+- **Local demonstration.** Build with an isolated synthetic catalog and controlled release time. Change the data or cross the release boundary after build, then compare homepage, sitemap and dynamically rendered detail routes. Include a temporary backend failure during refresh.
+- **Improvement.** Document a measurable freshness target and an explicit refresh mechanism. Choose bounded revalidation or another suitable strategy with its recovery and operational cost understood.
+- **Complete when.** New, removed, launched and archived records appear according to that target, transient failures recover, and cache headers match the implemented lifecycle contract. Demonstrate with synthetic data before claiming live freshness. [Next sitemap caching guidance](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap)
+- **Owner.** backend-engineer, seo-performance-engineer and devops-engineer.
+
+### 66. Keep the pointer visible in forced-colors mode
+
+**P2. Browser confirmed at 1280×900.** With forced colors active and a fine pointer, moving across a blank PDP area hides the native pointer. The 8px custom dot and the page background both compute to white, leaving no visible pointer on that area. Eligibility does not account for forced colors. [Custom cursor eligibility](../components/navigation/CustomCursor.tsx#L40), [native pointer suppression](../app/globals.css#L307), [custom dot](../app/globals.css#L341)
+
+- **Customer impact.** Visitors using system color adaptation can lose track of pointer position while shopping.
+- **Local demonstration.** Enable forced colors before load and during a visit, then move over blank page areas, links, inputs, modal backdrops and disabled controls. Include reduced motion and touch-emulated contexts.
+- **Improvement.** Provide a reliable native-pointer fallback or another independently visible treatment under forced colors. Follow live preference changes and retain native text and dialog cursor behavior.
+- **Complete when.** Pointer position stays visible throughout those states, no eligible state hides both pointers, and normal keyboard focus remains intact.
+- **Owner.** frontend-engineer, ui-reviewer and qa-engineer.
+
+### 67. Keep zoomed-image failure recovery inside the visible viewer
+
+**P2. Browser confirmed on desktop and phone viewports.** Abort the larger rendition requested after zooming crewneck gallery image 2. At 1280×900, Retry appears near x2412/y3204, beyond the image viewport ending near x1256/y816. At 390×844, it appears near x744/y1121, beyond the viewport ending near x374/y760. The banner is positioned against the enlarged image surface. [Zoomed container](../components/product/ProductGalleryImage.tsx#L35), [failure banner](../components/product/ProductGalleryImage.tsx#L74)
+
+- **Customer impact.** The visible viewer can become blank with its failure explanation and Retry action outside the current view.
+- **Local demonstration.** Load image 2, open fullscreen, fail only the larger optimized rendition on Zoom In, and inspect the viewport before scrolling. Repeat with retry failure, successful retry, image navigation and rotation of a phone viewport.
+- **Improvement.** Anchor recovery controls to the usable viewer area while allowing the enlarged image itself to pan or scroll.
+- **Complete when.** A failed zoom presents visible explanation and Retry without searching across the enlarged surface. Keyboard focus, successful retry, Escape and trigger restoration remain useful.
+- **Owner.** frontend-engineer, ui-reviewer and qa-engineer. Extend item 11's failed-image coverage to this zoom-dependent layout.
+
+### 68. Preserve page position while native modal panels are open
+
+**P2. Size Guide browser reproduction confirmed at 1280×900.** Open Size Guide at `scrollY=0`, then wheel 700px over its backdrop around x30/y400. The underlying page reaches `scrollY=700` while the dialog remains open. The native-dialog opening effect provides no page-scroll lock. Similar Quick Add and Shop the Look effects need the same verification. [Size Guide opening](../components/product/SizeGuidePanel.tsx#L17), [dialog styles](../app/globals.css#L485)
+
+- **Customer impact.** Closing a modal can return the customer to a different part of the page, disrupting the shopping context.
+- **Local demonstration.** Use backdrop wheel and touch gestures, long internal dialog content, Escape, browser navigation and nested Search/Quick Add. Test each native panel independently.
+- **Improvement.** Preserve background position and prevent scroll transfer while maintaining scrolling inside long dialogs. Use a coordinated lifecycle so closing one nested panel does not unlock a still-open overlay.
+- **Complete when.** The underlying page stays in its original position during backdrop gestures and after close, internal scrolling works, and scroll behavior is restored after all overlays close.
+- **Owner.** frontend-engineer, ui-reviewer and qa-engineer.
+
+### 69. Exercise optimized browser behavior in CI
+
+**P2. Source-confirmed coverage gap and automation proposal.** CI runs `pnpm build`, followed by ordinary main and Demo browser commands. The server launcher selects the development server unless `PLAYWRIGHT_PRODUCTION=1`, and that flag is absent from the workflow. The separate production smoke command is available. [CI browser steps](../.github/workflows/ci.yml#L43), [server-mode selection](../scripts/run-browser-server.mjs#L5), [production smoke entry point](../scripts/production-smoke.mjs)
+
+- **Customer impact.** Production-only rendering, caching, hydration or asset failures can escape the automated browser gates even when compilation passes.
+- **Local demonstration.** Inspect the browser-tested rendering marker and server process under the CI command environment. Compare with the existing owned production harness in both Demo and unconfigured modes.
+- **Improvement.** Integrate a suitably scoped optimized-build browser gate or explicitly enable the supported production mode. Keep server isolation and bounded runtime under the workflow's control.
+- **Complete when.** CI verifies production rendering through the existing mode check, executes critical shopping and recovery journeys against optimized output, and reports useful failure artifacts. Both configuration modes remain deliberate.
+- **Owner.** devops-engineer and qa-engineer. This extends item 16's implemented production harness into the delivery workflow.
+
+### 70. Cover desktop WebKit pointer and keyboard interactions
+
+**P3. Test-configuration coverage proposal.** Both browser configurations use WebKit for touch-oriented phone/tablet profiles. Desktop and laptop profiles use Chromium. Several pointer and hover checks skip mobile contexts, leaving that combination of engine and input behavior untested. [Main browser projects](../playwright.config.ts#L57), [Demo projects](../playwright.demo.config.ts#L38), [pointer-specific checks](../tests/e2e-demo/navigation-accessibility.spec.ts#L129)
+
+- **Customer impact to verify.** Desktop WebKit hover, pointer fallback, focus cycling and modal behavior can differ from the tested Chromium desktop and touch WebKit paths.
+- **Local demonstration.** Add an isolated fine-pointer WebKit audit profile and exercise menu/category hover, Search/Quick Add nesting, gallery controls, cursor fallback and keyboard purchase choices.
+- **Improvement.** Define the desktop browser/input coverage needed for launch and add the corresponding focused project or repeatable audit command.
+- **Complete when.** These critical interactions have recorded WebKit desktop evidence, skips describe unsupported features accurately, and scope and runtime are documented. Actual Safari hardware and assistive-technology speech keep their separate evidence requirements.
+- **Owner.** qa-engineer, frontend-engineer and ui-reviewer.
+
+### 71. Clarify upcoming-product visibility across direct destinations
+
+**P3. Demo behavior confirmed, product-policy decision pending.** A fresh cookie-free context sees the early-access teaser at `/collections/collection-002`, while `/api/products/preview-boxy-denim-jacket` returns its details and the corresponding PDP renders. This follows the current collection-route scope and the documented Demo product fallback. A broader product embargo needs an explicit decision. [Collection phase boundary](../app/(storefront)/collections/[handle]/page.tsx), [direct product API](../app/api/products/[handle]/route.ts), [Demo product lookup](../lib/shopify/preview-demo-fixtures.ts#L181)
+
+- **Customer impact to decide.** Release messaging and direct product visibility may communicate different expectations about what early access provides.
+- **Local demonstration.** In a fresh context, compare an upcoming collection, its known product handle, search, catalog, looks and sitemap. Repeat after a successful submission of a synthetic local code in an isolated test harness, and after the scheduled release time.
+- **Improvement.** Document which destinations and product facts are public during the upcoming phase. Align release copy, discovery and the corresponding server behavior with that decision.
+- **Complete when.** The agreed visibility matrix is explicit, local fixtures cover every listed destination, and release transitions match it. Preserve public browsing and the documented distinction between brand access and actual customer/order authorization.
+- **Owner.** product-manager, ecommerce-merchandiser, backend-engineer, security-engineer and qa-engineer. Live publishing behavior still requires separate store evidence.
+
 ## Feature packages for a more polished demo
 
 These packages expand the existing items into coherent website experiences. They are proposed scope for subsequent implementation. Each package can be demonstrated using synthetic products and intercepted service responses.
@@ -907,7 +1074,7 @@ Use the existing opt-in Demo Mode for populated journeys. Set `PREVIEW_DEMO_MODE
 
 Final garment measurements, composition, care, photography, approved business policies, live Shopify transactions, real email delivery, account access, and hosted deployment remain owner or service dependencies. Each related item above identifies the interface or local verification that can progress beforehand.
 
-## Follow-up audit coverage and limits
+## Historical follow-up audit coverage and limits
 
 The parent inspected product, saved-item, contact, access, archive, legal, metadata, sitemap, countdown, and shared layout code. Independent UI and commerce reviewers inspected discovery/navigation/closet and shopping data/operation contracts. Their source findings were compared with the original backlog before inclusion.
 
