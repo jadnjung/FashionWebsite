@@ -141,7 +141,7 @@ test('settled Search emits exact counts once and redacts an obvious email query'
     .poll(() => eventsNamed(page, 'search'))
     .toEqual([{ name: 'search', properties: { search_term: 'crewneck', result_count: 1 } }]);
   await input.fill('zzznothing');
-  await expect(search.getByText('NOTHING MATCHES.', { exact: true })).toBeVisible();
+  await expect(search.getByText('NO SUGGESTIONS.', { exact: true })).toBeVisible();
   await expect.poll(() => eventsNamed(page, 'search')).toHaveLength(2);
   await input.fill('synthetic@example.com');
   await expect

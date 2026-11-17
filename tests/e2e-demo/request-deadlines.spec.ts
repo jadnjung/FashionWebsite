@@ -113,7 +113,7 @@ for (const stage of ['fetch', 'body'] as const) {
     await expect(product).toBeVisible();
     await releaseRequest(page);
     await expect(product).toBeVisible();
-    await expect(search.getByText('NOTHING MATCHES.', { exact: true })).toHaveCount(0);
+    await expect(search.getByText('NO SUGGESTIONS.', { exact: true })).toHaveCount(0);
   });
 
   test(`Quick Add ${stage} deadline recovers with Retry and keeps fresh selections`, async ({

@@ -62,6 +62,7 @@ export default defineConfig({
             SHOPIFY_STORE_DOMAIN: '',
             SHOPIFY_STOREFRONT_API_TOKEN: '',
             NEXT_PUBLIC_GA4_MEASUREMENT_ID: '',
+            NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR: '',
             NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: '',
             NEXT_PUBLIC_SUPPORT_EMAIL: '',
             NEXT_PUBLIC_PREVIEW_ANALYTICS: '1',

@@ -26,6 +26,9 @@ import {
 // the same way it already covers a products-side one; no separate
 // partial-success handling is added (see DECISIONS.md D-058/D-069).
 export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.getAll('q').length > 1) {
+    return NextResponse.json({ error: 'invalid_query' }, { status: 400 });
+  }
   const query = normalizeSearchQuery(request.nextUrl.searchParams.get('q') ?? '');
 
   if (query.length > MAX_SEARCH_QUERY_LENGTH) {
@@ -45,10 +48,10 @@ export async function GET(request: NextRequest) {
       searchCollections(query),
     ]);
     return NextResponse.json({ products, collections });
-  } catch (error) {
-    // Logged, never forwarded to the client response — mirrors
-    // app/error.tsx's own "log the real error, never show it" contract.
-    console.error('[api/search]', error);
+  } catch {
+    // Upstream errors can contain free-text query values. Keep operational
+    // failure visibility without logging customer input or response detail.
+    console.error('[api/search] Search lookup failed.');
     return NextResponse.json({ error: 'search_failed' }, { status: 500 });
   }
 }

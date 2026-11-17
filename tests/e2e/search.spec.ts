@@ -118,7 +118,7 @@ test.describe('search overlay', () => {
       await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
       await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
       await expect(dialog.getByRole('heading', { name: /collections/i })).toHaveCount(0);
-      await expect(dialog.getByText('NOTHING MATCHES.')).toHaveCount(0);
+      await expect(dialog.getByText('NO SUGGESTIONS.')).toHaveCount(0);
     });
 
     test('typing a 2nd character hides the hint and proceeds to the normal result flow', async ({
@@ -166,7 +166,7 @@ test.describe('search overlay', () => {
       await expect(dialog.getByText('Keep typing…')).toHaveCount(0);
       await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
       await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
-      await expect(dialog.getByText('NOTHING MATCHES.')).toHaveCount(0);
+      await expect(dialog.getByText('NO SUGGESTIONS.')).toHaveCount(0);
     });
   });
 
@@ -249,7 +249,7 @@ test.describe('search overlay', () => {
     // Matches no local category either, so every result group is
     // genuinely empty and only the mocked PRODUCTS fetch is under test.
     await dialog.getByRole('searchbox').fill('zzzznomatch');
-    await expect(dialog.getByText('NOTHING MATCHES.')).toBeVisible();
+    await expect(dialog.getByText('NO SUGGESTIONS.')).toBeVisible();
     await expect(dialog.getByRole('heading', { name: /products/i })).toHaveCount(0);
     await expect(dialog.getByRole('heading', { name: /categories/i })).toHaveCount(0);
     await expect(dialog.getByRole('heading', { name: /collections/i })).toHaveCount(0);

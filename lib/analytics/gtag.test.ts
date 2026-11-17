@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sendGAEvent } from '@next/third-parties/google';
+import { queueAnalyticsCommand } from './queue';
 import { isAnalyticsConfigured, trackEvent } from './gtag';
 
-vi.mock('@next/third-parties/google', () => ({
-  sendGAEvent: vi.fn(),
+vi.mock('./queue', () => ({
+  queueAnalyticsCommand: vi.fn(),
 }));
 
 beforeEach(() => {
   vi.unstubAllGlobals();
-  vi.mocked(sendGAEvent).mockClear();
+  vi.mocked(queueAnalyticsCommand).mockClear();
 });
 
 describe('isAnalyticsConfigured', () => {
@@ -22,13 +22,40 @@ describe('isAnalyticsConfigured', () => {
     expect(isAnalyticsConfigured()).toBe(false);
   });
 
-  it('is true once a real measurement ID is configured', () => {
+  it('requires a verification assertion matching the configured public stream ID', () => {
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
+    for (const assertion of [undefined, '', '1', 'G-OTHER']) {
+      vi.stubEnv('NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR', assertion);
+      expect(isAnalyticsConfigured()).toBe(false);
+    }
+    vi.stubEnv('NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR', 'G-TEST123');
     expect(isAnalyticsConfigured()).toBe(true);
   });
 });
 
 describe('trackEvent', () => {
+  it('each configured event sanitizes current Search location and a prior Search referrer independently', () => {
+    vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
+    vi.stubEnv('NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR', 'G-TEST123');
+    vi.stubEnv('NEXT_PUBLIC_PREVIEW_ANALYTICS', '');
+    vi.stubGlobal('window', {
+      location: { href: 'https://esque.test/search?q=person%40example.com#private' },
+    });
+    vi.stubGlobal('document', { referrer: 'https://esque.test/search?q=secret' });
+    trackEvent('search', { search_term: 'person@example.com', result_count: 0 });
+    expect(queueAnalyticsCommand).toHaveBeenLastCalledWith('event', 'search', {
+      search_term: '[redacted]',
+      result_count: 0,
+      page_location: 'https://esque.test/search',
+      page_referrer: 'https://esque.test/search',
+    });
+    vi.stubGlobal('window', { location: { href: 'https://esque.test/products/piece' } });
+    trackEvent('request_access_open', {});
+    expect(queueAnalyticsCommand).toHaveBeenLastCalledWith('event', 'request_access_open', {
+      page_location: 'https://esque.test/products/piece',
+      page_referrer: 'https://esque.test/search',
+    });
+  });
   // This suite runs in vitest's Node environment (vitest.config.ts:
   // `environment: 'node'`, no jsdom) — `window` is genuinely undefined
   // here, exactly like an RSC/SSR render. That makes this the natural,
@@ -47,7 +74,7 @@ describe('trackEvent', () => {
   it('never forwards to the real GA4 sink when there is no `window`', () => {
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST123');
     trackEvent('drop_access_granted', { collection_handle: 'collection-002' });
-    expect(sendGAEvent).not.toHaveBeenCalled();
+    expect(queueAnalyticsCommand).not.toHaveBeenCalled();
   });
 
   it('accepts every documented event with its exact declared property shape without a type error', () => {

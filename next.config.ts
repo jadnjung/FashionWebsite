@@ -11,8 +11,17 @@ const nextConfig: NextConfig = {
   // https://nextjs.org/docs/app/guides/ai-agents.
   agentRules: false,
   async headers() {
-    if (process.env.PREVIEW_CSP_REPORT_ONLY !== '1') return [];
+    const searchHeaders = [
+      { source: '/search', headers: [{ key: 'Referrer-Policy', value: 'origin' }] },
+      {
+        source: '/:path*',
+        has: [{ type: 'query' as const, key: 'q' }],
+        headers: [{ key: 'Referrer-Policy', value: 'origin' }],
+      },
+    ];
+    if (process.env.PREVIEW_CSP_REPORT_ONLY !== '1') return searchHeaders;
     return [
+      ...searchHeaders,
       {
         source: '/:path*',
         headers: [

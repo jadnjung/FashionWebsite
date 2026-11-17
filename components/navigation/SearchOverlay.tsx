@@ -16,6 +16,7 @@ import {
   MIN_SEARCH_QUERY_LENGTH,
   normalizeSearchQuery,
 } from '@/lib/search-query';
+import { buildSearchHref } from '@/lib/search/links';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -292,7 +293,21 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
       </div>
 
       <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col gap-10 pt-8">
-        <div>
+        <form
+          action="/search"
+          method="get"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (
+              !isQueryLongEnough ||
+              composing ||
+              containerRef.current?.querySelector('dialog[open]')
+            )
+              return;
+            onClose();
+            window.location.assign(buildSearchHref(trimmedQuery));
+          }}
+        >
           <label htmlFor="esque-search-input" className="sr-only">
             Search
           </label>
@@ -300,10 +315,18 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
             id="esque-search-input"
             ref={inputRef}
             type="search"
+            name="q"
             autoComplete="off"
             placeholder="SEARCH ESQUE"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Enter' &&
+                (event.nativeEvent.isComposing || composing || event.nativeEvent.keyCode === 229)
+              )
+                event.preventDefault();
+            }}
             onCompositionStart={() => setComposing(true)}
             onCompositionEnd={(event) => {
               setQuery(event.currentTarget.value);
@@ -321,7 +344,26 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
               Use {MAX_SEARCH_QUERY_LENGTH} characters or fewer.
             </p>
           )}
-        </div>
+          {isQueryLongEnough && (
+            <a
+              href={buildSearchHref(trimmedQuery)}
+              onClick={(event) => {
+                if (
+                  event.button === 0 &&
+                  !event.metaKey &&
+                  !event.ctrlKey &&
+                  !event.shiftKey &&
+                  !event.altKey
+                )
+                  onClose();
+              }}
+              tabIndex={0}
+              className="mt-4 inline-flex min-h-11 items-center text-utility text-esque-text underline"
+            >
+              View all results
+            </a>
+          )}
+        </form>
 
         <p role="status" aria-atomic="true" className="sr-only">
           {effectiveSearchResultsState.status === 'loading'
@@ -329,9 +371,14 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
             : effectiveSearchResultsState.status === 'error'
               ? 'Search could not load. Try again.'
               : effectiveSearchResultsState.status === 'loaded'
-                ? `${effectiveSearchResultsState.products.length + effectiveSearchResultsState.collections.length + categoryResults.length} results for ${trimmedQuery}.`
+                ? `${effectiveSearchResultsState.products.length + effectiveSearchResultsState.collections.length + categoryResults.length} results shown for ${trimmedQuery}.`
                 : ''}
         </p>
+        {isQueryLongEnough && (
+          <p className="text-utility text-esque-text-secondary">
+            Up to 6 product and 6 collection suggestions.
+          </p>
+        )}
 
         {trimmedQuery.length > 0 && (
           <div className="flex flex-col gap-10">
@@ -467,7 +514,7 @@ export function SearchOverlay({ open, onClose, triggerRef }: SearchOverlayProps)
 
             {showNothingMatches && (
               <p className="font-display text-heading-3 uppercase text-esque-text">
-                NOTHING MATCHES.
+                NO SUGGESTIONS.
               </p>
             )}
           </div>

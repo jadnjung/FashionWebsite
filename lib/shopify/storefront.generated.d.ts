@@ -210,6 +210,30 @@ export type PredictiveSearchQuery = { predictiveSearch?: StorefrontTypes.Maybe<{
       & { priceRange: { minVariantPrice: Pick<StorefrontTypes.MoneyV2, 'amount' | 'currencyCode'> }, images: { edges: Array<{ node: Pick<StorefrontTypes.Image, 'url' | 'altText' | 'width' | 'height'> }> } }
     )> }> };
 
+export type GetFullSearchQueryVariables = StorefrontTypes.Exact<{
+  query: StorefrontTypes.Scalars['String']['input'];
+  collectionQuery: StorefrontTypes.Scalars['String']['input'];
+  first: StorefrontTypes.Scalars['Int']['input'];
+  productAfter?: StorefrontTypes.InputMaybe<StorefrontTypes.Scalars['String']['input']>;
+  collectionAfter?: StorefrontTypes.InputMaybe<StorefrontTypes.Scalars['String']['input']>;
+}>;
+
+
+export type GetFullSearchQuery = { products: { edges: Array<(
+      Pick<StorefrontTypes.SearchResultItemEdge, 'cursor'>
+      & { node: { __typename: 'Article' | 'Page' } | (
+        { __typename: 'Product' }
+        & Pick<StorefrontTypes.Product, 'id' | 'handle' | 'title' | 'productType' | 'tags' | 'availableForSale'>
+        & { priceRange: { minVariantPrice: Pick<StorefrontTypes.MoneyV2, 'amount' | 'currencyCode'> }, images: { edges: Array<{ node: Pick<StorefrontTypes.Image, 'url' | 'altText' | 'width' | 'height'> }> } }
+      ) }
+    )>, pageInfo: Pick<StorefrontTypes.PageInfo, 'hasNextPage' | 'endCursor'> }, collections: { edges: Array<(
+      Pick<StorefrontTypes.CollectionEdge, 'cursor'>
+      & { node: (
+        Pick<StorefrontTypes.Collection, 'id' | 'handle' | 'title'>
+        & { dropStatus?: StorefrontTypes.Maybe<Pick<StorefrontTypes.Metafield, 'value'>>, dropDate?: StorefrontTypes.Maybe<Pick<StorefrontTypes.Metafield, 'value'>>, archivedAt?: StorefrontTypes.Maybe<Pick<StorefrontTypes.Metafield, 'value'>> }
+      ) }
+    )>, pageInfo: Pick<StorefrontTypes.PageInfo, 'hasNextPage' | 'endCursor'> } };
+
 interface GeneratedQueryTypes {
   "#graphql\n  query GetCatalogProducts($first: Int!, $after: String, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {\n    products(first: $first, after: $after, query: $query, sortKey: $sortKey, reverse: $reverse) {\n      edges {\n        cursor\n        node {\n          id handle title description productType tags availableForSale\n          priceRange { minVariantPrice { amount currencyCode } }\n          images(first: 2) { edges { node { url altText width height } } }\n          options { id name optionValues { id name } }\n          collections(first: 250) { nodes { handle title } pageInfo { hasNextPage endCursor } }\n          variants(first: 100) {\n            pageInfo { hasNextPage endCursor }\n            edges {\n              node {\n                id title availableForSale quantityAvailable\n                price { amount currencyCode }\n                selectedOptions { name value }\n              }\n            }\n          }\n        }\n      }\n      pageInfo { hasNextPage endCursor }\n    }\n  }\n": {return: GetCatalogProductsQuery, variables: GetCatalogProductsQueryVariables},
   "#graphql\n  query GetProductCollections($handle: String!, $after: String!) {\n    product(handle: $handle) {\n      collections(first: 250, after: $after) {\n        nodes { handle title }\n        pageInfo { hasNextPage endCursor }\n      }\n    }\n  }\n": {return: GetProductCollectionsQuery, variables: GetProductCollectionsQueryVariables},
@@ -225,6 +249,7 @@ interface GeneratedQueryTypes {
   "#graphql\n  query GetCollectionProductListItems($handle: String!, $first: Int!, $after: String) {\n    collection(handle: $handle) {\n      products(first: $first, after: $after) {\n        edges {\n          cursor\n          node {\n            id\n            handle\n            title\n            productType\n            tags\n            availableForSale\n            priceRange {\n              minVariantPrice {\n                amount\n                currencyCode\n              }\n            }\n            images(first: 2) {\n              edges {\n                node {\n                  url\n                  altText\n                  width\n                  height\n                }\n              }\n            }\n          }\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n": {return: GetCollectionProductListItemsQuery, variables: GetCollectionProductListItemsQueryVariables},
   "#graphql\n  query GetProducts($first: Int!, $after: String, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {\n    products(first: $first, after: $after, query: $query, sortKey: $sortKey, reverse: $reverse) {\n      edges {\n        cursor\n        node {\n          id\n          handle\n          title\n          productType\n          tags\n          availableForSale\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          images(first: 2) {\n            edges {\n              node {\n                url\n                altText\n                width\n                height\n              }\n            }\n          }\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n": {return: GetProductsQuery, variables: GetProductsQueryVariables},
   "#graphql\n  query PredictiveSearch($query: String!, $limit: Int) {\n    predictiveSearch(query: $query, limit: $limit, types: [PRODUCT]) {\n      products {\n        id\n        handle\n        title\n        productType\n        tags\n        availableForSale\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        images(first: 2) {\n          edges {\n            node {\n              url\n              altText\n              width\n              height\n            }\n          }\n        }\n      }\n    }\n  }\n": {return: PredictiveSearchQuery, variables: PredictiveSearchQueryVariables},
+  "#graphql\n  query GetFullSearch($query: String!, $collectionQuery: String!, $first: Int!, $productAfter: String, $collectionAfter: String) {\n    products: search(query: $query, first: $first, after: $productAfter, types: [PRODUCT], prefix: LAST, sortKey: RELEVANCE, unavailableProducts: LAST) {\n      edges {\n        cursor\n        node {\n          __typename\n          ... on Product {\n            id\n            handle\n            title\n            productType\n            tags\n            availableForSale\n            priceRange { minVariantPrice { amount currencyCode } }\n            images(first: 2) { edges { node { url altText width height } } }\n          }\n        }\n      }\n      pageInfo { hasNextPage endCursor }\n    }\n    collections(query: $collectionQuery, first: $first, after: $collectionAfter, sortKey: RELEVANCE) {\n      edges {\n        cursor\n        node {\n          id\n          handle\n          title\n          dropStatus: metafield(namespace: \"custom\", key: \"drop_status\") { value }\n          dropDate: metafield(namespace: \"custom\", key: \"drop_date\") { value }\n          archivedAt: metafield(namespace: \"custom\", key: \"archived_at\") { value }\n        }\n      }\n      pageInfo { hasNextPage endCursor }\n    }\n  }\n": {return: GetFullSearchQuery, variables: GetFullSearchQueryVariables},
 }
 
 interface GeneratedMutationTypes {

@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { Suspense } from 'react';
+import { Analytics } from '@/components/analytics/Analytics';
+import Script from 'next/script';
+import { isAnalyticsConfigured } from '@/lib/analytics/config';
+import { buildAnalyticsBootstrap } from '@/lib/analytics/bootstrap';
 import { Footer } from '@/components/navigation/Footer';
 import { ShellClient } from '@/components/navigation/ShellClient';
 import { CartProvider } from '@/components/cart/CartProvider';
@@ -18,7 +22,6 @@ import './globals.css';
 // Search Console verification exists yet — matches .env.local.example's
 // established placeholder pattern, D-020's Klaviyo precedent). Read once,
 // at module scope, so both the metadata export and the JSX below agree.
-const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
 const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 // metadataBase resolves every relative URL-based metadata field (canonical,
@@ -98,23 +101,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           most of the page. Display (§7) is expressive/editorial and opt-in per
           element via the font-display utility, not a body-wide default. */}
       <body className="min-h-full flex flex-col font-functional">
+        {isAnalyticsConfigured() && (
+          <Script
+            id="esque-ga-init"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: buildAnalyticsBootstrap(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!),
+            }}
+          />
+        )}
         <CartProvider demo={process.env.PREVIEW_DEMO_MODE === '1'}>
           <ShellClient footer={<Footer />}>{children}</ShellClient>
         </CartProvider>
       </body>
-      {/* @next/third-parties's GoogleAnalytics — the current, official
-          Next.js-recommended mechanism for loading GA4's gtag.js (confirmed
-          against this exact installed Next 16.3.1 version's own bundled
-          docs, not assumed). Loads after hydration (its own next/script
-          default strategy, "afterInteractive") so it never competes with
-          initial paint — ARCHITECTURE.md's/CLAUDE.md's third-party-script
-          performance guidance. Rendered on every route (including
-          `/access`, outside the storefront shell) since Access Funnel page
-          views are real analytics targets too. Entirely absent from the
-          rendered output — not just inert — when unconfigured, matching
-          this project's established placeholder-env-var pattern (D-020).
-          See DECISIONS.md D-055. */}
-      {GA4_MEASUREMENT_ID && <GoogleAnalytics gaId={GA4_MEASUREMENT_ID} />}
+      {/* The configured SDK loads after hydration. Its safe queue/configuration
+          runs before customer effects, and automatic URL collection requires
+          the stream-specific provisioning assertion. */}
+      <Suspense fallback={null}>
+        <Analytics />
+      </Suspense>
     </html>
   );
 }

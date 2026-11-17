@@ -80,10 +80,10 @@ export default function PrivacyPolicyPage() {
           remove stored choices.
         </p>
         <p>
-          Google Analytics instrumentation is enabled only when a measurement ID is configured.
-          Shopify services and analytics depend on the connected store. The final policy will
-          describe the configured services, their cookies, retention, and any required consent
-          choices before launch.
+          Google Analytics is enabled only after its configuration and automatic data collection
+          settings have been verified. Shopify services and analytics depend on the connected store.
+          The final policy will describe the configured services, their cookies, retention, and any
+          required consent choices before launch.
         </p>
       </PolicySection>
 

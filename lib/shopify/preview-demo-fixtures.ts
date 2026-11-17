@@ -40,6 +40,16 @@ const IMG = (file: string, w: number, h: number) => ({
 const PREVIEW_DESCRIPTION =
   'Temporary preview placeholder description (free-license stock photography, not final product copy).';
 
+/** Full-search fixtures also match the shared description. Predictive fixtures keep title/type matching. */
+export function getPreviewFullSearchProducts(query: string): ProductListItem[] {
+  const term = query.toLowerCase();
+  return PREVIEW_PRODUCTS.filter((product) =>
+    [product.title, product.productType, PREVIEW_DESCRIPTION].some((field) =>
+      field.toLowerCase().includes(term),
+    ),
+  );
+}
+
 export const PREVIEW_PRODUCTS: ProductListItem[] = [
   {
     id: 'preview-1',

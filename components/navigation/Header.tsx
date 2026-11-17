@@ -201,17 +201,26 @@ export function Header({
         >
           MENU
         </Button>
-        <Button
-          ref={searchTriggerRef}
-          variant="secondary"
-          aria-expanded={searchOpen}
-          aria-controls="esque-search-overlay"
-          onClick={onSearchOpen}
-          className={`inline-flex items-center justify-center ${compactUtilityButton}`}
+        <form
+          action="/search"
+          method="get"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSearchOpen();
+          }}
         >
-          <SearchIcon className="h-5 w-5 md:hidden" />
-          <span className="sr-only md:not-sr-only">SEARCH</span>
-        </Button>
+          <Button
+            ref={searchTriggerRef}
+            type="submit"
+            variant="secondary"
+            aria-expanded={searchOpen}
+            aria-controls="esque-search-overlay"
+            className={`inline-flex items-center justify-center ${compactUtilityButton}`}
+          >
+            <SearchIcon className="h-5 w-5 md:hidden" />
+            <span className="sr-only md:not-sr-only">SEARCH</span>
+          </Button>
+        </form>
         {/* ACCOUNT: real behavior lands in ROADMAP.md Phase 10; clicking
             shows ComingSoonNotice instead of doing nothing. */}
         <Button

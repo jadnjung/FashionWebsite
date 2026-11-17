@@ -62,3 +62,11 @@ Parent unconfigured optimized build 76707 passed with Demo/scenario flags cleare
 The dedicated regression command is `pnpm test:e2e:collections` with `PLAYWRIGHT_PRODUCTION=1`. Local Windows verification used the documented direct pinned server plus `PLAYWRIGHT_EXTERNAL_SERVER=1` after managed-build IPC failures. The same normal Turbopack engine completed the scenario, default Demo and unconfigured optimized builds. No tracked build-engine workaround was introduced.
 
 Backlog item 50 is implemented and locally verified. ROADMAP, ARCHITECTURE and D-101 record the delivered contracts. Final publication and matching hosted CI remain pending. Physical-device and connected-store verification retain their existing owner/environment dependencies.
+
+## Hosted validation and diagnostic recovery
+
+Published revision 7460f7fb4afb06a345426373fe6230c7d2ae254d matches remote surfacebook. Hosted run 44030268236 failed only the unconfigured browser step. Agent setup, format, lint, typecheck, unit, build, populated Demo and dedicated collection-continuation steps passed. Earlier inference of unconfigured success from the following step running was incorrect because subsequent browser steps use `!cancelled()`.
+
+The full local reproduction on that exact revision completed with exit 0 in session 52817. Across 620 configured cases, 605 passed and 15 were intentionally skipped in 16.7 minutes. The saved last-run report contains no failed tests. Its owned server 16974 was stopped. Diagnostic logs remain in ignored test-results/diagnostics output. This local result does not explain the hosted failure.
+
+The public CI log endpoint returns HTTP 403 and the browser requires sign-in. Automatic approval review rejected a command that would read the saved GitHub credential and reuse it for log authentication, citing missing specific authorization. That command was blocked before execution. Explicit approval is pending through the user-input tool. Do not retry credential access or bypass the rejection without authorization. Independent Search discovery work can continue while this CI-specific dependency remains pending.

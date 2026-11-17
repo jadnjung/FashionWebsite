@@ -174,7 +174,7 @@ test('closing and reopening a pending Search keeps the new session empty', async
   await openSearch(page);
   await releaseSearchBody(page);
   await expect(search.getByRole('searchbox')).toHaveValue('');
-  await expect(search.getByText('NOTHING MATCHES.')).toHaveCount(0);
+  await expect(search.getByText('NO SUGGESTIONS.')).toHaveCount(0);
   await expect(search.getByRole('heading', { name: 'Products', exact: true })).toHaveCount(0);
   await expect(search.getByRole('link', { name: 'Featherweight Crewneck Sweater' })).toHaveCount(0);
 });

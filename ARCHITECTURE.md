@@ -110,6 +110,12 @@ The tree above is the historical scaffold sketch. It includes planned routes and
 - **Access gate**: See §6 below — must not block crawlers from indexed commerce routes.
 - Choose ISR or on-demand revalidation when adding an explicit product/collection cache, so Shopify content edits can appear without a full redeploy.
 
+### Full Search discovery
+
+`/search` is server-rendered with native GET parameters `q`, `productAfter` and `collectionAfter`. Normalized queries must contain 2–100 JavaScript string units; repeated query values are rejected before lookup. Each group shows at most 20 entries with bounded cursors scoped to query, group and fixed ordering. New submission clears both cursors; group navigation preserves the other group. One typed, ten-second-bounded request retains the existing combined failure policy, with an editable form and same-URL Retry.
+
+Products use the Storefront full Search connection with relevance ordering, final-word prefix matching and unavailable products last. Collections use literal escaped title clauses and relevance ordering. Predictive ranking/matching can differ from full Search. The product connection exposes up to 1,000 matches; page-scoped counts and refinement guidance avoid promising exhaustive broad-query results. Existing collection lifecycle destinations and visibility policy remain authoritative. Search metadata is generic, noindex/follow, with a bare canonical and no sitemap entry. Overlay Enter/View all uses document navigation so its response referrer policy applies before query-bearing document resources load. D-102 records the contract.
+
 ## 5. Data Model Mapping
 
 Per [PROJECT.md §10](./PROJECT.md#10-collections-vs-categories), **Category** and **Collection** are separate concepts and must map to distinct Shopify structures:
@@ -146,6 +152,7 @@ KLAVIYO_PRIVATE_API_KEY=
 KLAVIYO_LIST_ID=
 ESQUE_DROP_ACCESS_CODE=          # drop-specific early-access code for whichever collection is currently upcoming — see §6, DECISIONS.md D-064
 NEXT_PUBLIC_GA4_MEASUREMENT_ID=
+NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR= # same public ID after verifying stream privacy controls
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=   # Search Console verification meta tag content — not a secret
 NEXT_PUBLIC_SITE_URL=
 NEXT_PUBLIC_SUPPORT_EMAIL=       # shown on /contact; not a secret. See DECISIONS.md D-054.
@@ -159,7 +166,7 @@ No secrets are committed. `.env.local` is gitignored; production secrets live in
 ## 8. Third-Party Integrations
 
 - **Klaviyo** receives Request Access subscriptions through the `submitRequestAccess` Server Action in `app/(storefront)/access/actions.ts` and `lib/klaviyo/subscribe.ts`. Code delivery depends on the owner's Klaviyo flow or manual send. Order, abandoned-cart, and back-in-stock integrations remain planned.
-- **GA4 / Search Console**: GA4 loaded via `@next/third-parties`'s `GoogleAnalytics` component (root `app/layout.tsx`, every route including `/access`), gated on `NEXT_PUBLIC_GA4_MEASUREMENT_ID` and using that component's own default `next/script` `afterInteractive` strategy — no script at all renders when unconfigured. `trackEvent` (`lib/analytics/gtag.ts`) is the one function UI code calls to record a real, taxonomy-validated event (`lib/analytics/events.ts`); see DECISIONS.md D-055 for the full taxonomy and design. Search Console verification is a `<meta name="google-site-verification">` tag via Next's `Metadata.verification.google` field, gated on `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` — the DNS/HTML-file alternatives remain valid, equally supported ops choices that need no code either way.
+- **GA4 / Search Console**: The root layout owns controlled GA4 bootstrap and the `components/analytics/Analytics.tsx` manual pageview tracker. Remote tag loading requires `NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR` to match `NEXT_PUBLIC_GA4_MEASUREMENT_ID`, after the owner verifies automatic Site search and history pageviews are disabled in that stream. An ID alone leaves analytics inactive. This public provisioning assertion does not implement visitor consent. Initialization disables the config-load pageview and supplies sanitized URL context. Manual pageviews cover committed pathname/query navigation; taxonomy events supply sanitized current and virtual prior-page context. Preview event capture remains separate. Search queries are removed from analytics URLs, and Search response headers set an origin referrer policy. Browser history and deployment access logs still require their own handling. Search Console verification remains gated on `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. See D-102 and the Search execution record for validation and external checks.
 - **Shopify webhooks (planned)** can support order and inventory integrations when those features and any explicit cache are introduced.
 
 ## 9. Performance Baseline

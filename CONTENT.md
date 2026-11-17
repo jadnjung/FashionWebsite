@@ -147,7 +147,9 @@ Source: [PROJECT.md §40–41, §46](./PROJECT.md#40-sold-out-products), [DESIGN
 
 ## 9. Search Copy
 
-Overlay opening state: `SEARCH ESQUE`. No-result state: `NOTHING MATCHES.`
+Overlay opening state: `SEARCH ESQUE`. Empty predictive preview: `NO SUGGESTIONS.` Keep `VIEW ALL RESULTS` available for a valid query, including preview failure, because full Search matching can differ. Reserve `NOTHING MATCHES.` for an exhausted first full-results page with no matching groups.
+
+Counts describe the current page or preview, never an unverified total. Full Search includes concise 1,000-match product-limit guidance and a prompt to refine broad queries. Empty continuation groups describe that page and retain useful navigation. Recovery uses `COULD NOT LOAD RESULTS.` with `Retry`, preserving the editable query. See DECISIONS.md D-102.
 
 Source: [DESIGN_SYSTEM.md §50](./DESIGN_SYSTEM.md#50-search)
 

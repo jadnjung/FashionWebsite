@@ -1,31 +1,32 @@
 # Website maintenance checkpoint
 
-Resume with AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md. Findings remain in docs/website-improvement-backlog.md.
+Read AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md. Findings live in docs/website-improvement-backlog.md.
 
 ## Current task
 
-- Status is ready to publish validated item 50, collection/archive continuation and later-page homepage discovery.
-- Base is ce7156cb7a1005593e40baecfb2cccb5c43658b0 on surfacebook.
-- Owner is maintenance-item-50 in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. The fullstack specialist has handed back all 26 source/config/test files. The parent owns integration, documents and publication. All owned servers are stopped. Quality and security reviewers finished their assignments.
-- Application scope covers collection reads, archive/index pages and metadata, bounded homepage scanning, isolated large-collection fixtures, browser harness/configuration and CI coverage. Parent documentation includes the collection execution plan, backlog, roadmap, architecture, decisions and this checkpoint. Preserve pre-existing untracked debug.log.
-- Next candidate is item 57, complete Search discovery. Item 73 remains open.
+Item 57, full Search discovery, is implemented, reviewed and locally verified. Publication is next. Branch is surfacebook and current published base is 7460f7fb4afb06a345426373fe6230c7d2ae254d. Parent owns integration, documents and commit. All specialists have handed back their work and all owned servers are stopped. Preserve pre-existing untracked debug.log without reading or staging it.
 
-## Implementation and review
+The 35 implementer-owned source/config/test paths have fingerprint 07edd762045d3a31bf40bf5ef7408fbc3af827611555ead405eb0fe7f7fe5b65. With parent-owned privacy copy, the 36-path parent manifest is 68560db0b7c7a131d9426ce434e2272a535d0824d34aaa396410500f9640a233. The execution record documents exact hashing and evidence. Source is frozen. Parent documents include architecture, content, decisions D-102, roadmap, backlog and execution records.
 
-Four RED tests reproduced missing index continuation at 45 entries, false archive-empty state before entry 21, missing current entry 41 and missing upcoming entry 21. These now pass. Indexes expose normalized native continuation and matching canonical/Open Graph URLs. Archive retains source continuation through empty filtered pages. Homepage selectors scan at most 50 pages with a shared ten-second deadline, duplicate-ID and cursor-cycle guards and snapshot classification. Existing lifecycle/access rules remain authoritative.
+## Verified evidence
 
-Default Demo fixtures remain stable. Opt-in 21/45-collection scenarios have dedicated isolated browser configuration and CI execution. Initial browser runs exposed only fixture-selector assertions, corrected from actual rendered titles/destinations. Final scenario run 47622 passed all 25 cases across five profiles in 34.2 seconds. Final review manifest is 744e3fcecc799efb78cfbd7a88389258eb5339c7d28dd9610e4d6777aab4c6c7, with no actionable quality or security findings. Browser spec hash is 19c613674dcaf5476d004fde820a6fb503c42fcdf55d7d7e2fb8fbdd796d79c2.
+- Full unit run 29256 passed 629 tests across 61 files. Final typecheck 64584, lint 73394 and whole-repository format 6773 passed.
+- Normal large-catalog optimized browser run 77227 passed 55 cases. Fake-ID analytics run 8603 passed all five profiles with locally stubbed tag and no unexpected Google traffic.
+- Parent standard Demo run 73996 passed 92 cases with three intended mobile modifier skips, including all 25 shopping-journey cases. Unconfigured Search run 30262 passed 70 cases with two intended native-clear target skips.
+- Total final browser evidence is 222 passes and five intended skips. Optimized builds succeeded in all tested profiles. Decoded mobile and desktop layout samples were inspected. Security, analytics and quality reviews cleared malformed DTO, encoded-path URL privacy and fragment-context fixes. Final security re-review also covered last test-only changes.
 
-Parent full unit run 90893 passed 596 tests across 59 files. Full lint 33094 and typecheck 97401 passed. Optimized Turbopack scenario build succeeded. Local Playwright-managed build attempts first encountered process-creation panics. A direct pinned launch with inherited NO_COLOR removed succeeded using the existing engine, with no tracked build workaround.
+Full evidence and fake-ID reproduction commands are in docs/superpowers/plans/2026-11-17-search-continuation.md. Do not claim actual Google SDK processing, live stream receipt, populated-store relevance, physical devices or screen-reader speech were verified.
 
 ## Exact next action
 
-Item 50 local implementation, review and integrated validation are complete. Parent full unit run 90893 passed 596 tests across 59 files. Full lint/typecheck passed. Scenario run 47622 passed 25 cases, normal Demo run 80362 passed 69, and unconfigured run 86628 passed 28. Both optimized parent builds succeeded. All owned servers are stopped.
+Review the intended diff and document checks, verify surfacebook, stage only task-owned paths excluding debug.log and Claude files, commit and explicitly push HEAD:refs/heads/surfacebook. Reverify branch before push. Inspect CI at the actual resulting revision. Record publication and any actionable failures, then select item 53 grant-signal consumption as the next bounded actionable task unless evidence changes priority.
 
-Backlog, roadmap, architecture, decisions and execution records are updated. Run final formatting, diff, local link/number checks and source-manifest comparison, then publish only validated owned files on surfacebook. Inspect the exact commit's hosted CI result and recover failures. No item 50 commit or push has occurred. See docs/superpowers/plans/2026-11-17-collection-continuation.md.
+Real GA4 now stays inactive until NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR matches the ID after owner verification that automatic Site search and history pageviews are disabled. This is provisioning, not visitor consent. Live settings/receipt remain external. A direct native location.hash probe exposed null router history state; normal application anchor reproduction remains an investigation question, with no runtime fix claimed.
 
-## Published work and scheduling
+## Pending hosted investigation and schedule
 
-Items 51/74 are published as ce7156c and hosted CI 44026221837 passed at that exact revision. Their source, review and browser evidence is in the saved-refresh execution record. Setup 5541a45 and item 72 cfe278e also have successful matching hosted runs 44018644622 and 44020283058.
+Item 50 is published at 7460f7f. Hosted run 44030268236 failed only its unconfigured browser step, while agent setup, static, unit, build, Demo and collection checks passed. Full local reproduction passed 605 cases with 15 intended skips. Cause remains unknown in item 75.
 
-Fashion website maintainer remains ACTIVE every 30 minutes in this chat. The daily audit remains PAUSED. The current host applies website-maintainer TOML directly until native discovery refreshes. A previous account usage stop interrupted work, and this continuation recovered ordinary capacity. Read current limits when relevant. Scheduled recovery depends on app, awake machine, project access and account capacity.
+Automatic approval review rejected reading the saved GitHub credential for API CI-log access because that specific credential use lacked authorization. It was blocked before execution. The explicit read-only access question remains unanswered. Do not retry, delegate or work around it without an explicit user response; elapsed time and scheduler ticks do not approve it. Continue independent authorized work.
+
+Earlier setup 5541a45, item 72 cfe278e and items 51/74 ce7156c each have passing matching hosted CI, documented in their records. Maintainer remains ACTIVE every 30 minutes in this chat, 01a1d24c-d335-7533-83ac-b1ab13a0c637. Daily audit remains PAUSED. Root applies the website-maintainer TOML fallback. Actual schedule execution depends on app, awake machine, permissions and account capacity. Last checked capacity was ordinary allowed, primary 52%, weekly 40%; check fresh limits when needed.

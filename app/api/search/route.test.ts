@@ -19,6 +19,13 @@ function request(url: string): NextRequest {
 
 describe('GET /api/search', () => {
   beforeEach(() => vi.clearAllMocks());
+  test('repeated q parameters are invalid and never trigger either lookup', async () => {
+    const response = await GET(request('http://localhost/api/search?q=demo&q=other'));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_query' });
+    expect(productsModule.searchProducts).not.toHaveBeenCalled();
+    expect(collectionsModule.searchCollections).not.toHaveBeenCalled();
+  });
   test('no q param short-circuits to an empty result without calling searchProducts/searchCollections', async () => {
     const searchProducts = vi.mocked(productsModule.searchProducts);
     const searchCollections = vi.mocked(collectionsModule.searchCollections);
