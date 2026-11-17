@@ -103,6 +103,7 @@ The tree above is the historical scaffold sketch. It includes planned routes and
 
 - **Product/collection pages**: Server-rendered (RSC) for SEO and fast first paint, with client components for interactive pieces (quick add, interactive model, cursor).
 - **Homepage editorial scenes**: Server-rendered shell, client-hydrated for scroll/cursor-driven motion.
+- Catalog queries, results and the native GET form remain server-rendered. Small FacetGroup client islands retain interacted checkbox drafts across filter-option pages, reset through the applied-criteria form key, and render native controls during SSR. With scripting disabled, Apply commits choices before opening another option page. See D-098.
 - **Live cart/bag (planned)** uses Shopify's Storefront API cart object with its ID persisted in a cookie. Implementation awaits the real Shopify store (D-016). The separate Demo bag uses the server's explicit Demo Mode flag, canonical fixture responses from `/api/cart`, and versioned local variant references. Its interface is `/bag`, with checkout unavailable. See D-093 for this preview boundary.
 - **Access gate**: See §6 below — must not block crawlers from indexed commerce routes.
 - Choose ISR or on-demand revalidation when adding an explicit product/collection cache, so Shopify content edits can appear without a full redeploy.

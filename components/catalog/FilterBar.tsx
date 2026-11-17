@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FacetGroup } from '@/components/catalog/FacetGroup';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import {
@@ -109,34 +110,7 @@ export function FilterBar({
           />
         )}
         {groups.map((group) => (
-          <details key={group.name} className="col-span-2 min-w-0 self-start md:w-48">
-            <summary className={`${LINK_CLASS} cursor-pointer`}>
-              {group.label}
-              {group.selected.length ? ` (${group.selected.length})` : ''}
-            </summary>
-            <fieldset className="max-h-60 overflow-y-auto border border-esque-surface p-2">
-              <legend className="sr-only">{group.label}</legend>
-              {group.options.length ? (
-                group.options.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex min-h-11 min-w-0 items-center gap-2 py-2 text-utility text-esque-text [overflow-wrap:anywhere]"
-                  >
-                    <input
-                      type="checkbox"
-                      name={group.name}
-                      value={option.value}
-                      defaultChecked={group.selected.includes(option.value)}
-                      className="h-4 w-4 shrink-0 accent-esque-forest"
-                    />
-                    {option.label}
-                  </label>
-                ))
-              ) : (
-                <p className="py-2 text-utility text-esque-text-secondary">No options available.</p>
-              )}
-            </fieldset>
-          </details>
+          <FacetGroup key={group.name} {...group} />
         ))}
         <label className="col-span-2 flex min-h-11 items-center gap-2 py-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
           <input
@@ -200,6 +174,9 @@ export function FilterBar({
         className="flex flex-wrap items-center gap-x-4 text-utility text-esque-text-secondary"
       >
         <p>Filter options from this catalog section.</p>
+        <noscript>
+          <p>Apply your choices before opening another filter-option page.</p>
+        </noscript>
         {isFacetContinuation && (
           <Link
             href={buildFilterHref(pathname, searchParams, {

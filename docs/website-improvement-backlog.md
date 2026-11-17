@@ -1,6 +1,6 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 72 numbered items. The latest broad audit added items 59–71, and implementation review added item 72. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 73 numbered items. The latest broad audit added items 59–71, implementation review added item 72, and maintenance investigation added item 73. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
 
@@ -12,7 +12,7 @@ The 16 items in the five requested groups are implemented and locally verified. 
 | --- | --- | --- |
 | 59 | Retry represents the failed operation. Background refreshes preserve unresolved foreground intent and feedback. | Eight retry scenarios covering acknowledged mutations, initial restore, timeout, delayed responses and queued refreshes. |
 | 52 | Invalid optional grant-cookie encoding returns no signal and is cleared. Valid encoded handles retain their event behavior. | Parser edge cases and fresh-context storefront, navigation and single-consumption checks. |
-| 47 | Applied URL criteria and sort reset native form controls. Removed chips and Clear Filters stay removed on Apply. | Multiselect, price, availability, sorting, history, retained-option pagination and no-JavaScript GET submission. Item 72 tracks absent draft options separately. |
+| 47 | Applied URL criteria and sort reset native form controls. Removed chips and Clear Filters stay removed on Apply. | Multiselect, price, availability, sorting, history, retained-option pagination and no-JavaScript GET submission. The subsequent item 72 repair retains off-page draft options. |
 | 49 | Quick Add success commits only for its current opening/request. Current successful openings retain fresh-selection initialization. | An old abort-ignoring decoder cannot replace newer selections or availability. |
 | 48 | Search and Quick Add reach recovery after a ten-second request/JSON budget. Superseding and closing requests cancel ownership. | Header stalls, decoder stalls, transport failures, Retry and delayed completion. |
 | 54 | Service-level form errors focus useful recovery when submission retains focus ownership. | Keyboard failure/retry, retained values, deliberate focus movement, existing field and success behavior. |
@@ -29,9 +29,11 @@ The 16 items in the five requested groups are implemented and locally verified. 
 
 The 320px multi-digit bag header regression exposed during this pass is also corrected by reducing mobile MENU padding while retaining its touch target. Native browser magnification, screen-reader speech, physical devices and connected-service verification retain their existing evidence requirements. The daily audit stays paused.
 
-Items 50, 51, 53, 55–58, 70–72 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
+Item 72 was implemented during the November 17, 2026 UTC maintenance continuation. Interacted size, color and collection controls survive option-page changes and history, including keyboard unchecking and reselection. Committed criteria/sort changes reset drafts. Native GET visitors apply before navigating another option page, following explicit guidance. Parent validation passed 567 unit tests and all 140 relevant optimized-browser cases across the five profiles, including complete shopping journeys. Independent code and security reviews found no actionable introduced issue. [Implementation and verification](./superpowers/plans/2026-11-17-facet-draft-persistence.md)
 
-The website-maintainer workflow selects and implements actionable follow-ups, starting with item 72. The [maintenance checkpoint](./website-maintenance-state.md) records the active task and recovery state. This backlog retains issue evidence and fix status. Its existing open items remain open until the corresponding implementation and checks are verified.
+Items 50, 51, 53, 55–58, 70, 71 and 73 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
+
+The website-maintainer workflow selects and implements actionable follow-ups. The [maintenance checkpoint](./website-maintenance-state.md) records the active task and recovery state. This backlog retains issue evidence and fix status. Open items require their implementation and applicable verification before closure.
 
 ## Broad audit at revision aa2c594
 
@@ -1052,7 +1054,17 @@ These items describe open work found after the original implementation pass. Eac
 - **Local demonstration.** Choose an option unique to the first facet page, continue to later pages, add another choice, and Apply. Repeat with Back/Forward and Clear Filters.
 - **Improvement.** Define draft persistence across facet-page replacement while preserving committed URL synchronization and progressive GET submission. Item 47's form identity preserves controls that remain rendered.
 - **Complete when.** All intended draft choices survive option discovery and submit once. Explicit removal, clearing, committed criteria changes and no-JavaScript behavior remain predictable. Record the chosen state/persistence strategy.
-- **Owner.** frontend-engineer and qa-engineer. This pre-existing behavior was exposed by the new regression review and remains open.
+- **Owner.** frontend-engineer and qa-engineer. This pre-existing behavior was exposed by the regression review and implemented in the November 17, 2026 UTC maintenance update above. The original discovery evidence is preserved here.
+
+### 73. Explain and enforce the per-group filter selection budget
+
+**P2. Source confirmed with an executed parser probe during maintenance investigation on November 17, 2026 UTC.** The shared filter parser retains the first 20 distinct values for each multiselect group. The actual parser received Size 1 through Size 21 and returned 20 values ending at Size 20. The rendered size group can offer all 101 options in the many-variants fixture, with no selection-budget guidance. The customer can therefore submit more choices than the parser retains. [Filter parsing](../lib/catalog/filters.ts), [Facet controls](../components/catalog/FilterBar.tsx)
+
+- **Customer impact.** Later selected choices can disappear after Apply without an explanation.
+- **Local demonstration.** Select 20 and then 21 unique fixture sizes and compare checked controls, submitted values, resulting URL and applied chips. Repeat for color and collection with synthetic options and with scripting disabled. The recorded probe establishes parser truncation, while the full browser boundary still needs a dedicated reproduction.
+- **Improvement.** Make the supported budget explicit and provide useful feedback before or after excess submission. Preserve bounded server work and supported existing URLs. Avoid silently changing the selection budget as part of unrelated filter repairs.
+- **Complete when.** Within-budget choices submit intact. Excess choices receive deliberate, accessible guidance and a recovery path across enhanced and native GET flows. The URL, applied controls and matching behavior agree with the documented policy.
+- **Owner.** frontend-engineer, backend-engineer and qa-engineer. Item 72's draft persistence remains a separate repair within the current supported budget.
 
 ## Feature packages for a more polished demo
 

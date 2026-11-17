@@ -1838,3 +1838,13 @@ The user authorized autonomous V1 task selection, implementation, interruption r
 The app's fashion-website-maintainer automation returns to the existing chat every 30 minutes. This cadence supplies a retry opportunity after usage becomes available. Read actual primary and secondary windows when the host exposes them, and reconcile stale handoffs with Git, surviving processes, current source and fresh remote/CI evidence. Machine availability, the local app, account capacity and permissions determine whether a run can execute. [Official scheduled-task documentation](https://learn.chatgpt.com/docs/automations?surface=app)
 
 The current chat can apply the new role's TOML instructions directly until native role discovery refreshes. Required reviews and relevant validation precede publication only to surfacebook. User-directed work and existing ownership take priority. The separate daily audit remains paused. Material product-policy decisions and external account prerequisites retain their owner dependencies.
+
+## D-098 — Retained facet drafts within the existing GET form
+
+November 17, 2026 UTC.
+
+FilterBar keeps its server-rendered catalog queries, applied URL state and native GET form. Three small FacetGroup client islands retain interacted option labels and checked state across filter-option pages. Each group renders the current options plus previously interacted options missing from the new page, deduplicated by value. Unchecked retained rows stay available for keyboard focus and reselection.
+
+The existing form key resets all group drafts when committed criteria or sort changes. Option pagination and its history preserve the current form session. Group summary counts continue to describe applied selections. Draft state lives in component memory for that form session. The existing server parser and per-group 20-value budget retain their current behavior. Backlog item 73 records the separate missing budget guidance.
+
+Server-rendered native checkboxes and Apply remain usable with scripting disabled. Those visitors apply choices before navigating to another filter-option page, following the explicit guidance beside pagination. Enhanced browsing retains unapplied drafts across that navigation. This refines D-096's retained-control limitation and resolves backlog item 72. The execution record contains the reproduced failures and final validation. [Facet draft persistence](./docs/superpowers/plans/2026-11-17-facet-draft-persistence.md)
