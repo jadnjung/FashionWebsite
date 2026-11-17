@@ -11,9 +11,11 @@ export default async function verifyServerMode(config: FullConfig) {
   const mode = html.match(/data-preview-mode="([^"]+)"/)?.[1];
   const profile = html.match(/data-browser-test-profile="([^"]+)"/)?.[1];
   const render = html.match(/data-render-mode="([^"]+)"/)?.[1];
+  const collectionScenario = html.match(/data-preview-collection-scenario="([^"]+)"/)?.[1];
   if (
     mode !== config.metadata.previewMode ||
     profile !== `${config.metadata.previewMode}-isolated` ||
+    collectionScenario !== config.metadata.collectionScenario ||
     (process.env.PLAYWRIGHT_PRODUCTION === '1' && render !== 'production')
   ) {
     throw new Error(

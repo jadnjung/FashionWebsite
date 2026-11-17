@@ -56,6 +56,7 @@ export default defineConfig({
           timeout: 240_000,
           env: {
             PREVIEW_DEMO_MODE: '1',
+            PREVIEW_COLLECTION_SCENARIO: '',
             // Same reasoning as playwright.config.ts: never let a developer's
             // real Klaviyo credentials turn a test run into real list signups.
             SHOPIFY_STORE_DOMAIN: '',

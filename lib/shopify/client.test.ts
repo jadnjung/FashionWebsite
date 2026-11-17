@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { getStorefrontClient, toRequestError } from '@/lib/shopify/client';
 import { getProduct, getProducts } from '@/lib/shopify/products';
+import { getCollections } from '@/lib/shopify/collections';
 
 describe('getStorefrontClient', () => {
   test('throws a clear error when SHOPIFY_STORE_DOMAIN is unset', () => {
@@ -42,6 +43,40 @@ describe('Storefront SDK HTTP transport with synthetic responses', () => {
     vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => vi.unstubAllGlobals());
+
+  test('collection discovery cancellation reaches the real SDK transport and a fresh read recovers', async () => {
+    const controller = new AbortController();
+    let transportSignal: AbortSignal | null | undefined;
+    fetchMock.mockImplementationOnce(async (_url, init) => {
+      transportSignal = init?.signal;
+      controller.abort(new Error('Synthetic collection cancellation'));
+      return new Promise<Response>(() => {});
+    });
+    await expect(getCollections(20, 'source-page', controller.signal)).rejects.toThrow(
+      'Synthetic collection cancellation',
+    );
+    expect(transportSignal?.aborted).toBe(true);
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).variables).toEqual({
+      first: 20,
+      after: 'source-page',
+    });
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        data: {
+          collections: {
+            edges: [],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      }),
+    );
+    await expect(getCollections()).resolves.toEqual({
+      collections: [],
+      hasNextPage: false,
+      endCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 
   test('sends operation variables, version and token through the actual SDK and normalizes catalog data', async () => {
     fetchMock.mockResolvedValueOnce(

@@ -69,6 +69,28 @@ describe('isCollectionArchived', () => {
 });
 
 describe('getArchivedCollections', () => {
+  test('keeps source continuation through an empty filtered page and forwards the next cursor', async () => {
+    const read = vi
+      .spyOn(collectionsModule, 'getCollections')
+      .mockResolvedValueOnce({
+        collections: [CURRENT_SUMMARY],
+        hasNextPage: true,
+        endCursor: 'next-source-page',
+      })
+      .mockResolvedValueOnce({
+        collections: [ARCHIVED_SUMMARY],
+        hasNextPage: false,
+        endCursor: 'last-source-page',
+      });
+    const first = await getArchivedCollections();
+    expect(first).toEqual({ collections: [], hasNextPage: true, endCursor: 'next-source-page' });
+    expect(await getArchivedCollections(20, first.endCursor!)).toEqual({
+      collections: [ARCHIVED_SUMMARY],
+      hasNextPage: false,
+      endCursor: 'last-source-page',
+    });
+    expect(read).toHaveBeenLastCalledWith(20, 'next-source-page');
+  });
   test('filters a mixed list down to only archived entries', async () => {
     vi.spyOn(collectionsModule, 'getCollections').mockResolvedValue({
       collections: [CURRENT_SUMMARY, ARCHIVED_SUMMARY],
@@ -77,7 +99,11 @@ describe('getArchivedCollections', () => {
     });
 
     const result = await getArchivedCollections();
-    expect(result).toEqual([ARCHIVED_SUMMARY]);
+    expect(result).toEqual({
+      collections: [ARCHIVED_SUMMARY],
+      hasNextPage: false,
+      endCursor: null,
+    });
   });
 
   test('returns [] when none are archived', async () => {
@@ -88,7 +114,7 @@ describe('getArchivedCollections', () => {
     });
 
     const result = await getArchivedCollections();
-    expect(result).toEqual([]);
+    expect(result).toEqual({ collections: [], hasNextPage: false, endCursor: null });
   });
 
   test('propagates (does not catch) a rejection from getCollections', async () => {

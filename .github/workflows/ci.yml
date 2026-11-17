@@ -59,6 +59,11 @@ jobs:
         env:
           PLAYWRIGHT_PRODUCTION: '1'
 
+      - run: pnpm test:e2e:collections
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_PRODUCTION: '1'
+
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

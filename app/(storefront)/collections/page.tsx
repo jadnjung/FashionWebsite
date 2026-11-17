@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import { CollectionsIndex } from './CollectionsIndex';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { getPaginationCursor } from '@/lib/shopify/pagination';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Collections — Esque',
-  description: 'Every Esque collection — current, upcoming, and archived.',
-  path: '/collections',
-});
+type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const after = getPaginationCursor((await searchParams).after);
+  return buildPageMetadata({
+    title: 'Collections — Esque',
+    description: 'Every Esque collection — current, upcoming, and archived.',
+    path: `/collections${after ? `?${new URLSearchParams({ after })}` : ''}`,
+  });
+}
 
 // Matches app/(storefront)/archive/page.tsx's identical, already-proven
 // precedent exactly: without this, Next.js would try to statically
@@ -22,6 +28,7 @@ export const metadata: Metadata = buildPageMetadata({
 // it succeeds.
 export const dynamic = 'force-dynamic';
 
-export default function CollectionsPage() {
-  return <CollectionsIndex />;
+export default async function CollectionsPage({ searchParams }: PageProps) {
+  const after = getPaginationCursor((await searchParams).after);
+  return <CollectionsIndex after={after} />;
 }

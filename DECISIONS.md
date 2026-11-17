@@ -1866,3 +1866,13 @@ November 17, 2026 UTC.
 The product purchase panel observes a wrapper containing only its primary action button when deciding whether mobile purchase controls are needed. Feedback, inventory guidance and recovery links remain outside the observed bounds. Their appearance must not change the visibility measurement that chooses between inline and mobile controls.
 
 The previous feedback-containing target oscillated between 281.5 and 103 pixels tall at a fixed scroll position during mobile bag conflict recovery. A controlled probe recorded 302 observer entries in five seconds and a moving Retry target. The button-only target measures 48 pixels, produced one observer entry in the corresponding probe and allowed the actual pointer Retry to succeed. The observer threshold, sold-out target, purchase handlers and existing pointer test retain their contracts. Backlog item 74 and the saved-refresh execution record retain reproduction and validation evidence.
+
+## D-101 — Collection continuation and bounded homepage discovery
+
+November 17, 2026 UTC.
+
+The collections and archive indexes retain native source-page continuation. Archive filtering keeps the source cursor even when a page contains no archived entries, with page-scoped empty guidance and navigation. Rendering, canonical URLs and Open Graph URLs use the same normalized cursor. Malformed or ambiguous cursors restart at the first page. Source failures propagate to the route error boundary.
+
+Homepage current and upcoming selectors scan source pages in order until the first eligible match or genuine exhaustion. Each scan has a shared ten-second cancellation budget, a 50-page ceiling, cursor-cycle guards and ID deduplication. Classification uses one time snapshot per selector call. Exhausted budgets and malformed continuation fail into the existing logged homepage fallback. Existing collection lifecycle/access rules and 60-second request-driven content freshness remain in effect.
+
+The existing five-collection Demo profile remains the default. Allowlisted 21/45-entry scenarios require Demo Mode and explicit server configuration. A dedicated optimized browser suite verifies larger indexes and runs in CI. Default browser profiles clear the scenario and verify the served profile before testing. [Collection continuation execution record](./docs/superpowers/plans/2026-11-17-collection-continuation.md)

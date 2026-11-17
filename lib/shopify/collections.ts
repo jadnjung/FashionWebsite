@@ -9,10 +9,10 @@ import {
 // it's scoped (opt-in, off by default everywhere). This import and the
 // two short-circuits below are the only places this file branches on it.
 import {
-  PREVIEW_COLLECTIONS,
+  getPreviewCollections,
   getPreviewCollectionDetail,
 } from '@/lib/shopify/preview-demo-fixtures';
-import { previewPage } from '@/lib/shopify/pagination';
+import { getPaginationCursor, previewPage } from '@/lib/shopify/pagination';
 // No explicit <ReturnType, Variables> generics on client.request() below: this
 // client infers both from the query-string literal via the StorefrontQueries
 // map that storefront.generated.d.ts augments onto '@shopify/storefront-api-client'
@@ -39,6 +39,12 @@ export interface CollectionSummary {
 export interface CollectionDetail extends CollectionSummary {
   description: string;
   products: { id: string; handle: string; title: string }[];
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+export interface CollectionsPage {
+  collections: CollectionSummary[];
   hasNextPage: boolean;
   endCursor: string | null;
 }
@@ -111,10 +117,12 @@ export async function getCollection(
 export async function getCollections(
   first = 20,
   after?: string,
-): Promise<{ collections: CollectionSummary[]; hasNextPage: boolean; endCursor: string | null }> {
+  signal?: AbortSignal,
+): Promise<CollectionsPage> {
+  signal?.throwIfAborted();
   // Demo Mode short-circuit — see the import above and DECISIONS.md D-057.
   if (process.env.PREVIEW_DEMO_MODE === '1') {
-    const page = previewPage(PREVIEW_COLLECTIONS, first, after);
+    const page = previewPage(getPreviewCollections(), first, after);
     return {
       collections: page.items,
       hasNextPage: page.hasNextPage,
@@ -124,13 +132,42 @@ export async function getCollections(
   const client = getStorefrontClient();
   const { data, errors } = await client.request(GET_COLLECTIONS_QUERY, {
     variables: { first, after: after ?? null },
+    ...(signal ? { signal } : {}),
   });
+
+  signal?.throwIfAborted();
 
   if (errors) {
     throw toRequestError(errors);
   }
 
-  const edges = data?.collections?.edges ?? [];
+  const connection = data?.collections;
+  const pageInfo = connection?.pageInfo;
+  if (
+    !Array.isArray(connection?.edges) ||
+    typeof pageInfo?.hasNextPage !== 'boolean' ||
+    (pageInfo.endCursor != null &&
+      (typeof pageInfo.endCursor !== 'string' || !getPaginationCursor(pageInfo.endCursor)))
+  ) {
+    throw new Error('Shopify collection connection is malformed.');
+  }
+  if (pageInfo.hasNextPage && (!pageInfo.endCursor || pageInfo.endCursor === after)) {
+    throw new Error('Shopify collection pagination did not advance.');
+  }
+  const edges = connection.edges;
+  if (
+    edges.some(
+      (edge) =>
+        !edge?.node ||
+        typeof edge.node.id !== 'string' ||
+        !edge.node.id ||
+        typeof edge.node.handle !== 'string' ||
+        !edge.node.handle ||
+        typeof edge.node.title !== 'string',
+    )
+  ) {
+    throw new Error('Shopify collection entries are malformed.');
+  }
 
   return {
     collections: edges.map(({ node }) => ({
@@ -141,8 +178,8 @@ export async function getCollections(
       dropDate: node.dropDate?.value ?? null,
       archivedAt: node.archivedAt?.value ?? null,
     })),
-    hasNextPage: data?.collections?.pageInfo?.hasNextPage ?? false,
-    endCursor: data?.collections?.pageInfo?.endCursor ?? null,
+    hasNextPage: pageInfo.hasNextPage,
+    endCursor: pageInfo.endCursor ?? null,
   };
 }
 
@@ -179,7 +216,9 @@ export async function searchCollections(
   // rather than adding a new, separate fixture export.
   if (process.env.PREVIEW_DEMO_MODE === '1') {
     const q = trimmed.toLowerCase();
-    return PREVIEW_COLLECTIONS.filter((c) => c.title.toLowerCase().includes(q)).slice(0, limit);
+    return getPreviewCollections()
+      .filter((c) => c.title.toLowerCase().includes(q))
+      .slice(0, limit);
   }
 
   const client = getStorefrontClient();

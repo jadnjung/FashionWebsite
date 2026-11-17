@@ -367,6 +367,34 @@ export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
   },
 ];
 
+/** Isolated continuation scenarios leave the usual five-collection Demo unchanged. */
+export function getPreviewCollections(): CollectionSummary[] {
+  if (process.env.PREVIEW_DEMO_MODE !== '1') return PREVIEW_COLLECTIONS;
+  const scenario = process.env.PREVIEW_COLLECTION_SCENARIO;
+  if (scenario !== 'continuation-21' && scenario !== 'continuation-45') return PREVIEW_COLLECTIONS;
+  const count = scenario === 'continuation-21' ? 21 : 45;
+  return Array.from({ length: count }, (_, index) => {
+    // The 21-entry scenario has an empty first archive page. The 45-entry
+    // scenario has an empty middle archive page and a later current collection.
+    const current = index === 40;
+    const archived = (count === 45 && index < 20) || index === count - 1;
+    return {
+      id: `preview-continuation-${index + 1}`,
+      handle: `demo-collection-${String(index + 1).padStart(3, '0')}`,
+      title: `Demo Collection ${String(index + 1).padStart(3, '0')}`,
+      dropStatus: archived ? 'archived' : 'active',
+      dropDate: archived || current ? null : '2099-01-01T00:00:00Z',
+      archivedAt: archived ? '2026-06-01T00:00:00Z' : null,
+    };
+  });
+}
+
+function getContinuationCollection(handle: string) {
+  return getPreviewCollections().find(
+    (collection) => collection.handle === handle && handle.startsWith('demo-collection-'),
+  );
+}
+
 // Real product types from PROJECT.md §9's taxonomy (Jackets, Sweaters) —
 // not invented categories. Reuses product-1.jpg/product-2.jpg (already
 // used by two of PREVIEW_PRODUCTS above under different demo titles) —
@@ -440,6 +468,16 @@ const PREVIEW_UPCOMING_PRODUCTS: ProductListItem[] = [
  * would produce, not a fixture set that only ever contains archived data.
  */
 export function getPreviewCollectionDetail(handle: string): CollectionDetail | null {
+  const continuation = getContinuationCollection(handle);
+  if (continuation) {
+    return {
+      ...continuation,
+      description: 'Synthetic collection for local preview.',
+      products: PREVIEW_PRODUCTS.map(({ id, handle, title }) => ({ id, handle, title })),
+      hasNextPage: false,
+      endCursor: null,
+    };
+  }
   if (handle === 'demo-empty' || handle === 'demo-capsule') {
     const summary = PREVIEW_COLLECTIONS.find((collection) => collection.handle === handle)!;
     return {
@@ -512,6 +550,13 @@ export function getPreviewCollectionDetail(handle: string): CollectionDetail | n
  * real not-found contract.
  */
 export function getPreviewProductsByCollection(handle: string): ProductSummary[] | null {
+  if (getContinuationCollection(handle)) {
+    return PREVIEW_PRODUCTS.map((product) => ({
+      ...product,
+      description: PREVIEW_DESCRIPTION,
+      image: product.images[0] ?? null,
+    }));
+  }
   if (handle === 'demo-empty' || handle === 'demo-capsule')
     return getPreviewProductListItemsByCollection(handle)!.map((product) => ({
       ...product,
@@ -559,6 +604,7 @@ export function getPreviewProductsByCollection(handle: string): ProductSummary[]
  * lookup already associates with that handle.
  */
 export function getPreviewProductListItemsByCollection(handle: string): ProductListItem[] | null {
+  if (getContinuationCollection(handle)) return PREVIEW_PRODUCTS;
   if (handle === 'demo-empty') return [];
   if (handle === 'demo-capsule') return PREVIEW_PRODUCTS.filter((_, index) => index % 2 === 0);
   if (handle === 'collection-001') return PREVIEW_PRODUCTS;

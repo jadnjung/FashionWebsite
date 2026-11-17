@@ -2,26 +2,30 @@
 
 Resume with AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md. Findings remain in docs/website-improvement-backlog.md.
 
-## Current task and ownership
+## Current task
 
-- Status is ready for branch-safe publication of validated items 51 and 74.
-- Base is cfe278e438476d18581beb96a5302271ebd33867 on surfacebook.
-- Owner is maintenance-items-51-74 in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Source and test implementation is complete. The parent owns integration, documents, server 43606 and publication. Specialists have handed back their files and server. Preserve the pre-existing untracked debug.log.
-- Owned source paths are components/product/WishlistView.tsx, components/product/ProductPurchasePanel.tsx and tests/e2e-demo/saved-item-refresh.spec.ts. The parent also owns the related architecture, decisions, roadmap, backlog, execution record and this checkpoint.
-- Next candidate after completion is item 50, followed by 57. Item 73 remains open.
+- Status is ready to publish validated item 50, collection/archive continuation and later-page homepage discovery.
+- Base is ce7156cb7a1005593e40baecfb2cccb5c43658b0 on surfacebook.
+- Owner is maintenance-item-50 in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. The fullstack specialist has handed back all 26 source/config/test files. The parent owns integration, documents and publication. All owned servers are stopped. Quality and security reviewers finished their assignments.
+- Application scope covers collection reads, archive/index pages and metadata, bounded homepage scanning, isolated large-collection fixtures, browser harness/configuration and CI coverage. Parent documentation includes the collection execution plan, backlog, roadmap, architecture, decisions and this checkpoint. Preserve pre-existing untracked debug.log.
+- Next candidate is item 57, complete Search discovery. Item 73 remains open.
 
-## Implementation and evidence
+## Implementation and review
 
-Item 51 now limits per-mount saved-item availability refreshes to four active reads. It retains survivor results, queues additions, retries failures, cancels removed/unmounted jobs and rejects stale responses using job identity. Saved records stay uncapped and genuine remounts refresh anew. Baseline RED reproduced 30 simultaneous reads and unwanted survivor refetches. Six focused Chromium regressions passed after implementation.
+Four RED tests reproduced missing index continuation at 45 entries, false archive-empty state before entry 21, missing current entry 41 and missing upcoming entry 21. These now pass. Indexes expose normalized native continuation and matching canonical/Open Graph URLs. Archive retains source continuation through empty filtered pages. Homepage selectors scan at most 50 pages with a shared ten-second deadline, duplicate-ID and cursor-cycle guards and snapshot classification. Existing lifecycle/access rules remain authoritative.
 
-The first integrated 145-case run 54986 passed 144 and failed a mobile-chrome bag conflict pointer Retry. Traced repetitions 55270 failed all three times because the button was unstable/detached. Item 74 records the new finding. A measured visibility feedback loop produced 302 observer callbacks in five seconds at fixed scroll, alternating target heights 281.5/103 pixels and Retry positions 929.5/684 pixels. The fix observes the primary-button wrapper, excluding feedback height. GREEN measurement showed one callback, a stable 48-pixel target and a successful pointer Retry. The unchanged conflict test passed 15/15 across all five profiles in session 45777. Temporary probe removed.
+Default Demo fixtures remain stable. Opt-in 21/45-collection scenarios have dedicated isolated browser configuration and CI execution. Initial browser runs exposed only fixture-selector assertions, corrected from actual rendered titles/destinations. Final scenario run 47622 passed all 25 cases across five profiles in 34.2 seconds. Final review manifest is 744e3fcecc799efb78cfbd7a88389258eb5339c7d28dd9610e4d6777aab4c6c7, with no actionable quality or security findings. Browser spec hash is 19c613674dcaf5476d004fde820a6fb503c42fcdf55d7d7e2fb8fbdd796d79c2.
 
-Optimized build and final typecheck passed. Parent integrated unit run 55952 passed 567 tests across 56 files, and full lint 14800 passed after both source fixes. Quality and mandatory security reviews found no actionable issue on current source. Reviewed hashes are WishlistView 954124e87b4ccca799334c5965c37ed18407b73867e4583e72734566a9dede42, saved-item spec d8d29ceecfb462dac12120c4f14600ba10d6c3e56ecb5513caa29bf8e1cce3c3 and purchase panel b5b9dac125d19c852c64e5e7c345f8d008cf4abf4f5735b473c62405253ef297.
+Parent full unit run 90893 passed 596 tests across 59 files. Full lint 33094 and typecheck 97401 passed. Optimized Turbopack scenario build succeeded. Local Playwright-managed build attempts first encountered process-creation panics. A direct pinned launch with inherited NO_COLOR removed succeeded using the existing engine, with no tracked build workaround.
 
-Parent integrated browser rerun 8623 passed all 145 cases against optimized Demo server 43606, exit 0 in 4.6 minutes. Backlog, roadmap, architecture, decisions and execution record are updated. Exact next action is final formatting/diff/link checks, stop the owned server and publish only validated owned files on surfacebook, then inspect matching hosted CI. No item 51/74 commit or push has occurred.
+## Exact next action
+
+Item 50 local implementation, review and integrated validation are complete. Parent full unit run 90893 passed 596 tests across 59 files. Full lint/typecheck passed. Scenario run 47622 passed 25 cases, normal Demo run 80362 passed 69, and unconfigured run 86628 passed 28. Both optimized parent builds succeeded. All owned servers are stopped.
+
+Backlog, roadmap, architecture, decisions and execution records are updated. Run final formatting, diff, local link/number checks and source-manifest comparison, then publish only validated owned files on surfacebook. Inspect the exact commit's hosted CI result and recover failures. No item 50 commit or push has occurred. See docs/superpowers/plans/2026-11-17-collection-continuation.md.
 
 ## Published work and scheduling
 
-Setup 5541a45058337bc4e83f26a7f82de2141aaee37a and item 72 cfe278e438476d18581beb96a5302271ebd33867 are pushed. Their matching hosted CI runs 44018644622 and 44020283058 succeeded. Item 72 local evidence remains in its facet execution record.
+Items 51/74 are published as ce7156c and hosted CI 44026221837 passed at that exact revision. Their source, review and browser evidence is in the saved-refresh execution record. Setup 5541a45 and item 72 cfe278e also have successful matching hosted runs 44018644622 and 44020283058.
 
-Fashion website maintainer remains ACTIVE every 30 minutes in this owner chat. The daily audit remains PAUSED. Current host applies website-maintainer TOML directly because the new role was unavailable in this running chat. The prior interruption was an actual account usage-limit failure. The user's continuation recovered capacity, observed at primary 1 percent and weekly 0 percent with ordinary usage allowed. Recheck actual limits when relevant. Scheduled recovery requires app/machine/project availability and capacity.
+Fashion website maintainer remains ACTIVE every 30 minutes in this chat. The daily audit remains PAUSED. The current host applies website-maintainer TOML directly until native discovery refreshes. A previous account usage stop interrupted work, and this continuation recovered ordinary capacity. Read current limits when relevant. Scheduled recovery depends on app, awake machine, project access and account capacity.

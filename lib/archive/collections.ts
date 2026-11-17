@@ -1,5 +1,9 @@
 import { getCollection, getCollections } from '@/lib/shopify/collections';
-import type { CollectionDetail, CollectionSummary } from '@/lib/shopify/collections';
+import type {
+  CollectionDetail,
+  CollectionSummary,
+  CollectionsPage,
+} from '@/lib/shopify/collections';
 
 /**
  * True when a collection is archived. Either signal alone is sufficient
@@ -19,8 +23,8 @@ export function isCollectionArchived(
 }
 
 /**
- * Fetches every archived collection (ROADMAP.md Phase 11's `/archive`
- * index). Deliberately does NOT catch a thrown error the way
+ * Filters one source page for the archive index, retaining its continuation
+ * even when no entries on this page are archived. Deliberately does NOT catch a thrown error the way
  * lib/home/selected-pieces.ts's getSelectedPieces does (DECISIONS.md
  * D-033) — that exception is justified specifically because six of the
  * homepage's seven scenes have no Shopify dependency at all, so one
@@ -30,9 +34,9 @@ export function isCollectionArchived(
  * exactly like category pages and the PDP, so a thrown error (unconfigured
  * store, throttled request) correctly propagates to app/error.tsx.
  */
-export async function getArchivedCollections(first = 20): Promise<CollectionSummary[]> {
-  const { collections } = await getCollections(first);
-  return collections.filter(isCollectionArchived);
+export async function getArchivedCollections(first = 20, after?: string): Promise<CollectionsPage> {
+  const page = await getCollections(first, after);
+  return { ...page, collections: page.collections.filter(isCollectionArchived) };
 }
 
 /**

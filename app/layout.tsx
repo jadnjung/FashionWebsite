@@ -86,6 +86,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-preview-mode={process.env.PREVIEW_DEMO_MODE === '1' ? 'demo' : 'unconfigured'}
       data-render-mode={process.env.NODE_ENV}
       data-browser-test-profile={process.env.BROWSER_TEST_PROFILE}
+      data-preview-collection-scenario={
+        process.env.PREVIEW_DEMO_MODE === '1'
+          ? process.env.PREVIEW_COLLECTION_SCENARIO || undefined
+          : undefined
+      }
       className={`${functionalFont.variable} ${displayFont.variable} h-full antialiased`}
     >
       {/* Functional Swiss sans is the site's base/default typeface — DESIGN_SYSTEM.md

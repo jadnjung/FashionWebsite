@@ -4,9 +4,14 @@ const require = createRequire(import.meta.url);
 const next = require.resolve('next/dist/bin/next');
 const production = process.env.PLAYWRIGHT_PRODUCTION === '1';
 const demo = process.env.PREVIEW_DEMO_MODE === '1';
+const collectionScenario =
+  demo && ['continuation-21', 'continuation-45'].includes(process.env.PREVIEW_COLLECTION_SCENARIO)
+    ? process.env.PREVIEW_COLLECTION_SCENARIO
+    : '';
 const environment = {
   ...process.env,
   PREVIEW_DEMO_MODE: demo ? '1' : '',
+  PREVIEW_COLLECTION_SCENARIO: collectionScenario,
   SHOPIFY_STORE_DOMAIN: '',
   SHOPIFY_STOREFRONT_API_TOKEN: '',
   KLAVIYO_PRIVATE_API_KEY: '',

@@ -93,6 +93,38 @@ describe('getCollection', () => {
 });
 
 describe('getCollections', () => {
+  test.each([
+    undefined,
+    {},
+    { edges: [], pageInfo: {} },
+    { edges: null, pageInfo: { hasNextPage: false } },
+    { edges: [], pageInfo: { hasNextPage: true, endCursor: null } },
+    { edges: [], pageInfo: { hasNextPage: true, endCursor: '' } },
+    { edges: [], pageInfo: { hasNextPage: true, endCursor: 'x'.repeat(4097) } },
+    { edges: [{ node: null }], pageInfo: { hasNextPage: false } },
+    {
+      edges: [{ node: { id: '', handle: 'bad', title: 'Bad' } }],
+      pageInfo: { hasNextPage: false },
+    },
+  ])(
+    'rejects malformed collection connections rather than returning an empty or partial result',
+    async (connection) => {
+      mockClient({ data: { collections: connection } });
+      await expect(getCollections()).rejects.toThrow(/collection/);
+    },
+  );
+
+  test('rejects nonadvancing continuation and honors pre-cancellation', async () => {
+    mockClient({
+      data: { collections: { edges: [], pageInfo: { hasNextPage: true, endCursor: 'same' } } },
+    });
+    await expect(getCollections(20, 'same')).rejects.toThrow('did not advance');
+    const controller = new AbortController();
+    controller.abort(new Error('Already cancelled'));
+    await expect(getCollections(20, undefined, controller.signal)).rejects.toThrow(
+      'Already cancelled',
+    );
+  });
   test('maps a page of collections with pagination info', async () => {
     mockClient({
       data: {

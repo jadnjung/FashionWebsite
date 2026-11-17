@@ -85,6 +85,7 @@ export default defineConfig({
           // suite today.
           env: {
             PREVIEW_DEMO_MODE: '',
+            PREVIEW_COLLECTION_SCENARIO: '',
             ESQUE_DROP_ACCESS_CODE: '',
             // Pinned empty (not omitted) for the same reason as above:
             // getKlaviyoConfig() treats '' as unconfigured, same

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:demo": "playwright test -c playwright.demo.config.ts",
+    "test:e2e:collections": "playwright test -c playwright.collections.config.ts",
     "test:unit": "vitest run",
     "typecheck": "tsc --noEmit",
     "graphql-codegen": "graphql-codegen",

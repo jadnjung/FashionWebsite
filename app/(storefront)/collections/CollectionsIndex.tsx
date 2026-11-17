@@ -3,6 +3,7 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { getCollectionHref, getDropPhase } from '@/lib/collections/drop-phase';
 import { buildBreadcrumbJsonLd } from '@/lib/seo/structured-data';
 import { getCollections } from '@/lib/shopify/collections';
+import { CollectionsPagination } from '@/components/catalog/CollectionsPagination';
 
 // Mirrors app/(storefront)/collections/[handle]/DropCountdown.tsx's own
 // formatTargetDate exactly (UTC pinned deliberately — see its comment: the
@@ -32,8 +33,9 @@ function formatDropDate(dropDate: string): string {
 // (matching ArchiveIndex's identical precedent for /archive), so a thrown
 // error correctly propagates to app/error.tsx, like every other
 // Shopify-dependent route.
-export async function CollectionsIndex() {
-  const { collections } = await getCollections();
+export async function CollectionsIndex({ after }: { after?: string } = {}) {
+  const page = await getCollections(20, after);
+  const { collections } = page;
 
   return (
     <div className="flex flex-col gap-8 px-4 py-12 md:px-8">
@@ -43,7 +45,11 @@ export async function CollectionsIndex() {
           { name: 'Collections', path: '/collections' },
         ])}
       />
-      <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
+      <h1
+        id="collection-results"
+        tabIndex={-1}
+        className="scroll-mt-6 font-display text-display-l uppercase tracking-display text-esque-text"
+      >
         COLLECTIONS
       </h1>
       {collections.length === 0 ? (
@@ -54,7 +60,9 @@ export async function CollectionsIndex() {
         // "NOTHING HERE YET." empty-state treatment for consistency, rather
         // than inventing new copy.
         <div className="flex flex-col items-center gap-4 py-24 text-center">
-          <p className="font-display text-heading-3 uppercase text-esque-text">NOTHING HERE YET.</p>
+          <p className="font-display text-heading-3 uppercase text-esque-text">
+            {after || page.hasNextPage ? 'NO COLLECTIONS ON THIS PAGE.' : 'NOTHING HERE YET.'}
+          </p>
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
@@ -89,6 +97,7 @@ export async function CollectionsIndex() {
           })}
         </ul>
       )}
+      <CollectionsPagination pathname="/collections" after={after} page={page} />
     </div>
   );
 }

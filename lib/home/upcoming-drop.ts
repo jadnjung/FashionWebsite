@@ -1,5 +1,5 @@
 import { isCollectionUpcoming } from '@/lib/collections/drop-phase';
-import { getCollections } from '@/lib/shopify/collections';
+import { findHomeCollection } from '@/lib/home/find-collection';
 
 export interface UpcomingDrop {
   handle: string;
@@ -22,10 +22,11 @@ export interface UpcomingDrop {
  * one upcoming collection in practice), so the first match is returned
  * without needing to disambiguate multiple candidates.
  */
-export async function getUpcomingDrop(): Promise<UpcomingDrop | null> {
+export async function getUpcomingDrop(now: Date = new Date()): Promise<UpcomingDrop | null> {
   try {
-    const { collections } = await getCollections();
-    const upcoming = collections.find((collection) => isCollectionUpcoming(collection));
+    const upcoming = await findHomeCollection((collection) =>
+      isCollectionUpcoming(collection, now),
+    );
     if (!upcoming?.dropDate) return null;
     return { handle: upcoming.handle, title: upcoming.title, dropDate: upcoming.dropDate };
   } catch (error) {

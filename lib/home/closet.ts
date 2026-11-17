@@ -1,5 +1,5 @@
 import { getDropPhase } from '@/lib/collections/drop-phase';
-import { getCollections } from '@/lib/shopify/collections';
+import { findHomeCollection } from '@/lib/home/find-collection';
 import { getClosetProducts, type ClosetProduct } from '@/lib/shopify/products';
 
 export interface ClosetCollection {
@@ -23,8 +23,9 @@ export async function getClosetCollection(
   now: Date = new Date(),
 ): Promise<ClosetCollection | null> {
   try {
-    const { collections } = await getCollections();
-    const current = collections.find((collection) => getDropPhase(collection, now) === 'current');
+    const current = await findHomeCollection(
+      (collection) => getDropPhase(collection, now) === 'current',
+    );
     if (!current) return null;
 
     const products = await getClosetProducts(current.handle, 6);
