@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import { Analytics } from '@/components/analytics/Analytics';
+import { DropGrantObserver } from '@/components/analytics/DropGrantObserver';
 import Script from 'next/script';
 import { isAnalyticsConfigured } from '@/lib/analytics/config';
 import { buildAnalyticsBootstrap } from '@/lib/analytics/bootstrap';
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           runs before customer effects, and automatic URL collection requires
           the stream-specific provisioning assertion. */}
       <Suspense fallback={null}>
+        <DropGrantObserver />
         <Analytics />
       </Suspense>
     </html>

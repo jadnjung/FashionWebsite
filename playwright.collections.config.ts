@@ -4,7 +4,12 @@ import demo from './playwright.demo.config';
 // A separate server build keeps the standard five-collection fixture stable.
 export default defineConfig({
   ...demo,
-  metadata: { previewMode: 'demo', collectionScenario: 'continuation-45' },
+  metadata: {
+    previewMode: 'demo',
+    collectionScenario: 'continuation-45',
+    browserTestProfile: 'demo-drop-grant-isolated',
+    dropGrantFixture: true,
+  },
   testDir: './tests/e2e-collections',
   reporter: [['html', { outputFolder: 'playwright-report-demo/collections', open: 'never' }]],
   outputDir: 'test-results-demo/collections',
@@ -21,6 +26,7 @@ export default defineConfig({
             ...(demo.webServer && !Array.isArray(demo.webServer) ? demo.webServer.env : {}),
             PREVIEW_DEMO_MODE: '1',
             PREVIEW_COLLECTION_SCENARIO: 'continuation-45',
+            BROWSER_TEST_DROP_GRANT_PROFILE: 'demo45-grant',
           },
         },
 });

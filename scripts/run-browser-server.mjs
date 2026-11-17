@@ -8,6 +8,10 @@ const collectionScenario =
   demo && ['continuation-21', 'continuation-45'].includes(process.env.PREVIEW_COLLECTION_SCENARIO)
     ? process.env.PREVIEW_COLLECTION_SCENARIO
     : '';
+const dropGrantFixture =
+  demo &&
+  collectionScenario === 'continuation-45' &&
+  process.env.BROWSER_TEST_DROP_GRANT_PROFILE === 'demo45-grant';
 const environment = {
   ...process.env,
   PREVIEW_DEMO_MODE: demo ? '1' : '',
@@ -16,14 +20,18 @@ const environment = {
   SHOPIFY_STOREFRONT_API_TOKEN: '',
   KLAVIYO_PRIVATE_API_KEY: '',
   KLAVIYO_LIST_ID: '',
-  ESQUE_DROP_ACCESS_CODE: '',
+  ESQUE_DROP_ACCESS_CODE: dropGrantFixture ? 'fixture-drop-grant-53' : '',
   NEXT_PUBLIC_GA4_MEASUREMENT_ID: '',
   NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR: '',
   NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: '',
   NEXT_PUBLIC_SUPPORT_EMAIL: '',
   NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
   NEXT_PUBLIC_PREVIEW_ANALYTICS: demo ? '1' : '',
-  BROWSER_TEST_PROFILE: demo ? 'demo-isolated' : 'unconfigured-isolated',
+  BROWSER_TEST_PROFILE: dropGrantFixture
+    ? 'demo-drop-grant-isolated'
+    : demo
+      ? 'demo-isolated'
+      : 'unconfigured-isolated',
 };
 if (production) {
   const build = spawnSync(process.execPath, [next, 'build'], {

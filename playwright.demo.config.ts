@@ -57,6 +57,7 @@ export default defineConfig({
           env: {
             PREVIEW_DEMO_MODE: '1',
             PREVIEW_COLLECTION_SCENARIO: '',
+            BROWSER_TEST_DROP_GRANT_PROFILE: '',
             // Same reasoning as playwright.config.ts: never let a developer's
             // real Klaviyo credentials turn a test run into real list signups.
             SHOPIFY_STORE_DOMAIN: '',

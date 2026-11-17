@@ -14,7 +14,7 @@ export default async function verifyServerMode(config: FullConfig) {
   const collectionScenario = html.match(/data-preview-collection-scenario="([^"]+)"/)?.[1];
   if (
     mode !== config.metadata.previewMode ||
-    profile !== `${config.metadata.previewMode}-isolated` ||
+    profile !== (config.metadata.browserTestProfile ?? `${config.metadata.previewMode}-isolated`) ||
     collectionScenario !== config.metadata.collectionScenario ||
     (process.env.PLAYWRIGHT_PRODUCTION === '1' && render !== 'production')
   ) {

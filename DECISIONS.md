@@ -1027,6 +1027,9 @@ No other file in this codebase used Next.js Proxy/Middleware for anything else (
 
 ## D-065 — Access Funnel analytics taxonomy updated: `access_gate_view`/`access_granted` retired, `drop_teaser_view`/`drop_access_attempt`/`drop_access_granted` added
 
+Current lifecycle follow-up is D-103, which replaces Shell mount-only signal consumption with route/query observation and guarded form cleanup.
+
+
 **Decision.** `lib/analytics/events.ts`'s closed taxonomy is updated to match what the codebase can actually produce after D-063/D-064, not left to silently drift:
 
 - **Removed** (nothing will ever fire these again): `access_gate_view` (the whole-site gate it measured is deleted) and `access_granted`, including its `tier: 'general' | 'vip'` property shape (the "general access"/"VIP" concepts it distinguished no longer exist — PROJECT.md §58's full VIP system was always deferred, and the one real "early access" tier this codebase ever shipped was the now-deleted whole-site early-access password).
@@ -1897,3 +1900,14 @@ A query-bearing document URL expands analytics exposure beyond explicit Search e
 Google documents that [manual pageview configuration](https://developers.google.com/analytics/devguides/collection/ga4/views) and [enhanced measurement](https://support.google.com/analytics/answer/9216061?hl=en) require separate controls. Bootstrap disables the config-load pageview and supplies sanitized initial location/referrer before the SDK loads. Manual pageviews and explicit taxonomy events use sanitized current and virtual prior-page context. Hash-only changes do not count as pageviews. Settled predictive `search` attribution remains unchanged; full-page continuation adds ordinary pageviews without a duplicate Search event.
 
 Remove `q` from accepted analytics URLs, and all query/fragment context from decoded Search paths, including encoded aliases. Malformed URL encoding fails closed. Search uses origin-only referrer headers and metadata, with document navigation from the overlay. Generic application errors avoid raw query text. Browser history, framework request logs and deployment access logs may retain native GET URLs and need deployment-specific review. Real stream settings, ingestion, duplicate-event behavior, catalog relevance and visitor consent remain external launch verification. Local validation uses canonical fixtures and blocked/stubbed analytics traffic.
+
+
+## D-103 — Consume grant signals across navigation and same-path action replacement
+
+November 17, 2026. Implementation is locally verified in the [grant-lifecycle execution record](./docs/superpowers/plans/2026-11-17-drop-grant-lifecycle.md).
+
+Use one guarded synchronous read-clear-dispatch consumer for the existing short-lived optional grant cookie. The root observer runs on initial load and pathname/scalar-query changes inside the existing Suspense boundary. DropAccessForm also invokes the consumer from its unmount cleanup. A completed action's response cookies arrive before its Flight update replaces the hydrated code-entry form, so cleanup can consume a genuine grant when the pathname stays the same. An absent or malformed signal produces no event. Clearing before dispatch supports overlapping observations, StrictMode rehearsal and a later fresh grant for the same handle.
+
+Keep the bound native action/useActionState form and authoritative httpOnly unlock cookie. The cleanup consumes existing optional state and makes no authorization decision. A never-hydrated form relies on a later hydrated root to consume its retained signal. An abandoned in-flight response arriving after unrelated teardown remains best-effort until the next observed navigation. Cookie access/write failures must leave storefront operation usable. Actual GA4 delivery continues to depend on D-102 provisioning and a connected property.
+
+This follows the [React effect lifecycle](https://react.dev/reference/react/useEffect) and [Next server-function cookie behavior](https://nextjs.org/docs/app/api-reference/functions/cookies#understanding-cookie-behavior-in-server-functions). Local regression evidence must cover ordinary client navigation, query-only continuation, once-only consumption, fresh repeated-handle grants and the actual same-path action, including native no-JavaScript submission.

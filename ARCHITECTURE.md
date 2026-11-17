@@ -27,7 +27,7 @@ Nothing in the presentation layer should be able to corrupt commerce state. All 
 | Hosting/deploy | Vercel | Edge rendering, image optimization, preview deployments |
 | Email | Klaviyo (free tier at launch) | Access password email, welcome, collection announcements, abandoned cart, back-in-stock |
 | Analytics | Shopify Analytics + Google Analytics 4 + Google Search Console | Add Meta/TikTok pixels, Clarity, etc. only when a real marketing need exists |
-| Testing | Playwright for E2E (two suites: `pnpm test:e2e` with no store, proving graceful degradation; `pnpm test:e2e:demo` against Demo Mode fixtures — DECISIONS.md D-090) + Vitest unit tests | Both suites run in CI |
+| Testing | Playwright suites for unconfigured-store recovery, default Demo shopping and isolated collection/grant fixtures, plus Vitest unit tests | CI runs all three browser suites against optimized builds. The collection profile supplies an allowlisted public fixture code for real action regression (D-103). |
 | Package manager | pnpm for application dependencies | The isolated Codex TypeScript tooling uses its own npm lockfile under `.codex/tools/typescript-runtime/` |
 | Node version | 22 (per `.nvmrc`) | |
 
@@ -141,6 +141,10 @@ What replaces it is narrower and collection-scoped, not sitewide:
 - **Code validation happens server-side** (`app/(storefront)/collections/[handle]/actions.ts`'s `validateDropAccessCode`, a Server Action) — never compared client-side only — against a single environment variable (`ESQUE_DROP_ACCESS_CODE`), deliberately not a Shopify metafield: this codebase only ever uses the Storefront API (D-015), whose metafield reads are reachable by anyone holding a valid Storefront API token, not just this app's own server, so a metafield is the wrong place to hold a secret, even a low-stakes one.
 - **Code delivery** reuses the existing Request Access flow unchanged (`app/(storefront)/access/`, Klaviyo list signup) — the project owner sends the code to that list manually when ready (PROJECT.md §16's own documented example), not an automated transactional email.
 - This remains, by explicit design, **a brand gate, not a security boundary** (CONTENT.md §5, D-005): unlimited attempts, plain string equality, no rate limiting — carried over unchanged from the retired whole-site gate's own stance.
+
+### Grant-signal lifecycle
+
+The successful drop action sets a short-lived readable analytics signal alongside the authoritative httpOnly unlock cookie. A shared synchronous consumer reads and clears the optional signal before dispatching `drop_access_granted`. The root observer checks initial load and committed pathname/query changes inside the existing Suspense boundary. The code-entry form also attempts consumption during unmount, covering its same-path replacement after a completed successful action, including a subsequent render failure. Cleanup dispatches only when the optional signal exists. A later genuine grant for the same handle can produce another event. Cookie access/delivery failures are contained by the analytics helper. D-103 and the grant-lifecycle execution record retain validation and timing boundaries.
 
 ## 7. Environment Variables (draft — fill in once the Shopify store exists)
 

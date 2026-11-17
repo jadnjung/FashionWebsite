@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Header } from '@/components/navigation/Header';
 import { FullScreenMenu } from '@/components/navigation/FullScreenMenu';
 import { SearchOverlay } from '@/components/navigation/SearchOverlay';
 import { CustomCursor } from '@/components/navigation/CustomCursor';
-import { DROP_ACCESS_EVENT_COOKIE_NAME, parseDropAccessEventCookie } from '@/lib/access/cookies';
-import { trackEvent } from '@/lib/analytics/gtag';
 
 // Owns the shell-wide client state (currently just menu-open) so that
 // app/layout.tsx can stay a Server Component and keep its `metadata`
@@ -36,21 +34,6 @@ export function ShellClient({
   // it to the SEARCH button, SearchOverlay focuses it back on close.
   const [searchOpen, setSearchOpen] = useState(false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
-
-  // Access Funnel: "drop-gate unlock" — the collection-scoped analog of the
-  // deleted whole-site gate's access_granted. Consume the initial signal
-  // when the shell mounts. The real unlock cookie
-  // (DROP_ACCESS_COOKIE_NAME) is httpOnly (unreadable here by design);
-  // that action additionally sets a short-lived, non-httpOnly signal
-  // cookie on success specifically for this. Read and immediately cleared
-  // so it can only ever fire once per grant, not on every subsequent
-  // storefront page view.
-  useEffect(() => {
-    const handle = parseDropAccessEventCookie(document.cookie);
-    // Clear invalid signals too, so corrupt optional state cannot linger.
-    document.cookie = `${DROP_ACCESS_EVENT_COOKIE_NAME}=; Max-Age=0; path=/`;
-    if (handle) trackEvent('drop_access_granted', { collection_handle: handle });
-  }, []);
 
   return (
     <>

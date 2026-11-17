@@ -38,7 +38,7 @@ The product review found no material business-policy blocker for this scoped pro
 - [x] Integrate guarded analytics bootstrap, sanitized page context and manual pageviews, preserving explicit predictive-event semantics.
 - [x] Prove complete fixture-ID reachability, recovery, URL/history/focus/no-JavaScript behavior and privacy boundaries.
 - [x] Complete independent quality and security reviews, fix and re-review findings, then run parent integrated validation.
-- [ ] Update affected project documents, publish only validated owned files to surfacebook and inspect matching hosted CI.
+- [x] Update affected project documents, publish only validated owned files to surfacebook and inspect matching hosted CI.
 
 The fullstack specialist owns application, query, generated operation-type, test and necessary sample-environment edits. The parent owns task documents, integration, reviews and publication. Use existing dependencies and limit generated-type changes to affected operations.
 
@@ -87,20 +87,22 @@ Fake-ID suite session 8603 exited 0 with all five browser-profile cases passing 
 Reproduce the isolated positive build in a clean PowerShell process without editing environment files. All IDs below are public test placeholders. Normal test launchers deliberately clear these settings.
 
 ```powershell
+$env:NODE_ENV='production'
 $env:PREVIEW_DEMO_MODE='1'
 $env:PREVIEW_COLLECTION_SCENARIO='continuation-45'
 $env:SHOPIFY_STORE_DOMAIN=''
 $env:SHOPIFY_STOREFRONT_API_TOKEN=''
 $env:KLAVIYO_PRIVATE_API_KEY=''
 $env:KLAVIYO_LIST_ID=''
-$env:ESQUE_DROP_ACCESS_CODE=''
+$env:ESQUE_DROP_ACCESS_CODE='fixture-drop-grant-53'
 $env:NEXT_PUBLIC_GA4_MEASUREMENT_ID='G-ESQUETEST'
 $env:NEXT_PUBLIC_GA4_STREAM_PRIVACY_VERIFIED_FOR='G-ESQUETEST'
 $env:NEXT_PUBLIC_PREVIEW_ANALYTICS=''
 $env:NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=''
 $env:NEXT_PUBLIC_SUPPORT_EMAIL=''
 $env:NEXT_PUBLIC_SITE_URL='http://localhost:3000'
-$env:BROWSER_TEST_PROFILE='demo-isolated'
+$env:BROWSER_TEST_PROFILE='demo-drop-grant-isolated'
+$env:BROWSER_TEST_DROP_GRANT_PROFILE='demo45-grant'
 Remove-Item Env:NO_COLOR -ErrorAction SilentlyContinue
 python -B -X utf8 .codex/tools/run_project.py build
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -124,3 +126,19 @@ Final mandatory security re-review cleared the last test-only navigation/referre
 Unconfigured optimized Search run 30262 exited 0 with 70 passes and two intended native-clear target skips in 49.2 seconds. It covered native no-JavaScript entry, noindex metadata, retained-query failure/Retry and existing overlay focus, mutual exclusion, category navigation and reduced-motion behavior. Server 88189 is stopped.
 
 Final browser totals are 222 passing and five intended skips across normal large-data 55, fake-GA 5, default Demo 92/3 skips and unconfigured Search 70/2 skips. All 25 shopping-journey checks passed. Parent full units passed 629/61 files, final lint/typecheck/formatter passed and optimized builds succeeded in large-data, fake-GA, default Demo and unconfigured modes. Review findings were fixed and re-reviewed. No live Shopify/GA4 account behavior is claimed. Item 57 is locally complete; branch-only publication and matching CI remain the final steps.
+
+
+## Publication
+
+Branch was verified exactly surfacebook before commit and again before push. Published e1e4ac8dad8fd42871db59558d4a2effe5b87859 with explicit destination HEAD:refs/heads/surfacebook, and ls-remote confirmed the same revision. Hosted CI [44123444619](https://github.com/jadnjung/FashionWebsite/actions/runs/44123444619) is in progress. Agent setup passed; the app job reached browser installation. Full hosted completion remains pending. No credentials were read to inspect public status. A Python certificate-store mismatch was handled by using native Windows trust, without disabling TLS verification.
+
+
+The public job detail subsequently confirmed success for agent setup, formatter, lint, typecheck, unit tests, production build and the full unconfigured browser suite at e1e4ac8. Demo was still running and collections pending at that snapshot. The older revision's unconfigured failure remains unexplained; a newer successful run does not establish its cause.
+
+
+## Hosted completion recovered after capacity reset
+
+Public API verification after the usage interruption reports hosted CI 44123444619 completed SUCCESS at exact published e1e4ac8dad8fd42871db59558d4a2effe5b87859. All configured jobs and suites therefore passed. Item 57 is published and hosted-verified. Its live-account/catalog verification boundaries remain as recorded.
+
+
+The D-103 collections-profile follow-up adds a real-action fixture code and distinct existing browser-profile marker. The current fake-GA reproduction block above now includes that fixed public code and matching profile pins, so the external-server verifier accepts the revised collections configuration. Its fake-ID, stream assertion, Preview-off and blocked/stubbed Google traffic requirements retain their original scope.

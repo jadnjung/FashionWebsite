@@ -86,6 +86,7 @@ export default defineConfig({
           env: {
             PREVIEW_DEMO_MODE: '',
             PREVIEW_COLLECTION_SCENARIO: '',
+            BROWSER_TEST_DROP_GRANT_PROFILE: '',
             ESQUE_DROP_ACCESS_CODE: '',
             // Pinned empty (not omitted) for the same reason as above:
             // getKlaviyoConfig() treats '' as unconfigured, same

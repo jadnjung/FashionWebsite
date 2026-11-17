@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
 import { trackEvent } from '@/lib/analytics/gtag';
 import { validateDropAccessCode, type ValidateDropAccessResult } from './actions';
+import { consumeDropGrantSignal } from '@/lib/access/drop-grant';
 
 // CONTENT.md §5 — moved from the deleted app/(access)/access/AccessForm.tsx
 // unchanged: explicitly permitted for reuse as "incorrect code," not just
@@ -32,6 +33,14 @@ export function pickNextMessage(lastMessage: string | null): string {
 const initialState: ValidateDropAccessResult = { success: false };
 
 export function DropAccessForm({ handle }: { handle: string }) {
+  // A successful same-path action replaces this form after its cookies arrive.
+  // Teardown consumes only an existing signal and never implies a grant itself.
+  useEffect(
+    () => () => {
+      consumeDropGrantSignal();
+    },
+    [],
+  );
   // Bound server action: validateDropAccessCode needs `handle` (which
   // collection's code to check against) in addition to useActionState's
   // own 2-arg (prevState, formData) shape — Next.js/React's documented
