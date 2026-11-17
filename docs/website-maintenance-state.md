@@ -1,33 +1,27 @@
 # Website maintenance checkpoint
 
-This file is the current handoff for the website-maintainer agent. The shared backlog remains docs/website-improvement-backlog.md. Follow .codex/WEBSITE_MAINTENANCE.md and AGENTS.md.
+Resume with AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md. Findings remain in docs/website-improvement-backlog.md.
 
-## Current task
+## Current task and ownership
 
-- Status is ready to publish item 72.
-- Active item is 72, preserving unapplied choices across filter-option pages.
-- Base revision is 5541a45058337bc4e83f26a7f82de2141aaee37a on surfacebook.
-- Current owner is maintenance-item-72-2026-11-17 in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. The parent owns this checkpoint, task documentation and integration. The frontend specialist owns FilterBar, any required facet control component and focused regression tests after its brief. Setup commit 5541a45 is pushed and matches the freshly queried remote branch. Hosted setup CI is pending. Verify ownership before modifying overlapping files.
-- Candidate next items are 51, 50 and 57, subject to current severity and user direction.
+- Status is ready for branch-safe publication of validated items 51 and 74.
+- Base is cfe278e438476d18581beb96a5302271ebd33867 on surfacebook.
+- Owner is maintenance-items-51-74 in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Source and test implementation is complete. The parent owns integration, documents, server 43606 and publication. Specialists have handed back their files and server. Preserve the pre-existing untracked debug.log.
+- Owned source paths are components/product/WishlistView.tsx, components/product/ProductPurchasePanel.tsx and tests/e2e-demo/saved-item-refresh.spec.ts. The parent also owns the related architecture, decisions, roadmap, backlog, execution record and this checkpoint.
+- Next candidate after completion is item 50, followed by 57. Item 73 remains open.
 
-## Evidence and acceptance
+## Implementation and evidence
 
-Item 72 is browser confirmed. On /new?sort=featured, checking Size 1 and choosing More filter options removes that draft control. The existing applied URL synchronization fix retains controls that remain rendered.
+Item 51 now limits per-mount saved-item availability refreshes to four active reads. It retains survivor results, queues additions, retries failures, cancels removed/unmounted jobs and rejects stale responses using job identity. Saved records stay uncapped and genuine remounts refresh anew. Baseline RED reproduced 30 simultaneous reads and unwanted survivor refetches. Six focused Chromium regressions passed after implementation.
 
-Preserve intended draft selections across option discovery, explicit removal and Clear Filters. Verify Apply, Back/Forward, committed criteria changes and progressive no-JavaScript GET submission. Read the existing FilterBar and facet-pagination contracts before selecting an implementation.
+The first integrated 145-case run 54986 passed 144 and failed a mobile-chrome bag conflict pointer Retry. Traced repetitions 55270 failed all three times because the button was unstable/detached. Item 74 records the new finding. A measured visibility feedback loop produced 302 observer callbacks in five seconds at fixed scroll, alternating target heights 281.5/103 pixels and Retry positions 929.5/684 pixels. The fix observes the primary-button wrapper, excluding feedback height. GREEN measurement showed one callback, a stable 48-pixel target and a successful pointer Retry. The unchanged conflict test passed 15/15 across all five profiles in session 45777. Temporary probe removed.
 
-## Completed and pending work
+Optimized build and final typecheck passed. Parent integrated unit run 55952 passed 567 tests across 56 files, and full lint 14800 passed after both source fixes. Quality and mandatory security reviews found no actionable issue on current source. Reviewed hashes are WishlistView 954124e87b4ccca799334c5965c37ed18407b73867e4583e72734566a9dede42, saved-item spec d8d29ceecfb462dac12120c4f14600ba10d6c3e56ecb5513caa29bf8e1cce3c3 and purchase panel b5b9dac125d19c852c64e5e7c345f8d008cf4abf4f5735b473c62405253ef297.
 
-The preceding shopping-reliability batch implemented 16 items in commit 7984454. Its hosted CI passed at https://github.com/jadnjung/FashionWebsite/actions/runs/43957833531. Those results describe that revision and its recorded environment.
+Parent integrated browser rerun 8623 passed all 145 cases against optimized Demo server 43606, exit 0 in 4.6 minutes. Backlog, roadmap, architecture, decisions and execution record are updated. Exact next action is final formatting/diff/link checks, stop the owned server and publish only validated owned files on surfacebook, then inspect matching hosted CI. No item 51/74 commit or push has occurred.
 
-RED verification completed against the old optimized Demo server. Four focused Chromium tests exited 1 with three expected missing-Size-1 failures in persistence, keyboard recovery and facet history. The enhanced native GET case passed, including Apply followed by option discovery retaining its applied Size 1. Implementation is complete in FacetGroup.tsx, FilterBar.tsx and filter-url-state.spec.ts. The client group retains interacted label/checked state, and the existing server form key resets on committed criteria/sort changes. Unchecked retained controls remain available for keyboard focus and reselection. Native GET guidance explains Apply before option-page navigation with scripting disabled.
+## Published work and scheduling
 
-The specialist's typecheck, lint, formatting and 44 catalog units passed. Parent full unit process 32806 passed 567 tests, lint process 86343 passed, and optimized build session 90592 passed compilation/TypeScript and the owned local server was stopped after browser validation. All 140 scoped browser cases passed across the five profiles in process 19162, including all 25 shopping-journey checks. Independent code and security reviews found no actionable issue on the current source. The next action is final documentation/format checks, branch-safe publication and matching CI inspection. Stop the owned local server when it is no longer needed.
+Setup 5541a45058337bc4e83f26a7f82de2141aaee37a and item 72 cfe278e438476d18581beb96a5302271ebd33867 are pushed. Their matching hosted CI runs 44018644622 and 44020283058 succeeded. Item 72 local evidence remains in its facet execution record.
 
-The existing parser retains at most 20 values per group. An actual parser probe submitted 21 sizes and retained 20, ending at Size 20. This separate guidance gap is logged as item 73 and remains open. The item 72 patch preserves the existing budget.
-
-Item 72 implementation, review and local validation are complete. Publication and hosted CI remain pending. The next candidate is item 51's saved-item refresh work after publication is reconciled, with item 73's new guidance gap considered by impact. The pre-existing untracked debug.log is outside scope. No credential or external product dependency is currently known. The separate daily audit remains paused.
-
-## Scheduled recovery
-
-The app verified fashion-website-maintainer as ACTIVE every 30 minutes in the owner chat. Its November 17, 2026 04:34 UTC continuation recovered interrupted setup after account capacity returned, completed the pending security review and reran local checks. Setup was published as 5541a45 and this handoff advanced to item 72 implementation and validation. Use actual account reset windows when available. The app, machine and project must be available for a scheduled run.
+Fashion website maintainer remains ACTIVE every 30 minutes in this owner chat. The daily audit remains PAUSED. Current host applies website-maintainer TOML directly because the new role was unavailable in this running chat. The prior interruption was an actual account usage-limit failure. The user's continuation recovered capacity, observed at primary 1 percent and weekly 0 percent with ordinary usage allowed. Recheck actual limits when relevant. Scheduled recovery requires app/machine/project availability and capacity.

@@ -1848,3 +1848,21 @@ FilterBar keeps its server-rendered catalog queries, applied URL state and nativ
 The existing form key resets all group drafts when committed criteria or sort changes. Option pagination and its history preserve the current form session. Group summary counts continue to describe applied selections. Draft state lives in component memory for that form session. The existing server parser and per-group 20-value budget retain their current behavior. Backlog item 73 records the separate missing budget guidance.
 
 Server-rendered native checkboxes and Apply remain usable with scripting disabled. Those visitors apply choices before navigating to another filter-option page, following the explicit guidance beside pagination. Enhanced browsing retains unapplied drafts across that navigation. This refines D-096's retained-control limitation and resolves backlog item 72. The execution record contains the reproduced failures and final validation. [Facet draft persistence](./docs/superpowers/plans/2026-11-17-facet-draft-persistence.md)
+
+## D-099 — Incremental saved-item availability refreshes
+
+November 17, 2026 UTC.
+
+Each mounted WishlistView owns a refresh coordinator with at most four active product reads. A change to the saved list queues added handles and cancels removed handles while retaining surviving requests and completed results. Retry queues failed handles. Results publish independently, so a slow or unavailable product does not hold back healthy products.
+
+Every started read uses the existing ten-second full-operation request helper. Removed jobs lose result ownership before cancellation, and identity checks prevent late responses from replacing a newly saved entry with the same handle. Unmount disposes the coordinator. A genuine later mount refreshes availability again, without reusing a cross-page result cache. Retry focus restoration respects deliberate focus movement.
+
+This preserves D-061's uncapped, ordered saved records and existing storage format. The concurrency budget applies to availability reads, with no saved-entry eviction. Shopify remains the source of current product availability. [Saved refresh execution record](./docs/superpowers/plans/2026-11-17-saved-refresh-budget.md)
+
+## D-100 — Stable purchase-action visibility measurement
+
+November 17, 2026 UTC.
+
+The product purchase panel observes a wrapper containing only its primary action button when deciding whether mobile purchase controls are needed. Feedback, inventory guidance and recovery links remain outside the observed bounds. Their appearance must not change the visibility measurement that chooses between inline and mobile controls.
+
+The previous feedback-containing target oscillated between 281.5 and 103 pixels tall at a fixed scroll position during mobile bag conflict recovery. A controlled probe recorded 302 observer entries in five seconds and a moving Retry target. The button-only target measures 48 pixels, produced one observer entry in the corresponding probe and allowed the actual pointer Retry to succeed. The observer threshold, sold-out target, purchase handlers and existing pointer test retain their contracts. Backlog item 74 and the saved-refresh execution record retain reproduction and validation evidence.

@@ -1,6 +1,6 @@
 # Website improvements you can complete with demo products
 
-Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 73 numbered items. The latest broad audit added items 59–71, implementation review added item 72, and maintenance investigation added item 73. Shopify is the commerce platform referenced in this document.
+Use this backlog to improve Esque’s reliability, accessibility, presentation, and shopping experience before final products and external service accounts are available. Each item includes current evidence, a local demonstration, and a completion check. The backlog now contains 74 numbered items. The latest broad audit added items 59–71, implementation review added item 72, and maintenance investigation added items 73 and 74. Shopify is the commerce platform referenced in this document.
 
 Reviewed on November 14, 2026 against commit `d6cf965` on `surfacebook`. The original findings were open at the audit baseline. The implementation record below tracks the subsequent remediation and verification pass. Priorities are proposed implementation order. Expanded on November 14, 2026 with detailed behavior, edge cases, feature packages, and implementation handoffs. The added specifications describe proposed future work.
 
@@ -31,7 +31,9 @@ The 320px multi-digit bag header regression exposed during this pass is also cor
 
 Item 72 was implemented during the November 17, 2026 UTC maintenance continuation. Interacted size, color and collection controls survive option-page changes and history, including keyboard unchecking and reselection. Committed criteria/sort changes reset drafts. Native GET visitors apply before navigating another option page, following explicit guidance. Parent validation passed 567 unit tests and all 140 relevant optimized-browser cases across the five profiles, including complete shopping journeys. Independent code and security reviews found no actionable introduced issue. [Implementation and verification](./superpowers/plans/2026-11-17-facet-draft-persistence.md)
 
-Items 50, 51, 53, 55–58, 70, 71 and 73 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
+Items 51 and 74 were implemented and locally verified during the November 17, 2026 UTC continuation. Saved-item refreshes now run with four active reads, retain surviving results, refresh additions and retry failures. Mobile purchase visibility observes the primary button separately from feedback, preventing the measured recovery-control oscillation. The first integrated run exposed item 74 with 144 passes and one failure, followed by three reproduced failures. After the fix, parent validation passed all 567 unit tests and all 145 optimized browser cases across five profiles, including all 25 shopping-journey checks. The unchanged conflict pointer test also passed 15 repeated cases. Build, typecheck, full lint, independent quality and mandatory security reviews passed. Hosted CI for this batch follows publication. [Saved-item refresh and mobile recovery](./superpowers/plans/2026-11-17-saved-refresh-budget.md)
+
+Items 50, 53, 55–58, 70, 71 and 73 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
 
 The website-maintainer workflow selects and implements actionable follow-ups. The [maintenance checkpoint](./website-maintenance-state.md) records the active task and recovery state. This backlog retains issue evidence and fix status. Open items require their implementation and applicable verification before closure.
 
@@ -836,6 +838,8 @@ These items describe open work found after the original implementation pass. Eac
 
 ### 51. Scale saved-item refreshes to larger lists
 
+**Implemented and locally verified November 17, 2026 UTC.** Four active reads per mount, survivor retention, failed-only Retry, new-handle reconciliation and guarded cancellation preserve every saved record. Six new cases passed across all five browser profiles as part of the 145-case integrated run. The original evidence below records discovery.
+
 **P2. Browser confirmed with synthetic data.** A valid local list of 100 entries generated 100 product requests on opening `/wishlist`. Removing one entry generated another 99 requests, for 199 total. The list has no entry bound, and its effect creates a controller and refresh promise for every item whenever `items` changes. [Refresh effect](../components/product/WishlistView.tsx#L43), [effect dependencies](../components/product/WishlistView.tsx#L114), [stored-list parsing](../lib/product/wishlist.ts#L130)
 
 - **Customer impact.** Larger saved lists cause request bursts, repeated loading announcements and unnecessary work after a simple removal. A service limit can turn that extra work into visible availability failures.
@@ -1138,3 +1142,16 @@ Graphics motion/focus findings are based on source and still need a graphics-cap
 ## Keep this inventory current
 
 Refresh this document after each completed group of work. Align stale roadmap and test comments with the newer Demo coverage and D-093 so future work uses the current website baseline. Re-audit after new fixtures expose additional states. The findings reflect the reviewed source and listed demonstrations, with device-dependent and unverified behavior identified explicitly.
+
+
+### 74. Stabilize mobile purchase recovery while the inline action enters the viewport
+
+**Implemented and locally verified November 17, 2026 UTC.** The observer now tracks the primary-button wrapper. GREEN measurement recorded one stable 48-pixel target and successful pointer Retry. The unchanged conflict test passed 15 repetitions across five profiles, and the full 145-case integrated run passed.
+
+**P2. Browser confirmed during maintenance validation.** The optimized five-profile item 51 run passed 144 checks and failed the mobile-chrome no-Web-Locks bag conflict case. A focused traced rerun reproduced a 30-second timeout clicking TRY AGAIN. Playwright repeatedly found the control unstable, and once detached, while the conflict message remained visible. Cart source and that reliability test match the published cfe278e baseline. [Purchase visibility observer](../components/product/ProductPurchasePanel.tsx#L110), [inline feedback](../components/product/ProductPurchasePanel.tsx#L414), [mobile feedback](../components/product/ProductPurchasePanel.tsx#L443)
+
+- **Customer impact.** A customer recovering from a cross-tab bag conflict may encounter moving recovery controls on mobile. The observed inability to click is confirmed in automation, and the physical-device impact still needs direct evaluation.
+- **Reproduction.** Run the mobile-chrome reliability case named without Web Locks a delayed add rejects an intervening write and retry reconciles current intent against the optimized isolated Demo server. Preserve both tabs, the intercepted add and the intervening write. Trace artifacts are under test-results-demo for the failed case.
+- **Investigation.** The purchase visibility observer tracks a container whose feedback children change its size, and actionVisible controls both inline feedback visibility and conditional mobile controls. A temporary Pixel 7 probe confirmed the loop with 302 observer entries in five seconds at constant action Y 791 and scroll Y 1654. Target height alternated between 281.5 and 103 pixels, intersection ratio between 0.1705 and 0.4660, and Retry Y between 929.5 and 684 pixels. The specialist is changing observation to a dedicated primary-button wrapper and will repeat the measurement.
+- **Complete when.** Retry stays stable and reachable at the inline/mobile boundary, conflict recovery adds exactly the intended unit, visibility does not oscillate, and keyboard/touch focus and background scroll remain usable. Repeat the conflict case and full shopping journey across affected profiles.
+- **Owner.** frontend-engineer with quality and security review. Preserve the source test's real pointer action and collect evidence before changing behavior.

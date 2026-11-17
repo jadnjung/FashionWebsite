@@ -5,8 +5,25 @@ import { useEffect, useRef, useState } from 'react';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { useWishlist } from '@/components/product/use-wishlist';
 import { Button } from '@/components/ui/Button';
+import { fetchJsonWithDeadline } from '@/lib/client-request';
 import { toProductListItem, type WishlistItem } from '@/lib/product/wishlist';
 import type { ProductDetail, ProductListItem } from '@/lib/shopify/products';
+
+const MAX_CONCURRENT_REFRESHES = 4;
+
+type AvailabilityResult =
+  { status: 'queued' | 'loading' | 'failed' } | { status: 'ready'; product: ProductDetail | null };
+
+interface RefreshJob {
+  handle: string;
+  controller?: AbortController;
+  result: AvailabilityResult;
+}
+
+interface RefreshCoordinator {
+  update(handles: string[]): void;
+  retryFailed(): void;
+}
 
 function syntheticListItem(item: WishlistItem): ProductListItem {
   return {
@@ -27,92 +44,127 @@ function syntheticListItem(item: WishlistItem): ProductListItem {
 // The route remains a Server Component. Only this personal, browser-owned list hydrates.
 export function WishlistView() {
   const { items, ready, persistenceError, remove } = useWishlist();
-  const [liveResults, setLiveResults] = useState<Record<string, ProductDetail | null>>({});
-  const [failedHandles, setFailedHandles] = useState(() => new Set<string>());
-  const [refreshAttempt, setRefreshAttempt] = useState(0);
+  const [refreshResults, setRefreshResults] = useState(() => new Map<string, AvailabilityResult>());
   const [retrying, setRetrying] = useState(false);
-  const [refreshingHandles, setRefreshingHandles] = useState(() => new Set<string>());
   const [announcement, setAnnouncement] = useState('');
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const discoveryLink = useRef<HTMLAnchorElement>(null);
   const retryButton = useRef<HTMLButtonElement>(null);
   const retryFocusRequested = useRef(false);
-  const refreshFailed = items.some((item) => failedHandles.has(item.handle));
+  const coordinator = useRef<RefreshCoordinator | null>(null);
+  const refreshFailed = items.some((item) => refreshResults.get(item.handle)?.status === 'failed');
 
   useEffect(() => {
-    if (items.length === 0) return;
     let disposed = false;
-    const controllers = items.map(() => new AbortController());
-    const failures = new Set<string>();
+    let scheduled = false;
+    let active = 0;
+    let currentHandles: string[] = [];
+    let retryInProgress = false;
+    const jobs = new Map<string, RefreshJob>();
+    const retryHandles = new Set<string>();
 
-    async function refreshItem(item: WishlistItem, controller: AbortController) {
-      let onAbort: () => void;
-      const cancelled = new Promise<never>((_, reject) => {
-        onAbort = () => reject(controller.signal.reason);
-        controller.signal.addEventListener('abort', onAbort, { once: true });
-      });
-      const timeout = window.setTimeout(() => controller.abort(), 10_000);
+    function owns(job: RefreshJob) {
+      return !disposed && jobs.get(job.handle) === job;
+    }
+
+    async function refreshItem(job: RefreshJob) {
+      active += 1;
+      job.result = { status: 'loading' };
+      const controller = new AbortController();
+      job.controller = controller;
       try {
-        const result = await Promise.race([
-          fetch(`/api/products/${encodeURIComponent(item.handle)}`, {
-            signal: controller.signal,
-          }).then(async (response) => {
-            if (!response.ok) throw new Error('wishlist product fetch failed');
-            const data = (await response.json()) as { product?: ProductDetail | null };
-            if (data.product === undefined || (data.product && data.product.handle !== item.handle))
-              throw new Error('wishlist product response invalid');
-            return data.product;
-          }),
-          cancelled,
-        ]);
-        if (disposed || controller.signal.aborted) return;
-        setLiveResults((current) => ({ ...current, [item.handle]: result }));
+        const data = await fetchJsonWithDeadline<{ product?: ProductDetail | null }>(
+          `/api/products/${encodeURIComponent(job.handle)}`,
+          controller.signal,
+        );
+        if (data.product === undefined || (data.product && data.product.handle !== job.handle))
+          throw new Error('wishlist product response invalid');
+        if (owns(job)) job.result = { status: 'ready', product: data.product };
       } catch {
-        if (disposed) return;
-        failures.add(item.handle);
-        setFailedHandles((current) => new Set(current).add(item.handle));
+        if (owns(job) && !controller.signal.aborted) job.result = { status: 'failed' };
       } finally {
-        window.clearTimeout(timeout);
-        controller.signal.removeEventListener('abort', onAbort!);
-        if (!disposed) {
-          setRefreshingHandles((current) => {
-            const next = new Set(current);
-            next.delete(item.handle);
-            return next;
+        active -= 1;
+        if (owns(job)) {
+          job.controller = undefined;
+          retryHandles.delete(job.handle);
+        }
+        schedule();
+      }
+    }
+
+    function schedule() {
+      if (disposed || scheduled) return;
+      scheduled = true;
+      // Defer work so Strict Mode cleanup can reverse setup before requests start.
+      queueMicrotask(() => {
+        scheduled = false;
+        if (disposed) return;
+        for (const job of jobs.values()) {
+          if (active >= MAX_CONCURRENT_REFRESHES) break;
+          if (job.result.status === 'queued') void refreshItem(job);
+        }
+        setRefreshResults(new Map([...jobs].map(([handle, job]) => [handle, job.result])));
+        if (!retryInProgress || retryHandles.size > 0) return;
+        retryInProgress = false;
+        setRetrying(false);
+        const restoreRetryFocus = retryFocusRequested.current;
+        retryFocusRequested.current = false;
+        if (restoreRetryFocus) {
+          requestAnimationFrame(() => {
+            if (
+              disposed ||
+              (document.activeElement !== retryButton.current &&
+                document.activeElement !== document.body)
+            )
+              return;
+            const failuresRemain = currentHandles.some(
+              (handle) => jobs.get(handle)?.result.status === 'failed',
+            );
+            const target = failuresRemain
+              ? retryButton.current
+              : (removeButtons.current.get(currentHandles[0]) ?? discoveryLink.current);
+            target?.focus();
           });
         }
-      }
+      });
     }
 
-    async function refresh() {
-      // Keep effect setup reversible before publishing any state or starting requests.
-      await Promise.resolve();
-      if (disposed) return;
-      setRefreshingHandles(new Set(items.map((item) => item.handle)));
-      setFailedHandles(new Set());
-      await Promise.allSettled(items.map((item, index) => refreshItem(item, controllers[index])));
-      if (disposed) return;
-      const restoreRetryFocus =
-        retryFocusRequested.current &&
-        (document.activeElement === retryButton.current ||
-          document.activeElement === document.body);
-      retryFocusRequested.current = false;
-      setRetrying(false);
-      if (restoreRetryFocus) {
-        requestAnimationFrame(() => {
-          const target =
-            failures.size === 0 ? removeButtons.current.get(items[0].handle) : retryButton.current;
-          target?.focus();
-        });
-      }
-    }
-    void refresh();
+    coordinator.current = {
+      update(handles) {
+        currentHandles = handles;
+        const saved = new Set(handles);
+        for (const [handle, job] of jobs) {
+          if (saved.has(handle)) continue;
+          jobs.delete(handle);
+          retryHandles.delete(handle);
+          job.controller?.abort();
+        }
+        for (const handle of handles) {
+          if (!jobs.has(handle)) jobs.set(handle, { handle, result: { status: 'queued' } });
+        }
+        schedule();
+      },
+      retryFailed() {
+        retryInProgress = true;
+        for (const job of jobs.values()) {
+          if (job.result.status !== 'failed') continue;
+          job.result = { status: 'queued' };
+          retryHandles.add(job.handle);
+        }
+        schedule();
+      },
+    };
 
     return () => {
       disposed = true;
-      controllers.forEach((controller) => controller.abort());
+      jobs.forEach((job) => job.controller?.abort());
+      coordinator.current = null;
     };
-  }, [items, refreshAttempt]);
+  }, []);
+
+  useEffect(() => {
+    coordinator.current?.update(items.map((item) => item.handle));
+  }, [items]);
 
   function removeItem(item: WishlistItem, index: number) {
     const nextHandle = items[index + 1]?.handle ?? items[index - 1]?.handle;
@@ -151,7 +203,7 @@ export function WishlistView() {
               event.currentTarget.focus();
               retryFocusRequested.current = true;
               setRetrying(true);
-              setRefreshAttempt((attempt) => attempt + 1);
+              coordinator.current?.retryFailed();
             }}
           >
             Retry
@@ -181,9 +233,11 @@ export function WishlistView() {
           className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-8"
         >
           {items.map((item, index) => {
-            const liveResult = Object.prototype.hasOwnProperty.call(liveResults, item.handle)
-              ? liveResults[item.handle]
-              : undefined;
+            const refreshResult = refreshResults.get(item.handle);
+            const liveResult =
+              refreshResult?.status === 'ready' ? refreshResult.product : undefined;
+            const refreshing =
+              refreshResult?.status === 'queued' || refreshResult?.status === 'loading';
             const product = liveResult ? toProductListItem(liveResult) : syntheticListItem(item);
 
             return (
@@ -198,12 +252,12 @@ export function WishlistView() {
                   priority={index === 0}
                   purchaseState={liveResult === null ? 'unavailable' : undefined}
                 />
-                {refreshingHandles.has(item.handle) && (
+                {refreshing && (
                   <p role="status" className="text-body-sm text-esque-text-secondary">
                     Refreshing this piece’s availability…
                   </p>
                 )}
-                {failedHandles.has(item.handle) && !refreshingHandles.has(item.handle) && (
+                {refreshResult?.status === 'failed' && (
                   <p role="status" className="text-body-sm text-esque-text-secondary">
                     Saved details shown. Availability refresh failed.
                   </p>

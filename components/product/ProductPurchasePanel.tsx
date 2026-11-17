@@ -374,20 +374,23 @@ export function ProductPurchasePanel({
           </p>
         </div>
       ) : (
-        <div ref={actionRef} className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {/* D-016/D-055: this records purchase intent and explains that
               purchasing is unavailable while cart integration is deferred. */}
-          <Button
-            type="button"
-            variant="primary"
-            disabled={!canAddToBag}
-            aria-disabled={cart.pending}
-            aria-busy={cart.pending}
-            className="aria-disabled:cursor-wait aria-disabled:opacity-40"
-            onClick={handleAddToBag}
-          >
-            ADD TO BAG
-          </Button>
+          {/* Feedback visibility must not resize the observed primary action. */}
+          <div ref={actionRef} className="flex flex-col">
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!canAddToBag}
+              aria-disabled={cart.pending}
+              aria-busy={cart.pending}
+              className="aria-disabled:cursor-wait aria-disabled:opacity-40"
+              onClick={handleAddToBag}
+            >
+              ADD TO BAG
+            </Button>
+          </div>
           {matchedVariant?.availableForSale && inBag > 0 && quantityMax !== undefined && (
             <div role="status" className="text-utility text-esque-text">
               <p>
