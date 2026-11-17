@@ -68,6 +68,7 @@ Core roles include:
 - security-engineer
 - ecommerce-merchandiser
 - brand-content-editor
+- website-maintainer
 
 Review specialists may include:
 
@@ -339,6 +340,12 @@ Completion means the relevant implementation has been:
 # Native Codex coordination
 
 ## Quality and context efficiency
+
+For the user's ongoing autonomous website work, use website-maintainer and
+`.codex/WEBSITE_MAINTENANCE.md`. Resume `docs/website-maintenance-state.md` before
+selecting a new backlog task. Update the appropriate project documents with
+findings, actual fixes and validation. The local scheduled follow-up retries
+interrupted work when capacity permits. The separate daily audit remains paused.
 
 Quality takes precedence over token savings. Use the smallest team that covers
 the task's disciplines and risks. The top-level session supplies engineering-lead

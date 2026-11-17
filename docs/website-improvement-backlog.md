@@ -31,6 +31,8 @@ The 320px multi-digit bag header regression exposed during this pass is also cor
 
 Items 50, 51, 53, 55–58, 70–72 remain open. Earlier performance investigations and owner-dependent launch checks retain their recorded status.
 
+The website-maintainer workflow selects and implements actionable follow-ups, starting with item 72. The [maintenance checkpoint](./website-maintenance-state.md) records the active task and recovery state. This backlog retains issue evidence and fix status. Its existing open items remain open until the corresponding implementation and checks are verified.
+
 ## Broad audit at revision aa2c594
 
 This pass reviewed UI, accessibility, commerce state, public API boundaries, analytics, content consistency, SEO, caching and delivery automation. It added 13 open items. Earlier findings retain their implementation status and evidence. The audit uses placeholder products and synthetic failures wherever execution is recorded.

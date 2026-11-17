@@ -73,6 +73,7 @@ browser evidence. Full CI keeps its configured checks.
 
 | Work | Primary owner | Typical collaborators |
 | --- | --- | --- |
+| Recurring task selection, checkpoint recovery and documentation continuity | website-maintainer | engineering-lead and relevant specialists |
 | Scope, priorities, acceptance criteria | product-manager | engineering-lead, ecommerce-merchandiser |
 | Architecture and integrated delivery | engineering-lead | affected engineering and review roles |
 | Visual direction and interaction specification | ui-ux-designer | brand-content-editor, frontend-engineer |
@@ -103,6 +104,14 @@ Specialists implement and self-check their assigned scope. Review assignments pr
 The coordinator resolves conflicting findings, checks the integrated result, and reviews fixes. Keep routine authorized edits and checks moving. Ask only about essential decisions or external access that the existing request does not supply. Follow the surfacebook publication policy in AGENTS.md.
 
 ## Tools and access
+
+Ongoing user-authorized website maintenance follows
+[WEBSITE_MAINTENANCE.md](WEBSITE_MAINTENANCE.md). Its current handoff is
+[website-maintenance-state.md](../docs/website-maintenance-state.md). A scheduler
+tick resumes unfinished work before selecting another item. Account capacity,
+machine availability and host permissions determine when a local run can execute.
+Read the actual app usage windows when available and keep checkpointed validation
+evidence scoped to unchanged inputs. The separate daily audit remains paused.
 
 Custom agents inherit tools, MCP connections, and permissions from the parent session. A role description or a sandbox_mode field in a custom-agent file does not establish an independent permission boundary. Treat review-only instructions as an assignment constraint. If hard isolation is required, the parent must supply an appropriate runtime sandbox. [Codex custom-agent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 

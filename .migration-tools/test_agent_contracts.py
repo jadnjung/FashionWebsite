@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class AgentContractTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name).resolve()
         for relative in ['.claude', '.agents/skills', '.codex/agents']:
             shutil.copytree(ROOT / relative, self.root / relative)
         for document in ROOT.glob('*.md'):
@@ -22,6 +22,15 @@ class AgentContractTests(unittest.TestCase):
         for name in ['config.toml', 'hooks.json', 'AGENT_WORKFLOW.md', 'agent-capabilities.json',
                      'migration-inventory.json', 'migration-source-hashes.json']:
             shutil.copy2(ROOT / '.codex' / name, self.root / '.codex' / name)
+        capabilities = json.loads((ROOT / '.codex/agent-capabilities.json').read_text(encoding='utf-8'))
+        for role in capabilities['roles'].values():
+            for document in role.get('documents', []):
+                source, target = (ROOT / document).resolve(), (self.root / document).resolve()
+                if not source.is_relative_to(ROOT) or not target.is_relative_to(self.root):
+                    raise ValueError('Agent document path escapes fixture roots')
+                if source.is_file() and not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
         tools = self.root / '.migration-tools'
         tools.mkdir()
         shutil.copy2(ROOT / '.migration-tools/validate_migration.py', tools / 'validate_migration.py')
@@ -46,7 +55,7 @@ class AgentContractTests(unittest.TestCase):
             source.write_bytes(source.read_bytes().replace(b'\r\n', b'\n'))
         code, result = self.validate()
         self.assertEqual(code, 0, result['errors'])
-        self.assertEqual(result['agent_count'], 26)
+        self.assertEqual(result['agent_count'], 27)
         self.assertEqual(result['skill_count'], 12)
 
     def test_protected_content_change_is_rejected(self):

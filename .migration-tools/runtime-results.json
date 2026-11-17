@@ -4,7 +4,7 @@
     {
       "name": "code-review",
       "enabled": true,
-      "description": "Code review a pull request"
+      "description": "Review a pull request for actionable bugs and applicable project-instruction violations."
     },
     {
       "name": "fashion-commerce",
@@ -14,7 +14,7 @@
     {
       "name": "feature-dev",
       "enabled": true,
-      "description": "Guided feature development with codebase understanding and architecture focus"
+      "description": "Develop a substantial feature through scoped discovery, architecture, implementation, and review."
     },
     {
       "name": "frontend-design",
@@ -29,7 +29,7 @@
     {
       "name": "review-pr",
       "enabled": true,
-      "description": "Comprehensive PR review using specialized agents"
+      "description": "Review a pull request or local diff using relevant specialized review perspectives."
     },
     {
       "name": "security-guidance",
@@ -69,8 +69,8 @@
       "name": "context7",
       "authStatus": "unsupported",
       "tools": [
-        "resolve-library-id",
-        "query-docs"
+        "query-docs",
+        "resolve-library-id"
       ]
     }
   ],
@@ -80,9 +80,9 @@
       "tools": [
         "typescript_symbols",
         "typescript_diagnostics",
-        "typescript_references",
+        "typescript_hover",
         "typescript_definition",
-        "typescript_hover"
+        "typescript_references"
       ]
     }
   ],

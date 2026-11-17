@@ -12,6 +12,26 @@
     "external_services": "Authenticated store/email/deployment/analytics connections when available and authorized"
   },
   "roles": {
+    "website-maintainer": {
+      "mode": "planning",
+      "documents": [
+        "AGENTS.md",
+        ".codex/WEBSITE_MAINTENANCE.md",
+        "docs/website-maintenance-state.md",
+        "docs/website-improvement-backlog.md",
+        "ROADMAP.md",
+        "DECISIONS.md"
+      ],
+      "skills": ["feature-dev", "fashion-commerce", "security-guidance"],
+      "tool_groups": ["repository", "git", "browser", "playwright"],
+      "handoffs": [
+        "engineering-lead",
+        "frontend-engineer",
+        "backend-engineer",
+        "qa-engineer",
+        "security-engineer"
+      ]
+    },
     "engineering-lead": {
       "mode": "planning",
       "documents": ["PROJECT.md", "ARCHITECTURE.md", "DECISIONS.md", "ROADMAP.md"],

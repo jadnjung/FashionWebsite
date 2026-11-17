@@ -1,6 +1,6 @@
 # Codex automation follow-up
 
-The current team contains 26 custom agents, including 16 project roles and ten
+The current team contains 27 custom agents, including 17 project roles and ten
 plugin-derived specialists, plus 12 project skills. The role and tool map is
 maintained in [agent-capabilities.json](agent-capabilities.json), and assignments
 follow [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md). The original migration counts and
@@ -10,6 +10,43 @@ Status: implemented and tested on `surfacebook`; no application or Claude source
 files changed. The user authorizes commits and pushes for this migration and
 future work only to `surfacebook`, never `main`. Hook execution depends on the
 local Codex installation's trust state for each current hook definition.
+
+## Autonomous website maintainer
+
+On November 16, 2026 the user authorized ongoing selection, implementation,
+interruption recovery and documentation of V1 website improvements. The native
+website-maintainer role and [operating workflow](WEBSITE_MAINTENANCE.md) use the
+existing discipline specialists. The current handoff lives in
+[website-maintenance-state.md](../docs/website-maintenance-state.md). The initial
+queue starts with backlog item 72, then 51, 50 and 57, subject to current impact
+and user direction. The shared backlog remains the issue inventory.
+
+The app automation `fashion-website-maintainer` is an ACTIVE recurring follow-up
+in the existing chat, every 30 minutes. The separate
+`daily-fashion-website-audit` remains PAUSED. Local automation state is stored by
+the app outside the repository. Cloning the repository supplies the workflow
+and role, while another machine needs its own app schedule.
+
+Each run resumes unfinished work, checks actual usage windows when available,
+updates a durable checkpoint, and selects another actionable item after verified
+completion. A five-hour reset can leave another usage window exhausted. The
+schedule supplies periodic retries and cannot guarantee an exact reset-time
+restart. The machine must be awake, the app running and the project accessible.
+Host permissions remain authoritative. [Official scheduling behavior](https://learn.chatgpt.com/docs/automations?surface=app)
+
+The already-running chat did not expose the new native role at installation.
+Its scheduled prompt reads the role TOML and applies its instructions in the
+top-level coordinator, using existing native specialists. Fresh discovery can
+expose the new role. The independent behavior probe explicitly used this fallback.
+Strict configuration startup and existing skill/MCP/hook discovery succeeded.
+Six recovery scenarios covered queued work, interrupted checks, overlapping
+ownership, a wrong branch, exhausted weekly capacity and an already-published task.
+
+The November 17, 2026 04:34 UTC scheduled continuation recovered the interrupted
+setup after the host again reported usage available. It completed the pending
+review and reran configuration, contract and formatting checks. This is observed
+scheduled recovery. Later runs still depend on machine, app, account and permission
+availability.
 
 ## Automatic security review
 

@@ -1828,3 +1828,13 @@ Search and Quick Add bound the full browser request, including JSON decoding, to
 Applied filter criteria and sort identify the native form instance. Committed changes reset draft controls to the URL. Cursor-only navigation preserves controls that remain rendered. A draft option absent from the next facet page still needs separate persistence work, recorded as backlog item 72.
 
 CSS derives background scroll locking from all open dialogs and navigation overlays, including nested Quick Add inside Search. Image panning remains inside the viewer, while loading and recovery controls stay anchored to its visible frame. Forced colors disable the custom cursor with a live preference subscription and immediate CSS fallback. Form-level service errors focus recovery when submission still owns focus. Deliberate focus movement during the request is preserved.
+
+## D-097 — Recurring website maintenance with durable recovery
+
+November 16, 2026.
+
+The user authorized autonomous V1 task selection, implementation, interruption recovery and appropriate documentation. A website-maintainer role supplies that coordination through the existing engineering and review specialists. Its [operating workflow](./.codex/WEBSITE_MAINTENANCE.md) and [current checkpoint](./docs/website-maintenance-state.md) preserve the active item, ownership, actual evidence and next action across sessions. The shared improvement backlog remains the issue inventory.
+
+The app's fashion-website-maintainer automation returns to the existing chat every 30 minutes. This cadence supplies a retry opportunity after usage becomes available. Read actual primary and secondary windows when the host exposes them, and reconcile stale handoffs with Git, surviving processes, current source and fresh remote/CI evidence. Machine availability, the local app, account capacity and permissions determine whether a run can execute. [Official scheduled-task documentation](https://learn.chatgpt.com/docs/automations?surface=app)
+
+The current chat can apply the new role's TOML instructions directly until native role discovery refreshes. Required reviews and relevant validation precede publication only to surfacebook. User-directed work and existing ownership take priority. The separate daily audit remains paused. Material product-policy decisions and external account prerequisites retain their owner dependencies.

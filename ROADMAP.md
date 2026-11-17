@@ -14,6 +14,7 @@ A quick orientation for a new session; the phase checklists below and [DECISIONS
 - **Shopping reliability follow-up:** the five requested groups cover items 47–49, 52, 54 and 59–69. Implementation, remaining audit work and current validation are recorded in the [backlog](./docs/website-improvement-backlog.md) and [execution record](./docs/superpowers/plans/2026-11-16-shopping-reliability-and-production.md). Facet-page draft persistence is recorded separately as open item 72.
 - **Previous milestone:** the homepage hero is a **3D Collection Closet** (D-089); Scene 02 is a **rotating ring of up to 9 curated looks** with an all-looks grid and Shop the Look (D-091, replacing the hotspot model); plus a CI fix (D-090).
 - **CI:** both Playwright suites select optimized, isolated builds, alongside format, lint, typecheck, unit tests and build. Hosted results are recorded in the published branch's workflow runs.
+- **Autonomous maintenance:** website-maintainer resumes unfinished work and selects the next actionable V1 improvement through a 30-minute app follow-up. Its [checkpoint](./docs/website-maintenance-state.md) starts with item 72. The [workflow](./.codex/WEBSITE_MAINTENANCE.md) defines usage recovery, document updates and validated surfacebook publication. The separate daily audit remains paused.
 
 **Owner tasks (not code):**
 - Create the Shopify store and the Vercel project (Phase 0).
