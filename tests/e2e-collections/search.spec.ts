@@ -173,8 +173,14 @@ test('stale group cursors restart independently and Search HTML protects query m
   request,
 }) => {
   await page.goto('/search?q=demo');
-  await page.getByRole('link', { name: 'Next products', exact: true }).click();
-  const cursor = new URL(page.url()).searchParams.get('productAfter')!;
+  const next = page.getByRole('link', { name: 'Next products', exact: true });
+  const destination = new URL((await next.getAttribute('href'))!, page.url()).href;
+  await next.click();
+  await expect(page).toHaveURL(destination);
+  await expect(page.locator('main a[data-cursor="VIEW"]')).toHaveCount(4);
+  const cursor = new URL(page.url()).searchParams.get('productAfter');
+  expect(cursor).toBeTruthy();
+  if (!cursor) throw new Error('Product continuation did not provide a cursor');
   await page.goto(`/search?${new URLSearchParams({ q: 'preview', productAfter: cursor })}`);
   await expect(page.locator('main a[data-cursor="VIEW"]')).toHaveCount(20);
   await expect(page.getByRole('link', { name: 'First products page' })).toHaveCount(0);

@@ -67,3 +67,8 @@ Read-only filter_budget_discovery completed the scoped trace. No item 73 source 
 Parent full units passed 692/64 files, full lint passed, and final frozen typecheck and whole-repository formatting passed. Governance/planning documents are intentionally excluded from automatic formatting; their local links, sequential backlog numbering and diff whitespace are checked separately. Final no-script test removed the unsupported screen property. Both reviewers rechecked that test delta and confirmed no remaining actionable findings; final seven-path fingerprint is 72d5374007b881c7916eb8579ad7f355f7acec6ac9bdf3ad906307996e468ba6. Screenshot review covered widths 390/768/1024/1440; actual assistive-technology speech and physical devices remain outside this automated evidence.
 
 Worker reports server stopped and port 3000 free. Parent updated D-105, architecture, roadmap, backlog and checkpoint. Publication to surfacebook and matching hosted validation are next.
+
+
+## Publication
+
+Branch verified exactly surfacebook before commit and again before explicit push. Published b54d44268657c42444b91ce0788be341a236ea3e and confirmed the fresh remote revision matches. Matching public CI 44260605709 is queued. Final document checks passed 236 local links, 77 sequential backlog entries and diff whitespace. No main action or Claude-file change occurred.
