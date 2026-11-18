@@ -1,34 +1,34 @@
 # Website maintenance checkpoint
 
-Updated 2026-11-18 02:35 UTC. Resume AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md.
+Updated November 18, 2026 UTC. Resume AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md. Root applies the website-maintainer TOML fallback; the new native role is unavailable in this chat.
 
-## Active task
+## Active task and publication
 
-Item 55 selected-quantity purchase-intent analytics is implemented, reviewed and locally verified. Publication is next. Branch and published HEAD are surfacebook / c7fff198d046e0577d21258681e3302989b21e9c. Parent owns integration and publication. All specialists handed back work and all servers are stopped. Preserve unrelated untracked debug.log and Claude compatibility files.
+Item 73 is implemented, reviewed and locally verified against base 90a44916671c47afe5a52b3b9a6fa380ffaa56ed on surfacebook. Parent is preparing its logical commit and explicit branch-only push. Reconcile actual Git/remote state before repeating publication. No main action is authorized. Preserve unrelated untracked debug.log and Claude compatibility files.
 
-Eight source/test paths cover event types/tests, adapter tests, the new purchase-amounts helper/tests, both purchase panels and shopping-journey browser tests. Final parent fingerprint is ad3d8499841e208381f88c38fbf50a51f6e3dbff6d673a3b00b98dcef4e20a5d, after two comment-only corrections in events.ts. The helper matches final reviewers at SHA256 11433fa19077011390dcffde6ab977493ed5fc8f9a16c7a7ee989cc98bab96d5. Parent docs include D-104, architecture, roadmap, backlog and the purchase-intent execution record.
+Seven source/test paths cover filters.ts/tests, CategoryListing.tsx/test, FilterBar, FacetGroup and filter-selection-budget.spec.ts. Full normalized drafts remain separate from bounded query/cursor criteria. Overflow retains every choice and skips catalog calls/results. Enhanced drafts enforce 20 across off-page selections; native GET correction and Clear work. Security P2 quadratic removal-link output was reproduced and fixed by omitting recovery chips; Map label lookup and 100/1,000 growth tests preserve linear rendering. D-105 records the policy.
 
-## Verification
+## Final evidence
 
-- Normal PDP RED proved quantity 3 cart request versus missing event quantity/value 128 instead of 384.
-- Primary and security findings for negative prices and unbounded parsing were reproduced and fixed. Parent also reproduced null amount TypeError. Final guard rejects non-string values, more than 512 characters, negative amounts and non-round-tripping numbers without gating cart.
-- Final reviews cleared fixes. Worker final browser run 5725 passed 65/65 across all five normal Demo profiles, including negative/oversized/null/unrepresentable Quick Add metadata with canonical cart success. Servers stopped.
-- Parent integrated unit run 38389 passed 679 across 63 files. Typecheck 73762, full lint 83428 and whole-repository formatting passed. Optimized build passed. No live GA receipt is claimed.
+- Normal-route RED 5869 and server-boundary RED established current loss/calls before fixes. Focused final units 90/5 passed.
+- Parent 692/64 units, full lint, final frozen compiler and whole formatter passed. Documents are excluded by formatter policy; 211 local links and numbering 1 through 77 were checked before final doc additions; repeat final structural checks before commit.
+- Optimized build succeeded. Browser 45919 passed 150/150 across five profiles; final no-script 2905 passed 5/5 after removing unsupported test-only screen property. Server 35988 stopped; worker confirms port 3000 free.
+- Independent primary and mandatory security reviews rechecked fixes and final test delta, no actionable findings. Four screenshots at 390/768/1024/1440 passed visual review. Seven-path fingerprint 72d5374007b881c7916eb8579ad7f355f7acec6ac9bdf3ad906307996e468ba6. Final spec 1ee234f2a2a1fe8b863e6e042f0ed1a9cc54576bb73814153a2eef08e349eb18.
 
-Details are in docs/superpowers/plans/2026-11-17-purchase-intent-quantity.md. Resolve quantity once for both event and mutation, keep item price as unit price, value as decimal price times requested addition, and Retry without a second intent. Bad telemetry can omit the event while the cart continues.
+Detailed commands and handoffs: docs/superpowers/plans/2026-11-17-filter-selection-budget.md. Product/architecture/roadmap/backlog updated. Physical-device and assistive-technology speech checks remain manual evidence boundaries.
 
-## Exact next action
+## Next action
 
-Review final docs/status, verify surfacebook, stage only completed item 55 source/tests and related parent docs, commit and push explicitly HEAD:refs/heads/surfacebook. Verify branch again before push, confirm remote revision and inspect matching CI. Then start item 73's confirmed per-group filter-budget mismatch, the highest remaining actionable P2 shopping-choice issue. Item 70 and other P3 proposals remain queued. No item 73 source edits exist yet.
+Publish completed 73 only after branch/status/diff and final document checks. Verify remote exact revision and matching CI. Then fix small confirmed item 77 Search harness race: capture continuation href, click once, await exact URL/product count, assert real cursor before changed-query navigation. Finish/review/test that separately. Items 75 and 76 remain further reliability investigations; open items 56/58/70/71 retain prior scope/dependencies.
 
-## Hosted CI investigation
+## Hosted CI follow-up
 
-Item 57 e1e4ac8 has successful hosted CI 44123444619. Item 53 6d201c3 has failed unconfigured CI 44179007153, while frozen local CI-style reproduction 26386 passed 617 cases/15 skips, with zero unexpected and flaky results. Ignored JSON/log diagnostics live under playwright-report/diagnostics/unconfigured-6d201c3.*.
+Published 90a4491 quantity fix passed local 679 units/65 browser cases, but matching 44224527084 failed unconfigured tablet legal.spec.ts:84/105 through retries. Same-origin RSC prefetch access-control errors also recovered on mobile Safari. Read-only discovery suggests rapid document replacement may be relevant, but cause is unconfirmed. Isolate settled legal pages, capture active URL/time/request failures/status, compare existing seven-page sweep; do not suppress errors or add permissive CORS. Item 75 records this and older unknown failures.
 
-Reporter-only c7fff19 is published. It enables CI GitHub annotations alongside preserved HTML reporters. Synthetic annotation and local/CI config probes, typecheck, formatter, lint and security review passed. Hosted CI 44222096860 remains in progress at the latest snapshot, having reached Demo with no failed step. Inspect its final outcome/annotations. Item 75 remains open because older hosted failure causes are unknown.
+Run 44224527084 Demo completed 850 passes/23 skips with repeated recovered mobile Chrome Quick Add first-opening timeout (item 76). Collections completed 59 passes/9 skips plus two recovered Search cursor races (item 77). Reporter-only c7fff19 CI 44222096860 succeeded and public GitHub annotations work. Search e1e4ac8 CI 44123444619 succeeded. Older 6d201c3 failed 44179007153 but frozen local 617 passes/15 skips; unknown older causes stay open.
 
-Saved GitHub credential CI-log API reuse was rejected by automatic approval review because that specific use lacks authorization. No credential was retrieved. The explicit read-only access question remains unanswered. Do not retry, delegate or bypass it without an explicit user response. Future public annotations are repository-owned reporting and require no credential access.
+Saved-credential reuse for private CI logs was rejected by automatic approval review because that specific use lacks authorization. No credential retrieved. Read-only access question unanswered; do not retry/delegate/bypass without explicit response. Current public annotations require no credentials and supply actionable evidence.
 
 ## Capacity and scheduling
 
-Actual limits interrupted earlier runs, and this continuation recovered capacity. Last check showed ordinary allowed, primary 71%, weekly 75%. Save precise checkpoints before substantial work or a limit. Maintainer remains ACTIVE every 30 minutes in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Daily audit remains PAUSED. Root applies the website-maintainer TOML fallback. Scheduling depends on app, awake machine, permissions and actual account capacity.
+A real usage stop interrupted 73; fresh capacity later verified primary 1%, weekly 79%, ordinary allowed. Recheck before substantial work. Maintainer remains ACTIVE every 30 minutes in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Daily audit remains PAUSED. Local scheduling depends on app, awake machine, permissions and actual account capacity. Save precise milestones; do not infer reset or completion from elapsed time.

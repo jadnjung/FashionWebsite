@@ -5,6 +5,8 @@ import { ProductGrid } from '@/components/catalog/ProductGrid';
 import { JsonLd } from '@/components/seo/JsonLd';
 import {
   buildFilterHref,
+  analyzeCatalogSelections,
+  FACET_SELECTION_LIMIT,
   hasActiveFilters,
   parseCatalogFilters,
   type CatalogSearchParams,
@@ -72,19 +74,21 @@ export async function CategoryListing({
 
   const defaultSort = DEFAULT_SORT_BY_CATEGORY[category];
   const filters = parseCatalogFilters(searchParams, defaultSort);
+  const selectionAnalysis = analyzeCatalogSelections(searchParams);
+  const recovering = selectionAnalysis.overBudget.length > 0;
   const after = Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after;
   const optionsAfter = Array.isArray(searchParams.optionsAfter)
     ? searchParams.optionsAfter[0]
     : searchParams.optionsAfter;
   const {
-    products,
+    products = [],
     facets,
     hasNextPage,
     endCursor,
     isContinuation,
     facetEndCursor,
     isFacetContinuation,
-  } = await getCatalogPage(productTypes, filters, after, optionsAfter);
+  } = recovering ? {} : await getCatalogPage(productTypes, filters, after, optionsAfter);
 
   const pathname = subcategory ? `/${category}/${subcategory}` : `/${category}`;
   const filtersActive = hasActiveFilters(filters, defaultSort);
@@ -108,10 +112,16 @@ export async function CategoryListing({
       <h1 className="font-display text-display-l uppercase tracking-display text-esque-text">
         {label}
       </h1>
-      <details className="border-y border-esque-elevated py-2">
+      {recovering && (
+        <p role="alert" className="text-body text-esque-text">
+          Choose up to {FACET_SELECTION_LIMIT} options per filter group, then apply your filters.
+          Your choices have been kept.
+        </p>
+      )}
+      <details open={recovering || undefined} className="border-y border-esque-elevated py-2">
         <summary className="min-h-11 cursor-pointer py-3 text-utility uppercase tracking-metadata text-esque-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text">
           Filter and sort
-          {filtersActive && (
+          {!recovering && filtersActive && (
             <span className="ml-2 text-esque-text-secondary">
               (
               {(filters.sizes?.length ?? 0) +
@@ -132,71 +142,76 @@ export async function CategoryListing({
             facets={facets}
             facetEndCursor={facetEndCursor}
             isFacetContinuation={isFacetContinuation}
+            recoverySelections={recovering ? selectionAnalysis.selections : undefined}
           />
         </div>
       </details>
-      <p id="catalog-results" role="status" className="text-utility text-esque-text-secondary">
-        {products.length} {products.length === 1 ? 'piece' : 'pieces'} on this page.
-      </p>
-      {products.length === 0 ? (
-        // Two distinct zero-result states (design spec): a genuinely empty
-        // category vs. filtered down to zero — hasActiveFilters is the
-        // single source of truth for which copy/affordance applies.
-        <div className="flex flex-col items-center gap-4 py-24 text-center">
-          <p className="font-display text-heading-3 uppercase text-esque-text">
-            {hasNextPage
-              ? 'NO MATCHES IN THIS SECTION.'
-              : filtersActive
-                ? 'NOTHING MATCHES.'
-                : 'NOTHING HERE YET.'}
+      {!recovering && (
+        <>
+          <p id="catalog-results" role="status" className="text-utility text-esque-text-secondary">
+            {products.length} {products.length === 1 ? 'piece' : 'pieces'} on this page.
           </p>
-          {filtersActive && (
-            // WCAG 2.2 AA (2.5.8): measured at under the 24px minimum on
-            // the vertical axis. `py-2` grows the clickable box
-            // (Footer.tsx's established technique) without changing the
-            // visible text size. No compensating negative margin: this is
-            // a standalone link in a `flex flex-col items-center gap-4
-            // py-24` empty-state block with generous surrounding space —
-            // distinct from FilterBar's own "Clear Filters" link, which
-            // sits in a tight row governed by taller siblings and uses
-            // `py-1` instead.
-            <Link
-              href={pathname}
-              className="py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
-            >
-              Clear Filters
-            </Link>
+          {products.length === 0 ? (
+            // Two distinct zero-result states (design spec): a genuinely empty
+            // category vs. filtered down to zero — hasActiveFilters is the
+            // single source of truth for which copy/affordance applies.
+            <div className="flex flex-col items-center gap-4 py-24 text-center">
+              <p className="font-display text-heading-3 uppercase text-esque-text">
+                {hasNextPage
+                  ? 'NO MATCHES IN THIS SECTION.'
+                  : filtersActive
+                    ? 'NOTHING MATCHES.'
+                    : 'NOTHING HERE YET.'}
+              </p>
+              {filtersActive && (
+                // WCAG 2.2 AA (2.5.8): measured at under the 24px minimum on
+                // the vertical axis. `py-2` grows the clickable box
+                // (Footer.tsx's established technique) without changing the
+                // visible text size. No compensating negative margin: this is
+                // a standalone link in a `flex flex-col items-center gap-4
+                // py-24` empty-state block with generous surrounding space —
+                // distinct from FilterBar's own "Clear Filters" link, which
+                // sits in a tight row governed by taller siblings and uses
+                // `py-1` instead.
+                <Link
+                  href={pathname}
+                  className="py-2 text-utility uppercase tracking-metadata text-esque-text-secondary underline-offset-4 hover:text-esque-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-esque-text"
+                >
+                  Clear Filters
+                </Link>
+              )}
+            </div>
+          ) : (
+            // priorityFirstImage — DECISIONS.md D-045: this grid is the page's
+            // primary above-the-fold content, so its first (featured) image is
+            // very likely the LCP element.
+            <ProductGrid products={products} priorityFirstImage />
           )}
-        </div>
-      ) : (
-        // priorityFirstImage — DECISIONS.md D-045: this grid is the page's
-        // primary above-the-fold content, so its first (featured) image is
-        // very likely the LCP element.
-        <ProductGrid products={products} priorityFirstImage />
+          <nav
+            aria-label="Product pages"
+            className="flex flex-wrap items-center gap-6 text-utility text-esque-text"
+          >
+            {isContinuation && (
+              <Link
+                href={buildFilterHref(pathname, searchParams, { after: undefined })}
+                className="inline-flex min-h-11 items-center underline"
+              >
+                First page
+              </Link>
+            )}
+            {hasNextPage && endCursor ? (
+              <Link
+                href={`${buildFilterHref(pathname, searchParams, { after: endCursor })}#catalog-results`}
+                className="inline-flex min-h-11 items-center underline"
+              >
+                Next products
+              </Link>
+            ) : (
+              products.length > 0 && <p>End of results.</p>
+            )}
+          </nav>
+        </>
       )}
-      <nav
-        aria-label="Product pages"
-        className="flex flex-wrap items-center gap-6 text-utility text-esque-text"
-      >
-        {isContinuation && (
-          <Link
-            href={buildFilterHref(pathname, searchParams, { after: undefined })}
-            className="inline-flex min-h-11 items-center underline"
-          >
-            First page
-          </Link>
-        )}
-        {hasNextPage && endCursor ? (
-          <Link
-            href={`${buildFilterHref(pathname, searchParams, { after: endCursor })}#catalog-results`}
-            className="inline-flex min-h-11 items-center underline"
-          >
-            Next products
-          </Link>
-        ) : (
-          products.length > 0 && <p>End of results.</p>
-        )}
-      </nav>
     </div>
   );
 }

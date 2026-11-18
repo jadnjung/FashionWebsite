@@ -24,3 +24,8 @@ This diagnostics change is ready for branch-only publication. Actual hosted anno
 ## Publication
 
 Branch was verified exactly surfacebook before commit and again before explicit push to HEAD:refs/heads/surfacebook. Published c7fff198d046e0577d21258681e3302989b21e9c and verified the remote revision. Matching public CI run is [44222096860](https://github.com/jadnjung/FashionWebsite/actions/runs/44222096860), currently in progress. Its public job snapshot had reached Demo with no failed step reported. Hosted annotation visibility and final result remain pending.
+
+
+## Hosted result and actionable annotations
+
+Run 44222096860 completed SUCCESS at c7fff19. Public annotations confirm 617 unconfigured passes/15 skips and 61 collection passes/nine skips. Demo reported 810 passes, 23 skips and one recovered mobile-Chrome Quick Add opening failure. Its failed assertion at request-deadlines.spec.ts:21 found no dialog for five seconds after focus/Enter, in the case at line 141. This actionable new symptom is backlog item 76. Its cause is unconfirmed and it does not establish the cause of either older unconfigured failure. Actual hosted annotation delivery is now verified without credentials.

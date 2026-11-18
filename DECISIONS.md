@@ -1922,3 +1922,14 @@ The add_to_bag_click and quick_add_click item tuples require selected-variant un
 Use a pure decimal coefficient/exponent helper to preserve source unit price and multiplied value through numeric serialization. Scientific notation is supported for equivalent inputs and JavaScript number round trips. Shopify's scalar is an arbitrary-precision serialized string, and its documentation does not promise an exponent format. The purchase domain rejects negative values under Shopify's variant-price rules and retains zero/free values. [Shopify Decimal](https://shopify.dev/docs/api/storefront/latest/scalars/decimal), [variant-price constraints](https://shopify.dev/docs/api/admin-graphql/2026-07/enums/ProductVariantsBulkUpdateUserErrorCode)
 
 Optional amount parsing validates a string boundary and a 512-character budget before regex, Number or BigInt work. Unsafe quantities, negative/non-string/oversized amounts and values whose numeric serialization loses source precision omit the purchase telemetry. Cart submission still uses the resolved quantity. This prevents invalid numeric instrumentation or pathological parsing from interrupting a supported shopping action. It creates no currency-rounding or stock policy. Live GA4 receipt remains a connected-property check.
+
+
+## D-105 — Retain over-budget filter choices for correction
+
+November 18, 2026. Implementation and validation are tracked in the [selection-budget execution record](./docs/superpowers/plans/2026-11-17-filter-selection-budget.md).
+
+Keep the existing maximum of 20 normalized distinct choices independently for size, color and collection. Normalize by trimming, removing empty or more-than-160-character values and case-sensitive deduplication. Preserve collection-handle validation after the bounded slice for valid query criteria. Recovery selections and overflow metadata remain separate from the bounded CatalogFilters object used for query and cursor scope.
+
+A submitted group exceeding the budget invalidates the whole submission. Retain every normalized choice in an expanded editable recovery form, preserve other supported criteria, explain correction and expose Clear Filters. Do not request matching products or facets or present a partially applied results page. Native GET remains authoritative with JavaScript disabled. Recovery uses checkbox correction with Apply and Clear, omitting per-value full-query removal links to prevent quadratic response growth. Label initialization uses a Map.
+
+Enhanced checkbox drafts count selected values across retained off-page options. Reject an attempted extra selection at the limit, retain existing choices and keyboard focus, and allow a replacement after removal. An existing over-budget URL retains its checked choices until corrected. This extends D-098 without increasing the query budget or changing catalog authority.

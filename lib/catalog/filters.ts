@@ -1,9 +1,6 @@
-// URL-driven catalog filters — sort, availability, and price range — parsed
-// from a category page's searchParams and translated into a Shopify
-// Storefront API search-query string plus sort variables. See the design
-// spec's Architecture section and DECISIONS.md D-023/D-024 for the
-// reasoning behind what's built here and what's deferred (size, color,
-// collection).
+// URL-driven catalog criteria: sort, availability, price and size/color/collection
+// selections. Base search/sort variables and bounded facet criteria feed the
+// catalog matcher; full over-budget drafts are retained separately for recovery.
 //
 // Deliberately independent of lib/catalog/taxonomy.ts (product types are
 // passed in, not looked up here) and of any Shopify-generated type
@@ -49,6 +46,14 @@ export interface CatalogFilters {
   collections?: string[];
 }
 
+export const FACET_SELECTION_LIMIT = 20;
+
+export interface CatalogFacetSelections {
+  sizes: string[];
+  colors: string[];
+  collections: string[];
+}
+
 function facetValues(value: string | string[] | undefined): string[] {
   const values = Array.isArray(value) ? value : value ? [value] : [];
   return [
@@ -57,7 +62,20 @@ function facetValues(value: string | string[] | undefined): string[] {
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0 && entry.length <= 160),
     ),
-  ].slice(0, 20);
+  ];
+}
+
+/** Full normalized drafts stay separate from bounded query/cursor criteria. */
+export function analyzeCatalogSelections(searchParams: CatalogSearchParams) {
+  const selections: CatalogFacetSelections = {
+    sizes: facetValues(searchParams.size),
+    colors: facetValues(searchParams.color),
+    collections: facetValues(searchParams.collection),
+  };
+  const overBudget = (Object.keys(selections) as (keyof CatalogFacetSelections)[]).filter(
+    (group) => selections[group].length > FACET_SELECTION_LIMIT,
+  );
+  return { selections, overBudget };
 }
 
 function firstValue(value: string | string[] | undefined): string | undefined {
@@ -93,10 +111,14 @@ export function parseCatalogFilters(
     maxPriceRaw !== undefined && minPrice !== undefined && maxPriceRaw < minPrice;
   const maxPrice = maxPriceDropped ? undefined : maxPriceRaw;
 
+  const { selections } = analyzeCatalogSelections(searchParams);
   const facets = {
-    sizes: facetValues(searchParams.size),
-    colors: facetValues(searchParams.color),
-    collections: facetValues(searchParams.collection).filter((value) => /^[a-z0-9-]+$/.test(value)),
+    sizes: selections.sizes.slice(0, FACET_SELECTION_LIMIT),
+    colors: selections.colors.slice(0, FACET_SELECTION_LIMIT),
+    // Handle validation deliberately follows the budget, preserving existing query scope.
+    collections: selections.collections
+      .slice(0, FACET_SELECTION_LIMIT)
+      .filter((value) => /^[a-z0-9-]+$/.test(value)),
   };
   return {
     sort,

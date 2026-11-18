@@ -59,3 +59,13 @@ Parent integrated run 38389 passed 679/63 files in 15.98 seconds, typecheck 7376
 ## Final integrated completion
 
 Parent full formatting passed after documentation and comment updates. The final parent eight-path fingerprint is ad3d8499841e208381f88c38fbf50a51f6e3dbff6d673a3b00b98dcef4e20a5d. Its difference from the worker's 9191ffcbf6393c5ba6bf7cd9954a8871f090a3eaa0384bdf76c744a9679e8529 is the parent's two stale-comment corrections in events.ts. Runtime behavior is unchanged, and helper SHA256 still matches both final reviewers at 11433fa19077011390dcffde6ab977493ed5fc8f9a16c7a7ee989cc98bab96d5. Branch-only publication and matching hosted CI are the remaining steps.
+
+
+## Publication
+
+Verified surfacebook before commit and again before explicit push to HEAD:refs/heads/surfacebook. Published 90a44916671c47afe5a52b3b9a6fa380ffaa56ed and confirmed the same remote revision. Matching hosted CI [44224527084](https://github.com/jadnjung/FashionWebsite/actions/runs/44224527084) is in progress. Local source, reviews and validation are complete, with hosted verification pending. Related checkpoint/publication updates may remain uncommitted during the next task.
+
+
+## Hosted follow-up, November 18 UTC
+
+Matching run 44224527084 completed with failure in the unconfigured tablet legal-page check, not the quantity assertions. Demo completed 850 checks with 23 skips and the recovered Quick Add opening issue tracked under item 76. Collections completed 59 checks with nine skips and two recovered Search cursor-navigation races. Item 75 records the legal-page RSC access-control errors and investigation. Local quantity validation remains as recorded; hosted overall success is not claimed.

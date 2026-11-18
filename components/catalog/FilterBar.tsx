@@ -7,6 +7,7 @@ import {
   buildFilterHref,
   hasActiveFilters,
   type CatalogFilters,
+  type CatalogFacetSelections,
   type CatalogSearchParams,
 } from '@/lib/catalog/filters';
 import type { CatalogFacets } from '@/lib/catalog/products';
@@ -18,6 +19,7 @@ interface FilterBarProps {
   facets?: CatalogFacets;
   facetEndCursor?: string | null;
   isFacetContinuation?: boolean;
+  recoverySelections?: CatalogFacetSelections;
 }
 
 const LINK_CLASS =
@@ -31,13 +33,19 @@ export function FilterBar({
   facets,
   facetEndCursor,
   isFacetContinuation,
+  recoverySelections,
 }: FilterBarProps) {
+  const selections = recoverySelections ?? {
+    sizes: filters.sizes ?? [],
+    colors: filters.colors ?? [],
+    collections: filters.collections ?? [],
+  };
   const groups = [
     {
       name: 'size',
       label: 'Size',
-      selected: filters.sizes ?? [],
-      options: [...new Set([...(facets?.sizes ?? []), ...(filters.sizes ?? [])])].map((value) => ({
+      selected: selections.sizes,
+      options: [...new Set([...(facets?.sizes ?? []), ...selections.sizes])].map((value) => ({
         value,
         label: value,
       })),
@@ -45,19 +53,20 @@ export function FilterBar({
     {
       name: 'color',
       label: 'Color',
-      selected: filters.colors ?? [],
-      options: [...new Set([...(facets?.colors ?? []), ...(filters.colors ?? [])])].map(
-        (value) => ({ value, label: value }),
-      ),
+      selected: selections.colors,
+      options: [...new Set([...(facets?.colors ?? []), ...selections.colors])].map((value) => ({
+        value,
+        label: value,
+      })),
     },
     {
       name: 'collection',
       label: 'Collection',
-      selected: filters.collections ?? [],
+      selected: selections.collections,
       options: [
         ...new Map(
           [
-            ...(filters.collections ?? []).map((handle) => ({ handle, title: handle })),
+            ...selections.collections.map((handle) => ({ handle, title: handle })),
             ...(facets?.collections ?? []),
           ].map((collection) => [collection.handle, collection]),
         ).values(),
@@ -110,7 +119,7 @@ export function FilterBar({
           />
         )}
         {groups.map((group) => (
-          <FacetGroup key={group.name} {...group} />
+          <FacetGroup key={group.name} {...group} recovering={Boolean(recoverySelections)} />
         ))}
         <label className="col-span-2 flex min-h-11 items-center gap-2 py-2 text-utility uppercase tracking-metadata text-esque-text-secondary">
           <input
@@ -153,7 +162,7 @@ export function FilterBar({
         <Button type="submit" variant="secondary" className="col-span-2">
           APPLY
         </Button>
-        {hasActiveFilters(filters, 'featured') && (
+        {(recoverySelections || hasActiveFilters(filters, 'featured')) && (
           <Link
             href={buildFilterHref(pathname, searchParams, {
               available: undefined,
@@ -169,55 +178,63 @@ export function FilterBar({
           </Link>
         )}
       </form>
-      <nav
-        aria-label="Filter option pages"
-        className="flex flex-wrap items-center gap-x-4 text-utility text-esque-text-secondary"
-      >
-        <p>Filter options from this catalog section.</p>
-        <noscript>
-          <p>Apply your choices before opening another filter-option page.</p>
-        </noscript>
-        {isFacetContinuation && (
-          <Link
-            href={buildFilterHref(pathname, searchParams, {
-              optionsAfter: undefined,
-              after: Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after,
-            })}
-            className={LINK_CLASS}
-          >
-            First filter options
-          </Link>
-        )}
-        {facetEndCursor && (
-          <Link
-            href={buildFilterHref(pathname, searchParams, {
-              optionsAfter: facetEndCursor,
-              after: Array.isArray(searchParams.after) ? searchParams.after[0] : searchParams.after,
-            })}
-            className={LINK_CLASS}
-          >
-            More filter options
-          </Link>
-        )}
-      </nav>
-      <ul aria-label="Active filters" className="flex min-w-0 flex-wrap gap-x-4">
-        {groups.flatMap((group) =>
-          group.selected.map((value) => (
-            <li key={`${group.name}-${value}`} className="min-w-0">
-              <Link
-                href={buildFilterHref(pathname, searchParams, {
-                  [group.name]: group.selected.filter((entry) => entry !== value),
-                })}
-                className={`${LINK_CLASS} [overflow-wrap:anywhere]`}
-                aria-label={`Remove ${group.label.toLowerCase()} ${value}`}
-              >
-                {group.label}{' '}
-                {group.options.find((option) => option.value === value)?.label ?? value} ×
-              </Link>
-            </li>
-          )),
-        )}
-      </ul>
+      {!recoverySelections && (
+        <nav
+          aria-label="Filter option pages"
+          className="flex flex-wrap items-center gap-x-4 text-utility text-esque-text-secondary"
+        >
+          <p>Filter options from this catalog section.</p>
+          <noscript>
+            <p>Apply your choices before opening another filter-option page.</p>
+          </noscript>
+          {isFacetContinuation && (
+            <Link
+              href={buildFilterHref(pathname, searchParams, {
+                optionsAfter: undefined,
+                after: Array.isArray(searchParams.after)
+                  ? searchParams.after[0]
+                  : searchParams.after,
+              })}
+              className={LINK_CLASS}
+            >
+              First filter options
+            </Link>
+          )}
+          {facetEndCursor && (
+            <Link
+              href={buildFilterHref(pathname, searchParams, {
+                optionsAfter: facetEndCursor,
+                after: Array.isArray(searchParams.after)
+                  ? searchParams.after[0]
+                  : searchParams.after,
+              })}
+              className={LINK_CLASS}
+            >
+              More filter options
+            </Link>
+          )}
+        </nav>
+      )}
+      {!recoverySelections && (
+        <ul aria-label="Active filters" className="flex min-w-0 flex-wrap gap-x-4">
+          {groups.flatMap((group) =>
+            group.selected.map((value) => (
+              <li key={`${group.name}-${value}`} className="min-w-0">
+                <Link
+                  href={buildFilterHref(pathname, searchParams, {
+                    [group.name]: group.selected.filter((entry) => entry !== value),
+                  })}
+                  className={`${LINK_CLASS} [overflow-wrap:anywhere]`}
+                  aria-label={`Remove ${group.label.toLowerCase()} ${value}`}
+                >
+                  {group.label}{' '}
+                  {group.options.find((option) => option.value === value)?.label ?? value} ×
+                </Link>
+              </li>
+            )),
+          )}
+        </ul>
+      )}
     </div>
   );
 }

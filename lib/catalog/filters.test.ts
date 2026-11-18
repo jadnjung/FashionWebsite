@@ -5,7 +5,70 @@ import {
   getSortVariables,
   hasActiveFilters,
   parseCatalogFilters,
+  analyzeCatalogSelections,
+  FACET_SELECTION_LIMIT,
 } from '@/lib/catalog/filters';
+
+describe('analyzeCatalogSelections', () => {
+  for (const [param, group] of [
+    ['size', 'sizes'],
+    ['color', 'colors'],
+    ['collection', 'collections'],
+  ] as const) {
+    test(`${param} has an independent 20-choice boundary with full recovery selections`, () => {
+      const choices = Array.from({ length: 21 }, (_, index) => `choice-${index}`);
+      expect(analyzeCatalogSelections({ [param]: choices.slice(0, 20) }).overBudget).toEqual([]);
+      const analysis = analyzeCatalogSelections({ [param]: choices });
+      expect(analysis.overBudget).toEqual([group]);
+      expect(analysis.selections[group]).toEqual(choices);
+      const filters = parseCatalogFilters({ [param]: choices });
+      expect(filters[group]).toEqual(choices.slice(0, FACET_SELECTION_LIMIT));
+      expect(filters).not.toHaveProperty('overBudget');
+      expect(filters).not.toHaveProperty('selections');
+    });
+  }
+
+  test('trims, removes empty/overlong values and deduplicates case-sensitively before counting', () => {
+    const exact = 'x'.repeat(160);
+    const analysis = analyzeCatalogSelections({
+      size: [' M ', 'M', '', '  ', 'm', 'x'.repeat(161), exact],
+    });
+    expect(analysis.selections.sizes).toEqual(['M', 'm', exact]);
+    expect(analysis.overBudget).toEqual([]);
+    expect(analyzeCatalogSelections({ color: ' Black ' }).selections.colors).toEqual(['Black']);
+  });
+
+  test('duplicate/invalid-length entries do not create a false overflow', () => {
+    const values = Array.from({ length: 20 }, (_, index) => `value-${index}`);
+    expect(
+      analyzeCatalogSelections({ size: [...values, ' value-0 ', '', 'x'.repeat(161)] }).overBudget,
+    ).toEqual([]);
+  });
+
+  test('collection handle validation follows the budget, including malformed tokens consuming slots', () => {
+    const handles = Array.from({ length: 20 }, (_, index) => `collection-${index}`);
+    const values = ['INVALID HANDLE', ...handles];
+    expect(analyzeCatalogSelections({ collection: values })).toMatchObject({
+      selections: { collections: values },
+      overBudget: ['collections'],
+    });
+    expect(parseCatalogFilters({ collection: values }).collections).toEqual(handles.slice(0, 19));
+  });
+
+  test('budgets do not combine groups or discard any group during recovery', () => {
+    const values = Array.from({ length: 20 }, (_, index) => `value-${index}`);
+    expect(
+      analyzeCatalogSelections({ size: values, color: values, collection: values }).overBudget,
+    ).toEqual([]);
+    const analysis = analyzeCatalogSelections({
+      size: [...values, 'last-size'],
+      color: [...values, 'last-color'],
+      collection: values,
+    });
+    expect(analysis.overBudget).toEqual(['sizes', 'colors']);
+    expect(analysis.selections.collections).toEqual(values);
+  });
+});
 
 describe('parseCatalogFilters', () => {
   test('defaults to the given defaultSort, unavailable, and no price bounds', () => {
