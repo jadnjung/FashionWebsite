@@ -160,6 +160,69 @@ test('Quick Add closing and reopening preserves the new session after an old dec
   await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeDisabled();
 });
 
+for (const delivery of ['during the transition', 'after the dialog opens'] as const) {
+  test(`a delayed native close event cannot dismiss Quick Add ${delivery}`, async ({ page }) => {
+    await page.goto('/tops/sweaters');
+    await holdFirstRequest(page, `/api/products/${handle}`, 'body');
+    const { panel, trigger } = await openQuickAdd(page);
+    await waitUntilHeld(page);
+
+    // Native close() restores focus before its queued close event is delivered.
+    // Keep that real close/focus behavior, but deliver its notification only
+    // after the customer's next single activation has opened a new session.
+    await panel.evaluate((dialog) => {
+      const state = window as typeof window & { releaseDialogClose?: () => void };
+      dialog.addEventListener(
+        'close',
+        (event) => {
+          event.stopImmediatePropagation();
+          state.releaseDialogClose = () => dialog.dispatchEvent(new Event('close'));
+        },
+        { capture: true, once: true },
+      );
+    });
+    await panel.getByRole('button', { name: 'CLOSE', exact: true }).click();
+    await expect(trigger).toBeFocused();
+    await page.waitForFunction(
+      () =>
+        typeof (window as typeof window & { releaseDialogClose?: () => void })
+          .releaseDialogClose === 'function',
+    );
+    if (delivery === 'during the transition') {
+      await page.evaluate(() => {
+        function replayAfterReceipt(event: Event) {
+          if ((event as CustomEvent<{ name: string }>).detail.name !== 'quick_add_open') return;
+          window.removeEventListener('esque:analytics', replayAfterReceipt);
+          // Replay only after React accepted this single activation, before
+          // its transition has committed the new dialog opening.
+          queueMicrotask(() =>
+            (window as typeof window & { releaseDialogClose?: () => void }).releaseDialogClose?.(),
+          );
+        }
+        window.addEventListener('esque:analytics', replayAfterReceipt);
+      });
+    }
+    await openQuickAdd(page);
+    if (delivery === 'after the dialog opens')
+      await page.evaluate(async () => {
+        (window as typeof window & { releaseDialogClose?: () => void }).releaseDialogClose?.();
+        // Observe the state after the native event's React update can paint.
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
+      });
+    await expect(panel).toBeVisible();
+    await choose(panel, 'M');
+    await choose(panel, 'Black');
+    await releaseRequest(page);
+    await expect(panel.getByRole('radio', { name: 'M', exact: true })).toBeChecked();
+    await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeEnabled();
+    await panel.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+}
+
 test('a superseding Search query cancels its deadline without a spurious error', async ({
   page,
 }) => {

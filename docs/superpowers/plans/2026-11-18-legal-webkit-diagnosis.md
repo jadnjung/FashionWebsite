@@ -183,3 +183,13 @@ No hosted success, item closure, local fix or passing review is claimed.
 Populated Demo, purchase flows, physical devices and assistive-technology speech
 are outside this focused unchanged legal-page reproduction; no external-account
 access, customer email, purchase or live-data mutation is performed.
+
+
+## Publication
+
+Parent final compiler, targeted lint/formatter, document links/numbering and diff whitespace passed. Mandatory security re-review cleared final SHA-256 above, including final synthetic privacy evidence. Verified surfacebook before commit and again before explicit push. Published b057d5b98473f3941c8293ac079ed12d6b567e23; fresh remote revision matches. Matching hosted verification is pending. Item 75 remains open; this commit improves reporting and does not establish the earlier hosted cause.
+
+
+## Enriched hosted recurrence
+
+Matching CI44264476075 failed the known legal sweep on tablet/mobile Safari. Public context links RSC cancellation events to hard navigation: current/privacy to intended/terms at339ms and current/shipping to intended/returns pageerror at490ms in separate attempts. Destination responses were200. Query-free network/route context is visible publicly, proving reporting works. Exact causal classification/remedy remains open; no error exclusion or application fix is inferred. The preceding389d53b full run44261401908 succeeded, so the symptom is not deterministic across matching builds. New recovered grant-receipt and SizeGuide-scroll symptoms are recorded as81/82; QuickAdd reopen repeats76.

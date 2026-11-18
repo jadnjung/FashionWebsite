@@ -46,6 +46,7 @@ type FetchState =
 // from §46's "side panel" for Size Guide) — see DECISIONS.md D-060.
 export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const pendingProgrammaticCloses = useRef(0);
   const [fetchState, setFetchState] = useState<FetchState>({ status: 'idle' });
   const [selections, setSelections] = useState<OptionSelections>({});
   const [retryToken, setRetryToken] = useState(0);
@@ -62,6 +63,7 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
     if (open && !dialog.open) {
       dialog.showModal();
     } else if (!open && dialog.open) {
+      pendingProgrammaticCloses.current += 1;
       dialog.close();
     }
   }, [open]);
@@ -144,7 +146,17 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   return (
     <dialog
       ref={dialogRef}
-      onClose={onClose}
+      onClose={(event) => {
+        // close() restores focus before its queued close event arrives.
+        // Its prop-driven state change is already applied; the notification
+        // must not cancel a newer opening, even while its transition waits.
+        if (pendingProgrammaticCloses.current > 0) {
+          pendingProgrammaticCloses.current -= 1;
+          return;
+        }
+        // A native close notification may also outlive a reopened dialog.
+        if (!event.currentTarget.open) onClose();
+      }}
       aria-label={`Quick Add — ${title}`}
       // top-auto: a real, live-verified fix, not copied blindly from
       // SizeGuidePanel's identical base classes. The native <dialog>'s own

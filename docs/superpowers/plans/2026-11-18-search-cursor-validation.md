@@ -19,3 +19,8 @@ Repeated run 2966 passed all 50 cases in 1.3 minutes. Full collection run 94192 
 ## Publication
 
 Verified surfacebook before commit and push. Published 389d53b1f4909f5dd572d0549ec9d91f8a200773 using the explicit surfacebook destination; fresh remote revision matches. Matching CI 44261401908 is in progress. The preceding filter fix CI 44260605709 is also in progress.
+
+
+## Hosted verification
+
+Matching full CI 44261401908 at 389d53b completed SUCCESS. This validates the published cursor repair in its configured hosted scope. Later b057d5b reporting CI failed a known legal sweep and does not invalidate this matching result.
