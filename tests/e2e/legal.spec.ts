@@ -81,28 +81,99 @@ test.describe('contact', () => {
 });
 
 test.describe('legal pages — cross-cutting', () => {
-  test('all seven pages load with no console or page errors', async ({ page }) => {
+  test('all seven pages load with no console or page errors', async ({ page }, testInfo) => {
     const consoleErrors: string[] = [];
     const pageErrors: string[] = [];
+    const started = Date.now();
+    let destination = '';
+    type Diagnostic = Record<string, string | number | boolean | undefined>;
+    const events: Diagnostic[] = [];
+    let firstError: Diagnostic | undefined;
+    let firstPageError: Diagnostic | undefined;
+    const record = (event: string, details: Diagnostic = {}) => {
+      const entry = {
+        event,
+        elapsedMs: Date.now() - started,
+        destination,
+        activePath: new URL(page.url()).pathname,
+        ...details,
+      };
+      events.push(entry);
+      if (events.length > 30) events.shift();
+      if (!firstError && ['consoleerror', 'pageerror', 'requestfailed'].includes(event)) {
+        firstError = entry;
+      }
+      if (!firstPageError && event === 'pageerror') firstPageError = entry;
+    };
+    const safeText = (text: string, limit = 300) =>
+      text
+        // WebKit access-control messages can omit the URL scheme.
+        .replace(/[?#][^\s"'<>)]*/g, '')
+        .replace(/https?:\/\/[^\s"'<>]+/g, (url) => {
+          try {
+            return new URL(url).pathname;
+          } catch {
+            return '[invalid URL]';
+          }
+        })
+        .slice(0, limit);
     page.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+        record('consoleerror', { message: safeText(message.text()) });
+      }
     });
-    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('pageerror', (error) => {
+      pageErrors.push(error.message);
+      record('pageerror', {
+        message: safeText(error.message),
+        stack: safeText(error.stack ?? '', 2_000),
+      });
+    });
+    page.on('response', (response) => {
+      const url = new URL(response.url());
+      const rsc = url.searchParams.has('_rsc');
+      if (response.request().isNavigationRequest() || rsc) {
+        record('response', { path: url.pathname, rsc, status: response.status() });
+      }
+    });
+    page.on('requestfailed', (request) => {
+      const url = new URL(request.url());
+      const rsc = url.searchParams.has('_rsc');
+      if (request.isNavigationRequest() || rsc) {
+        record('requestfailed', {
+          path: url.pathname,
+          rsc,
+          message: safeText(request.failure()?.errorText ?? ''),
+        });
+      }
+    });
 
-    for (const path of [
-      '/legal/privacy',
-      '/legal/terms',
-      '/legal/shipping',
-      '/legal/returns',
-      '/legal/refunds',
-      '/legal/accessibility',
-      '/contact',
-    ]) {
-      await page.goto(path);
+    try {
+      for (const path of [
+        '/legal/privacy',
+        '/legal/terms',
+        '/legal/shipping',
+        '/legal/returns',
+        '/legal/refunds',
+        '/legal/accessibility',
+        '/contact',
+      ]) {
+        destination = path;
+        record('goto');
+        await page.goto(path);
+      }
+
+      const context = `Legal navigation: ${JSON.stringify({ destination, activePath: new URL(page.url()).pathname, firstError: firstError && { ...firstError, stack: undefined }, network: events.filter(({ event }) => event === 'response' || event === 'requestfailed').slice(-3) })}`;
+      expect(consoleErrors, context).toEqual([]);
+      expect(pageErrors, context).toEqual([]);
+    } catch (error) {
+      await testInfo.attach('legal-page-diagnostics', {
+        body: JSON.stringify({ destination, firstError, firstPageError, events }, null, 2),
+        contentType: 'application/json',
+      });
+      throw error;
     }
-
-    expect(consoleErrors).toEqual([]);
-    expect(pageErrors).toEqual([]);
   });
 
   test('sitemap.xml lists every legal page and contact', async ({ page }) => {

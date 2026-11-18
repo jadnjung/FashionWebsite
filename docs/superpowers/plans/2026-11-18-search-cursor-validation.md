@@ -14,3 +14,8 @@ Mandatory read-only security review found no actionable issue; reviewed source S
 ## Final local acceptance
 
 Repeated run 2966 passed all 50 cases in 1.3 minutes. Full collection run 94192 passed 61 cases with nine intended profile/isolated-analytics skips in 1.1 minutes, exit 0. Ignored log: playwright-report/diagnostics/search-cursor-77-collections.log. Typecheck, targeted ESLint and Prettier passed. Security review cleared the exact source hash above. No application behavior or test retry policy changed. Root stopped owned server 17933. Branch-only publication and matching hosted checks remain next.
+
+
+## Publication
+
+Verified surfacebook before commit and push. Published 389d53b1f4909f5dd572d0549ec9d91f8a200773 using the explicit surfacebook destination; fresh remote revision matches. Matching CI 44261401908 is in progress. The preceding filter fix CI 44260605709 is also in progress.
