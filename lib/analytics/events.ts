@@ -21,18 +21,22 @@
 // `view_item` uses GA4's own standard recommended-event name/shape (a
 // genuine, honest match — a real product page genuinely was viewed) while
 // `add_to_bag_click`/`quick_add_click` deliberately do NOT use GA4's
-// standard `add_to_cart` name: no real cart exists yet (D-016/D-029), and
-// firing GA4's own "this item was added to a cart" semantic event for a
-// no-op click would misrepresent what happened and contaminate any future
-// report once a real add_to_cart event exists alongside it.
+// standard `add_to_cart` name: these events record accepted purchase intent,
+// including requests that later fail. They do not claim commerce success.
 
-/** One line-item for GA4's standard `items` array shape (view_item, add_to_bag_click, quick_add_click). */
+/** Shared item fields; views and wishlist keep their existing optional unit price. */
 export interface AnalyticsItem {
   item_id: string;
   item_name: string;
   item_category?: string;
   item_variant?: string;
   price?: number;
+}
+
+/** Requested addition only: selected-variant unit price and normalized units. */
+export interface PurchaseAnalyticsItem extends AnalyticsItem {
+  price: number;
+  quantity: number;
 }
 
 // Single source of truth for both the runtime allowlist (isKnownAnalyticsEvent)
@@ -68,9 +72,7 @@ export function isKnownAnalyticsEvent(name: string): name is AnalyticsEventName 
   return (ANALYTICS_EVENT_NAMES as readonly string[]).includes(name);
 }
 
-// The empty-properties shape for events that carry no data beyond the fact
-// that they happened (GA4 still records the standard automatic parameters —
-// page_location, page_title, timestamp — for every event regardless).
+// Empty event payloads still receive sanitized browser context from the adapter.
 type NoProperties = Record<string, never>;
 
 interface EventPropertiesMap {
@@ -85,8 +87,9 @@ interface EventPropertiesMap {
   };
   add_to_bag_click: {
     currency: string;
+    // Decimal unit price times requested quantity, excluding existing bag units.
     value: number;
-    items: [AnalyticsItem];
+    items: [PurchaseAnalyticsItem];
   };
   // Fires when the on-grid Quick Add trigger (ProductCard) is clicked and
   // the panel begins opening — mirrors the shop_the_look_open/
@@ -98,13 +101,11 @@ interface EventPropertiesMap {
     item_id: string;
     item_name: string;
   };
-  // Fired from two real surfaces: the Interactive Model's own panel
-  // (region = hotspot region, e.g. 'top'/'bottom') and the on-grid Quick
-  // Add panel (region: 'product_card') — see DECISIONS.md D-060.
+  // The on-grid Quick Add panel declares one requested unit (region: 'product_card').
   quick_add_click: {
     currency: string;
     value: number;
-    items: [AnalyticsItem];
+    items: [PurchaseAnalyticsItem];
     region: string;
   };
   variant_selected: {
@@ -126,8 +127,8 @@ interface EventPropertiesMap {
   // deliberate avoidance of GA4's standard add_to_cart name: a wishlist
   // add is a completely real, fully-functioning action in this pass (a
   // real, persisted local save happens via lib/product/wishlist.ts), so
-  // there's no "stub" gap being misrepresented. Identical shape to
-  // add_to_bag_click. No corresponding "remove" event exists, deliberately:
+  // there's no "stub" gap being misrepresented. Keeps its original item
+  // shape. No corresponding "remove" event exists, deliberately:
   // GA4 has no standard remove_from_wishlist recommended event, PROJECT.md
   // §82 only names "Wishlist adds" (no removal-tracking is named there or
   // anywhere else in this codebase's taxonomy — there is no
@@ -178,9 +179,8 @@ interface EventPropertiesMap {
   drop_access_attempt: {
     collection_handle: string;
   };
-  // Fires once, post-redirect, via the ShellClient signal-cookie mechanism
-  // (DROP_ACCESS_EVENT_COOKIE_NAME) — the collection-scoped analog of the
-  // deleted whole-site gate's access_granted.
+  // Consumes the optional grant signal through the root navigation observer
+  // or code-form cleanup after a same-path unlock (D-103).
   drop_access_granted: {
     collection_handle: string;
   };

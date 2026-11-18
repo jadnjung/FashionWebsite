@@ -673,7 +673,7 @@ Until the env var is set, the page renders the identical `ESQUE PLACEHOLDER — 
 
 ## D-055 — Analytics wired (ROADMAP.md Phase 12): a typed, closed event taxonomy; GA4 via `@next/third-parties`; Search Console's real code surface; Shopify Analytics is genuinely automatic; real events wired at every interaction point this codebase can currently produce
 
-Current integration follow-up: D-102 replaces the component and ID-only activation described in this historical record with controlled bootstrap, sanitized manual pageviews and stream-specific verification.
+Current integration follow-up: D-102 replaces the component and ID-only activation described in this historical record with controlled bootstrap, sanitized manual pageviews and stream-specific verification. D-104 adds explicit normalized purchase quantity and line-value semantics.
 
 
 **Decision, in six parts:**
@@ -1911,3 +1911,14 @@ Use one guarded synchronous read-clear-dispatch consumer for the existing short-
 Keep the bound native action/useActionState form and authoritative httpOnly unlock cookie. The cleanup consumes existing optional state and makes no authorization decision. A never-hydrated form relies on a later hydrated root to consume its retained signal. An abandoned in-flight response arriving after unrelated teardown remains best-effort until the next observed navigation. Cookie access/write failures must leave storefront operation usable. Actual GA4 delivery continues to depend on D-102 provisioning and a connected property.
 
 This follows the [React effect lifecycle](https://react.dev/reference/react/useEffect) and [Next server-function cookie behavior](https://nextjs.org/docs/app/api-reference/functions/cookies#understanding-cookie-behavior-in-server-functions). Local regression evidence must cover ordinary client navigation, query-only continuation, once-only consumption, fresh repeated-handle grants and the actual same-path action, including native no-JavaScript submission.
+
+
+## D-104 — Quantity-aware purchase-intent analytics
+
+November 17, 2026. Local verification is recorded in the [purchase-intent execution record](./docs/superpowers/plans/2026-11-17-purchase-intent-quantity.md).
+
+The add_to_bag_click and quick_add_click item tuples require selected-variant unit price and normalized requested quantity. Event value is their decimal product. Quantity describes this addition, excluding existing bag units, tax, shipping and unavailable discount information. PDP resolves one quantity snapshot before telemetry and reuses it for cart.addItems. Quick Add explicitly requests one. The event remains an accepted Add activation, including one whose mutation later fails. Cart Retry replays its stored operation without another intent. A later explicit Add is another intent. Existing views and wishlist retain their original shapes. Historical events without quantity cannot recover a previous multi-unit choice. [GA4 item/value reference](https://developers.google.com/analytics/devguides/collection/ga4/reference/events#add_to_cart)
+
+Use a pure decimal coefficient/exponent helper to preserve source unit price and multiplied value through numeric serialization. Scientific notation is supported for equivalent inputs and JavaScript number round trips. Shopify's scalar is an arbitrary-precision serialized string, and its documentation does not promise an exponent format. The purchase domain rejects negative values under Shopify's variant-price rules and retains zero/free values. [Shopify Decimal](https://shopify.dev/docs/api/storefront/latest/scalars/decimal), [variant-price constraints](https://shopify.dev/docs/api/admin-graphql/2026-07/enums/ProductVariantsBulkUpdateUserErrorCode)
+
+Optional amount parsing validates a string boundary and a 512-character budget before regex, Number or BigInt work. Unsafe quantities, negative/non-string/oversized amounts and values whose numeric serialization loses source precision omit the purchase telemetry. Cart submission still uses the resolved quantity. This prevents invalid numeric instrumentation or pathological parsing from interrupting a supported shopping action. It creates no currency-rounding or stock policy. Live GA4 receipt remains a connected-property check.

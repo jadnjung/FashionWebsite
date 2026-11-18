@@ -1,34 +1,34 @@
 # Website maintenance checkpoint
 
-Updated 2026-11-17 21:20 UTC. Read AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md before resuming.
+Updated 2026-11-18 02:35 UTC. Resume AGENTS.md, .codex/WEBSITE_MAINTENANCE.md and .codex/AGENT_WORKFLOW.md.
 
-## Current task
+## Active task
 
-Item 53 is published as 6d201c3dadad8d8171e35136f2db30dc227be71c on surfacebook, with matching remote revision verified. Hosted CI 44179007153 failed the unconfigured browser step. Public check metadata has no test name, only exit code 1. Its full frozen local reproduction passed 617 cases with 15 intended skips, zero unexpected and zero flaky results. Underlying hosted cause remains unknown. Parent is publishing the validated CI failure-annotation improvement separately. Item 55 selected-quantity intent analytics discovery is active with the data-analytics specialist, read-only. No item 55 source edits exist yet. Parent owns documents, integration and publication. Item 53 specialists handed back source. Frozen reproduction 26386 completed and server31063 is stopped. Fullstack now owns normal Demo server/build87645 and port3000 for item55 RED. Do not start competing builds. Preserve unrelated untracked debug.log without reading/staging it and preserve Claude compatibility files.
+Item 55 selected-quantity purchase-intent analytics is implemented, reviewed and locally verified. Publication is next. Branch and published HEAD are surfacebook / c7fff198d046e0577d21258681e3302989b21e9c. Parent owns integration and publication. All specialists handed back work and all servers are stopped. Preserve unrelated untracked debug.log and Claude compatibility files.
 
-The 13 source/test/harness paths have parent-confirmed fingerprint 758b00ed7974c43d3a63a3b4d242a7b776334c2997dc436fa0d2834a59f463cb. They cover the shared consumer/observer, root layout, ShellClient, DropAccessForm, unit/browser regressions, isolated launcher, three Playwright configs and server-mode verifier. Related parent docs include architecture, decisions D-103, roadmap, backlog, execution records and the agent workflow's three-suite guidance.
+Eight source/test paths cover event types/tests, adapter tests, the new purchase-amounts helper/tests, both purchase panels and shopping-journey browser tests. Final parent fingerprint is ad3d8499841e208381f88c38fbf50a51f6e3dbff6d673a3b00b98dcef4e20a5d, after two comment-only corrections in events.ts. The helper matches final reviewers at SHA256 11433fa19077011390dcffde6ab977493ed5fc8f9a16c7a7ee989cc98bab96d5. Parent docs include D-104, architecture, roadmap, backlog and the purchase-intent execution record.
 
-## Actual verification
+## Verification
 
-- RED 16623 reproduced an after-mount signal missed during normal BAG client navigation in the same document.
-- Parent full units 52534 passed 635 cases across 62 files. Final typecheck 11771, lint 26014 and whole-repository format 46673 passed. Four agent/document contract tests 84944 passed.
-- Cookie recovery 47812 passed 30/30. Managed optimized collections 63996 passed 61 with nine explicit profile skips, including six real-action checks across three Chromium projects.
-- A confirmed test-mode compatibility issue was fixed and re-reviewed. Focused action cases passed 2/2 production (54277) and 2/2 development (58899).
-- Parent ordinary shopping run 91819 passed all 25 cases. Updated fake-GA profile 83396 passed all five cases with local interception and no unexpected Google requests.
-- Primary quality and mandatory security reviews cleared source, harness and the final test fix. Both reviewed action-spec SHA256 79356396abf0a9f5bc21031e4ed4c462328d355df69bd063a91cc4694aa29c9c. No review request is being counted as an outcome.
+- Normal PDP RED proved quantity 3 cart request versus missing event quantity/value 128 instead of 384.
+- Primary and security findings for negative prices and unbounded parsing were reproduced and fixed. Parent also reproduced null amount TypeError. Final guard rejects non-string values, more than 512 characters, negative amounts and non-round-tripping numbers without gating cart.
+- Final reviews cleared fixes. Worker final browser run 5725 passed 65/65 across all five normal Demo profiles, including negative/oversized/null/unrepresentable Quick Add metadata with canonical cart success. Servers stopped.
+- Parent integrated unit run 38389 passed 679 across 63 files. Typecheck 73762, full lint 83428 and whole-repository formatting passed. Optimized build passed. No live GA receipt is claimed.
 
-Details and reproduction are in docs/superpowers/plans/2026-11-17-drop-grant-lifecycle.md. Real analytics receipt and HTTPS WebKit action coverage remain separate verification. Signals arriving after unrelated abandoned-action teardown wait for the next observation.
+Details are in docs/superpowers/plans/2026-11-17-purchase-intent-quantity.md. Resolve quantity once for both event and mutation, keep item price as unit price, value as decimal price times requested addition, and Retry without a second intent. Bad telemetry can omit the event while the cart continues.
 
 ## Exact next action
 
-Publish only the three validated CI reporter configs and their parent docs after branch verification, then inspect the exact matching CI run for actionable failure annotations. The local JSON reproduction has no failed/flaky case and cannot identify the hosted cause. Parent is also adding CI-only GitHub failure annotations to the three Playwright configs, preserving HTML destinations. Current run explicitly overrides line/json reporters, so its test behavior is fixed. Continue item 55 read-only discovery with search_url_analytics_review. Resolve quantity before the PDP intent event, use the same normalized snapshot for event and cart call, document unit price/line-value semantics, preserve retries and distinguish intention from acknowledged commerce. Inspect the existing event contract and money helpers before design. Save a failing normal-entry-point regression before implementing. Parent owns integration, docs and the active unconfigured server. The fullstack specialist owns item55 helper/unit source, event types and purchase handlers after its required normal PDP RED. New purchase-amounts helper has 35 passing tests; no PDP/Quick Add runtime edit existed at last handoff. Runtime is released to that worker. Reporter configs remain parent-owned. Keep item55 files out of the separate diagnostics commit.
+Review final docs/status, verify surfacebook, stage only completed item 55 source/tests and related parent docs, commit and push explicitly HEAD:refs/heads/surfacebook. Verify branch again before push, confirm remote revision and inspect matching CI. Then start item 73's confirmed per-group filter-budget mismatch, the highest remaining actionable P2 shopping-choice issue. Item 70 and other P3 proposals remain queued. No item 73 source edits exist yet.
 
-## Published work and dependency
+## Hosted CI investigation
 
-Item 57 is published e1e4ac8 with full hosted CI 44123444619 SUCCESS at that exact revision. Its local evidence is 629 units and 222 browser passes/five intended skips. The execution record includes the updated fake-GA reproduction pins for D-103's fixture profile. Real GA4 requires the ID-matching public stream privacy assertion and verified automatic URL collection settings. Live receipt and populated-store relevance remain external.
+Item 57 e1e4ac8 has successful hosted CI 44123444619. Item 53 6d201c3 has failed unconfigured CI 44179007153, while frozen local CI-style reproduction 26386 passed 617 cases/15 skips, with zero unexpected and flaky results. Ignored JSON/log diagnostics live under playwright-report/diagnostics/unconfigured-6d201c3.*.
 
-Item 75 retains older CI run 44030268236's unexplained unconfigured-browser failure at 7460f7f. Local reproduction passed 605/15 skips. The newer success does not establish the old cause. Automatic approval review rejected reading the saved GitHub credential for CI-log API use because that specific use lacked authorization. The command was blocked before execution and the explicit access question remains unanswered. Do not retry, delegate or work around the rejection without an explicit user response. Continue independent authorized work.
+Reporter-only c7fff19 is published. It enables CI GitHub annotations alongside preserved HTML reporters. Synthetic annotation and local/CI config probes, typecheck, formatter, lint and security review passed. Hosted CI 44222096860 remains in progress at the latest snapshot, having reached Demo with no failed step. Inspect its final outcome/annotations. Item 75 remains open because older hosted failure causes are unknown.
 
-## Capacity and schedule
+Saved GitHub credential CI-log API reuse was rejected by automatic approval review because that specific use lacks authorization. No credential was retrieved. The explicit read-only access question remains unanswered. Do not retry, delegate or bypass it without an explicit user response. Future public annotations are repository-owned reporting and require no credential access.
 
-Actual usage restrictions interrupted implementation and interim review. This continuation recovered ordinary use, last checked primary 1% and weekly 64%. Check fresh limits when relevant. Maintainer remains ACTIVE every 30 minutes in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Daily audit remains PAUSED. Root applies the website-maintainer TOML fallback. Scheduling depends on app, awake machine, project access, permissions and account capacity.
+## Capacity and scheduling
+
+Actual limits interrupted earlier runs, and this continuation recovered capacity. Last check showed ordinary allowed, primary 71%, weekly 75%. Save precise checkpoints before substantial work or a limit. Maintainer remains ACTIVE every 30 minutes in chat 01a1d24c-d335-7533-83ac-b1ab13a0c637. Daily audit remains PAUSED. Root applies the website-maintainer TOML fallback. Scheduling depends on app, awake machine, permissions and actual account capacity.

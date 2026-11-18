@@ -7,6 +7,7 @@ import { useCart } from '@/components/cart/CartProvider';
 import { CartFeedback } from '@/components/cart/CartFeedback';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { trackEvent } from '@/lib/analytics/gtag';
+import { getPurchaseAmounts } from '@/lib/analytics/purchase-amounts';
 import { fetchJsonWithDeadline } from '@/lib/client-request';
 import { formatPrice } from '@/lib/product/price';
 import { getRemainingQuantity } from '@/lib/product/quantity';
@@ -232,27 +233,30 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
                 aria-busy={cart.pending}
                 className="aria-disabled:cursor-wait aria-disabled:opacity-40"
                 onClick={() => {
-                  // D-016/D-055: track the valid click and explain the
-                  // deferred purchasing integration.
+                  // Track accepted intent; cart recovery owns retries without another intent.
                   if (!canAddToBag || !matchedVariant || cart.pending) return;
                   setPurchaseUnavailable(true);
+                  const quantity = 1;
+                  const amounts = getPurchaseAmounts(matchedVariant.price.amount, quantity);
+                  if (amounts)
+                    trackEvent('quick_add_click', {
+                      currency: matchedVariant.price.currencyCode,
+                      value: amounts.value,
+                      items: [
+                        {
+                          item_id: loaded.product.handle,
+                          item_name: loaded.product.title,
+                          item_category: loaded.product.productType,
+                          item_variant: matchedVariant.id,
+                          price: amounts.price,
+                          quantity,
+                        },
+                      ],
+                      region: 'product_card',
+                    });
                   void cart.addItems([
-                    { handle: loaded.product.handle, variantId: matchedVariant.id, quantity: 1 },
+                    { handle: loaded.product.handle, variantId: matchedVariant.id, quantity },
                   ]);
-                  trackEvent('quick_add_click', {
-                    currency: matchedVariant.price.currencyCode,
-                    value: Number(matchedVariant.price.amount),
-                    items: [
-                      {
-                        item_id: loaded.product.handle,
-                        item_name: loaded.product.title,
-                        item_category: loaded.product.productType,
-                        item_variant: matchedVariant.id,
-                        price: Number(matchedVariant.price.amount),
-                      },
-                    ],
-                    region: 'product_card',
-                  });
                 }}
               >
                 ADD TO BAG

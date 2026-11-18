@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   dispatchAnalyticsEvent,
   isKnownAnalyticsEvent,
   sanitizeEventProperties,
   type AnalyticsEventName,
+  type AnalyticsEventProperties,
+  type PurchaseAnalyticsItem,
 } from './events';
 
 describe('isKnownAnalyticsEvent', () => {
@@ -88,6 +90,26 @@ describe('sanitizeEventProperties', () => {
 });
 
 describe('dispatchAnalyticsEvent', () => {
+  it('requires unit price and quantity only for purchase-intent items', () => {
+    expectTypeOf<Pick<PurchaseAnalyticsItem, 'price' | 'quantity'>>().toEqualTypeOf<{
+      price: number;
+      quantity: number;
+    }>();
+    expectTypeOf<AnalyticsEventProperties<'add_to_bag_click'>['items']>().toEqualTypeOf<
+      [PurchaseAnalyticsItem]
+    >();
+    expectTypeOf<AnalyticsEventProperties<'quick_add_click'>['items']>().toEqualTypeOf<
+      [PurchaseAnalyticsItem]
+    >();
+    const sink = vi.fn();
+    const properties = {
+      currency: 'USD',
+      value: 30.03,
+      items: [{ item_id: 'piece', item_name: 'Piece', price: 10.01, quantity: 3 }],
+    } satisfies AnalyticsEventProperties<'add_to_bag_click'>;
+    dispatchAnalyticsEvent('add_to_bag_click', properties, sink);
+    expect(sink).toHaveBeenCalledWith('add_to_bag_click', properties);
+  });
   it('calls the sink with the event name and sanitized properties', () => {
     const sink = vi.fn();
     dispatchAnalyticsEvent('drop_access_granted', { collection_handle: 'collection-002' }, sink);
@@ -155,7 +177,7 @@ describe('dispatchAnalyticsEvent', () => {
       {
         currency: 'USD',
         value: 128,
-        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01' }],
+        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01', price: 128, quantity: 1 }],
         region: 'product_card',
       },
       sink,

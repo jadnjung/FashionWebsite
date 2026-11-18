@@ -19,3 +19,8 @@ All three Playwright configs add the built-in github reporter when CI is truthy,
 - Typecheck and targeted Prettier validation passed. Security review found no actionable issue and confirmed the installed reporter makes no credential collection or external requests. Reviewed three-config fingerprint is 85139fa5b5342b287ceeefced91d97f32924491fe4226e6082dcf64d26d0e77d.
 
 This diagnostics change is ready for branch-only publication. Actual hosted annotation visibility and the test causing the earlier hosted failures remain pending the next run. Item 75 stays open. Item 55 helper/tests are independent uncommitted worker-owned work and are excluded from this publication.
+
+
+## Publication
+
+Branch was verified exactly surfacebook before commit and again before explicit push to HEAD:refs/heads/surfacebook. Published c7fff198d046e0577d21258681e3302989b21e9c and verified the remote revision. Matching public CI run is [44222096860](https://github.com/jadnjung/FashionWebsite/actions/runs/44222096860), currently in progress. Its public job snapshot had reached Demo with no failed step reported. Hosted annotation visibility and final result remain pending.

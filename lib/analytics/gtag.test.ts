@@ -93,12 +93,20 @@ describe('trackEvent', () => {
       trackEvent('add_to_bag_click', {
         currency: 'USD',
         value: 68,
-        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01', item_variant: 'variant-gid' }],
+        items: [
+          {
+            item_id: 'hoodie-01',
+            item_name: 'Hoodie 01',
+            item_variant: 'variant-gid',
+            price: 68,
+            quantity: 1,
+          },
+        ],
       });
       trackEvent('quick_add_click', {
         currency: 'USD',
         value: 68,
-        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01' }],
+        items: [{ item_id: 'hoodie-01', item_name: 'Hoodie 01', price: 68, quantity: 1 }],
         region: 'top',
       });
       trackEvent('variant_selected', {

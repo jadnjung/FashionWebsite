@@ -10,6 +10,7 @@ import { SizeGuidePanel } from '@/components/product/SizeGuidePanel';
 import { VariantPicker } from '@/components/product/VariantPicker';
 import { WishlistToggle } from '@/components/product/WishlistToggle';
 import { trackEvent } from '@/lib/analytics/gtag';
+import { getPurchaseAmounts } from '@/lib/analytics/purchase-amounts';
 import { formatPrice } from '@/lib/product/price';
 import { getRemainingQuantity, resolveQuantity } from '@/lib/product/quantity';
 import { getScarcityLabel, getScarcityStatus } from '@/lib/product/scarcity';
@@ -225,20 +226,23 @@ export function ProductPurchasePanel({
   function handleAddToBag() {
     if (!canAddToBag || !matchedVariant || cart.pending) return;
     setPurchaseUnavailable(true);
-    trackEvent('add_to_bag_click', {
-      currency: matchedVariant.price.currencyCode,
-      value: Number(matchedVariant.price.amount),
-      items: [
-        {
-          item_id: handle,
-          item_name: title,
-          item_category: productType,
-          item_variant: matchedVariant.id,
-          price: Number(matchedVariant.price.amount),
-        },
-      ],
-    });
     const quantity = resolveQuantity(quantityInput, 1, quantityMax);
+    const amounts = getPurchaseAmounts(matchedVariant.price.amount, quantity);
+    if (amounts)
+      trackEvent('add_to_bag_click', {
+        currency: matchedVariant.price.currencyCode,
+        value: amounts.value,
+        items: [
+          {
+            item_id: handle,
+            item_name: title,
+            item_category: productType,
+            item_variant: matchedVariant.id,
+            price: amounts.price,
+            quantity,
+          },
+        ],
+      });
     setQuantityInput(String(quantity));
     void cart.addItems([{ handle, variantId: matchedVariant.id, quantity }]);
   }
