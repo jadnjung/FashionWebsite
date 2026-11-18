@@ -23,7 +23,10 @@ export default defineConfig({
   workers: 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: [['html', { outputFolder: 'playwright-report-demo', open: 'never' }]],
+  reporter: [
+    ...(process.env.CI ? [['github'] as ['github']] : []),
+    ['html', { outputFolder: 'playwright-report-demo', open: 'never' }],
+  ],
   outputDir: 'test-results-demo',
   use: {
     baseURL: 'http://localhost:3000',

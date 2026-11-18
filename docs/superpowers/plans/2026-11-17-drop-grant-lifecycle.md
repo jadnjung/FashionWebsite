@@ -106,3 +106,17 @@ Parent ordinary optimized build 12318 succeeded with the collection scenario/pro
 The final root composition and revised documented fake-GA profile passed all five analytics cases in 14.6 seconds (83396). Google traffic was locally stubbed or blocked as asserted by the test. Server 2560 was stopped. Final principal browser evidence is 30 cookie-recovery, 61 collection/action, 25 shopping-journey and five fake-GA passes, with nine profile-specific skipped executions in the collection run. The five fake-GA cases skipped there were exercised separately. Focused action checks additionally passed 2/2 in each production and development mode.
 
 Parent independently recomputed the 13-path fingerprint and matched 758b00ed7974c43d3a63a3b4d242a7b776334c2997dc436fa0d2834a59f463cb. Source, harness and review fixes are frozen. Parent integrated units passed 635/62 files, final lint/typecheck/format checks passed, optimized and development builds ran, and four agent/document contract checks passed. All owned servers are stopped. Item 53 is locally complete and ready for branch-only publication. Actual live analytics receipt, HTTPS WebKit action coverage and the recorded abandoned-response timing boundary retain their external or scope-specific verification requirements.
+
+
+## Publication
+
+The branch was verified exactly surfacebook before commit and again before the explicit push. Published 6d201c3dadad8d8171e35136f2db30dc227be71c with destination HEAD:refs/heads/surfacebook. ls-remote confirmed the same revision. Hosted CI [44179007153](https://github.com/jadnjung/FashionWebsite/actions/runs/44179007153) is in progress at that exact commit. Source, harness, reviews, local verification and documents are committed. Subsequent checkpoint/publication updates may remain uncommitted during the next task.
+
+
+## Hosted failure follow-up
+
+Hosted run 44179007153 failed its unconfigured browser step after publication. Agent setup passed. Public check output has no summary or test text, and its annotations give only exit code 1 plus an Ubuntu image notice. Saved-credential CI-log reuse remains specifically rejected pending explicit approval. No credential was accessed.
+
+After another actual usage interruption, ordinary capacity recovered with primary 1% and weekly 64%. Parent recovered frozen exact-6d201c3 unconfigured optimized server 31063. Full local reproduction 26386 runs 632 cases with CI retries and two workers. Durable ignored diagnostics are playwright-report/diagnostics/unconfigured-6d201c3.log and .json. The JSON reporter is explicitly selected alongside line output. The build preceded any item 55 application work. The implementer may create independent helper/unit source but must not rebuild .next or use the browser server until reproduction completes.
+
+A separate bounded diagnostics fix will enable Playwright's built-in GitHub reporter only in CI while retaining all existing HTML destinations. This generates future failed-test annotations. It does not retrieve authenticated logs or establish the current failure's cause. Current reproduction explicitly overrides reporters, so the later config-only reporter change does not alter its assertions or reporter selection. [Reporter documentation](https://playwright.dev/docs/test-reporters#github-actions-annotations)

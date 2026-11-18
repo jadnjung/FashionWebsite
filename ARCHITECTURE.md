@@ -181,6 +181,8 @@ Per [PROJECT.md §76](./PROJECT.md#76-performance-requirements) and [DESIGN_SYST
 - Route-level code splitting is automatic with the App Router; keep heavy motion/WebGL code in dynamically-imported client components so it never blocks initial paint.
 - No animation library is loaded on routes that don't use it.
 
+CI Playwright runs emit GitHub failure annotations alongside each suite's existing HTML report, so failed test names and locations accompany the check result. Local reporter behavior retains the HTML defaults. See the [CI diagnostics record](./docs/superpowers/plans/2026-11-17-ci-browser-diagnostics.md).
+
 ## 10. Open Architecture Decisions
 
 These remain open until resolved (see [PROJECT.md §101](./PROJECT.md#101-items-still-intentionally-open)):

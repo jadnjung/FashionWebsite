@@ -11,7 +11,10 @@ export default defineConfig({
     dropGrantFixture: true,
   },
   testDir: './tests/e2e-collections',
-  reporter: [['html', { outputFolder: 'playwright-report-demo/collections', open: 'never' }]],
+  reporter: [
+    ...(process.env.CI ? [['github'] as ['github']] : []),
+    ['html', { outputFolder: 'playwright-report-demo/collections', open: 'never' }],
+  ],
   outputDir: 'test-results-demo/collections',
   webServer:
     process.env.PLAYWRIGHT_EXTERNAL_SERVER === '1'
