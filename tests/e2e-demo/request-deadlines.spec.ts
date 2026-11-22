@@ -160,6 +160,77 @@ test('Quick Add closing and reopening preserves the new session after an old dec
   await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeDisabled();
 });
 
+test('an Escape close notification cannot cancel the next Quick Add opening', async ({ page }) => {
+  let productRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === `/api/products/${handle}`) productRequests += 1;
+  });
+  await page.goto('/tops/sweaters');
+  await holdFirstRequest(page, `/api/products/${handle}`, 'body');
+  const { panel, trigger } = await openQuickAdd(page);
+  await waitUntilHeld(page);
+  await panel.getByRole('button', { name: 'CLOSE', exact: true }).click();
+  await expect(trigger).toBeFocused();
+  await openQuickAdd(page);
+  await choose(panel, 'M');
+  await choose(panel, 'Black');
+  await releaseRequest(page);
+  await expect(panel.getByRole('radio', { name: 'M', exact: true })).toBeChecked();
+  await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeEnabled();
+
+  // Keep Escape's real close and focus restoration. Delay only its queued
+  // notification until React has received the next single activation.
+  await panel.evaluate((dialog) => {
+    const state = window as typeof window & { releaseEscapeClose?: () => void };
+    dialog.addEventListener(
+      'close',
+      (event) => {
+        event.stopImmediatePropagation();
+        state.releaseEscapeClose = () => dialog.dispatchEvent(new Event('close'));
+      },
+      { capture: true, once: true },
+    );
+  });
+  await panel.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await page.waitForFunction(
+    () =>
+      typeof (window as typeof window & { releaseEscapeClose?: () => void }).releaseEscapeClose ===
+      'function',
+  );
+  await page.evaluate(() => {
+    function replayAfterReceipt(event: Event) {
+      if ((event as CustomEvent<{ name: string }>).detail.name !== 'quick_add_open') return;
+      window.removeEventListener('esque:analytics', replayAfterReceipt);
+      queueMicrotask(() =>
+        (window as typeof window & { releaseEscapeClose?: () => void }).releaseEscapeClose?.(),
+      );
+    }
+    window.addEventListener('esque:analytics', replayAfterReceipt);
+  });
+  await openQuickAdd(page);
+  await expect(panel.getByRole('radio', { name: 'M', exact: true })).not.toBeChecked();
+  await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeDisabled();
+  expect(productRequests).toBe(3);
+
+  // A consumed old notification must not swallow later genuine Escape closes.
+  for (const expectedRequests of [4, 5]) {
+    await choose(panel, 'M');
+    await choose(panel, 'Black');
+    await panel.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await openQuickAdd(page);
+    await expect(panel.getByRole('radio', { name: 'M', exact: true })).not.toBeChecked();
+    await expect(panel.getByRole('button', { name: 'ADD TO BAG', exact: true })).toBeDisabled();
+    expect(productRequests).toBe(expectedRequests);
+  }
+  await panel.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
 for (const delivery of ['during the transition', 'after the dialog opens'] as const) {
   test(`a delayed native close event cannot dismiss Quick Add ${delivery}`, async ({ page }) => {
     await page.goto('/tops/sweaters');

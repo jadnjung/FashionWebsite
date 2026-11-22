@@ -146,6 +146,12 @@ export function QuickAddPanel({ handle, title, open, onClose }: QuickAddPanelPro
   return (
     <dialog
       ref={dialogRef}
+      onCancel={(event) => {
+        // Own Escape before native focus restoration allows another activation.
+        // The controlled effect closes natively and accounts for its notification.
+        event.preventDefault();
+        onClose();
+      }}
       onClose={(event) => {
         // close() restores focus before its queued close event arrives.
         // Its prop-driven state change is already applied; the notification
