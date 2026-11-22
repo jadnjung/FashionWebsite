@@ -1933,3 +1933,14 @@ Keep the existing maximum of 20 normalized distinct choices independently for si
 A submitted group exceeding the budget invalidates the whole submission. Retain every normalized choice in an expanded editable recovery form, preserve other supported criteria, explain correction and expose Clear Filters. Do not request matching products or facets or present a partially applied results page. Native GET remains authoritative with JavaScript disabled. Recovery uses checkbox correction with Apply and Clear, omitting per-value full-query removal links to prevent quadratic response growth. Label initialization uses a Map.
 
 Enhanced checkbox drafts count selected values across retained off-page options. Reject an attempted extra selection at the limit, retain existing choices and keyboard focus, and allow a replacement after removal. An existing over-budget URL retains its checked choices until corrected. This extends D-098 without increasing the query budget or changing catalog authority.
+
+
+## D-106 — Validate legal-page health through arrivals and actual navigation
+
+November 21, 2026. The [legal lifecycle execution record](./docs/superpowers/plans/2026-11-18-legal-webkit-diagnosis.md) contains the hosted evidence and local proof.
+
+Use a fresh Playwright page/context for each of the seven legal/support arrivals. Verify response status 200, destination URL, visible heading and document title, then require empty console-error and page-error arrays. A separate guarded footer journey uses the actual links through all seven destinations, including keyboard activation, and retains error collection for the whole journey. Existing content, draft-framing and sitemap checks remain.
+
+Share the existing bounded, sanitized diagnostic collector within the spec. Preserve raw error assertions, failure propagation and failure-only attachments. Negative probes must fail both isolated and journey guards on uncaught errors and must also fail on console errors. No error allowlist, prefetch suppression, CORS workaround or arbitrary timing delay is introduced.
+
+The previous seven consecutive hard-goto aggregate observed WebKit errors while an old document remained active and the next destination was requested, alongside canceled RSC loads. Keep the published aggregate and captured evidence available for engine investigation. Direct arrival and ordinary customer navigation define the ongoing legal-page health checks. Fresh local checks and matching hosted verification are required before marking the production-check backlog item complete. Real Safari hardware and all possible late asynchronous faults remain outside a finite emulated-browser sample.

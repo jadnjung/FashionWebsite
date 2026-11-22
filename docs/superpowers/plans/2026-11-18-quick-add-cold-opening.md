@@ -103,3 +103,17 @@ Parent primary review and mandatory security re-review cleared the final counter
 
 
 Parent full lint/format 23055 completed exit 0. Final integrated checks are clean; no source bytes changed after reviewed fingerprints. Governance/planning prose is excluded by formatter policy and is validated separately through local links, backlog numbering and diff whitespace.
+
+
+## Publication
+
+Verified branch exactly surfacebook before commit and push. Published 8cbfb99120e8f2dc7641d29399e0ff3d27e02e99 with explicit destination and fresh exact remote match. Final structural check passed 218 local links and 82 numbered backlog entries, alongside reviewed source hashes. Matching CI 44309969021 is in progress. Root continues item 75 harness lifecycle repair next; exact natural hosted ordering of item 76 remains unconfirmed pending matching evidence.
+
+
+## November 21 hosted follow-up: native Escape
+
+Matching run 44309969021 at 8cbfb99 completed with failure in the known legal sweep. Demo completed 883 passes/23 skips and three recovered reopening failures on Chromium, laptop and mobile Chrome. The caller is line 158, the third activation after Escape at line 156; the Close-button reopening at line 150 succeeded in those attempts. Keep item 76 open.
+
+Read-only frontend trace identifies a distinct ownership gap: native Escape can close the DOM dialog and restore focus before its queued close event reconciles the parent's open prop. A subsequent setOpen(true) may have no false-to-true edge while that prop is still true. The counter covers effect-driven programmatic closes, not this native Escape notification. This remains a hypothesis for the hosted ordering.
+
+After the legal worker releases runtime, reproduce the three-opening journey with native Escape and controlled close-notification capture/replay, one activation and preserved native focus/decoder behavior. Record actual RED before editing. Candidate only after proof: onCancel prevents default and synchronizes controlled close, letting the existing effect call native dialog.close() and balance the notification counter. Preserve both programmatic timing regressions, consecutive Escape/reopen, fresh selections/requests and nested Search Escape ownership. No new state/effects/dependencies or loading/readiness scope expansion is proposed. [HTML dialog close algorithm](https://html.spec.whatwg.org/multipage/interactive-elements.html#close-the-dialog)
