@@ -30,6 +30,7 @@ test('PDP adds the selected demo variant and clears feedback on quantity edits',
 test('Quick Add adds to the demo bag and starts fresh after reopening', async ({ page }) => {
   await page.goto('/new');
   const trigger = page.getByRole('button', { name: 'QUICK ADD', exact: true }).first();
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const dialog = page.getByRole('dialog', { name: /^Quick Add/ });

@@ -65,6 +65,7 @@ test('Quick Add prevents an exhausted variant and lets another variant be added'
     .locator(`a[href="/products/${crewneck.handle}"]`)
     .locator('..')
     .getByRole('button', { name: 'QUICK ADD', exact: true });
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const dialog = page.getByRole('dialog', { name: /Quick Add.*Featherweight/ });
@@ -154,6 +155,7 @@ test('selected-variant bag imagery survives quantity updates and reload', async 
     .locator('a[href="/products/preview-variant-media"]')
     .locator('..')
     .getByRole('button', { name: 'QUICK ADD', exact: true });
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const dialog = page.getByRole('dialog', { name: /Quick Add.*Demo variant media/ });

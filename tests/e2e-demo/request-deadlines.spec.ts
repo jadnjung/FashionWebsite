@@ -15,6 +15,7 @@ async function openQuickAdd(page: Page) {
     .locator('div.group')
     .filter({ has: page.locator(`a[href="/products/${handle}"]`) });
   const trigger = card.getByRole('button', { name: 'QUICK ADD', exact: true });
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const panel = page.getByRole('dialog', { name: `Quick Add — ${title}`, exact: true });

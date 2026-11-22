@@ -196,6 +196,7 @@ test('closing nested Quick Add keeps Search locked until Search closes', async (
   const search = page.getByRole('dialog', { name: 'Search', exact: true });
   await search.getByRole('searchbox').fill('sweater');
   const trigger = search.getByRole('button', { name: 'QUICK ADD', exact: true }).first();
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const quickAdd = page.getByRole('dialog', { name: /Quick add/i });

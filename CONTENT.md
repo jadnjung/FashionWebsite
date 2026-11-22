@@ -112,6 +112,10 @@ Even utility experiences stay on-brand — creativity must never obscure what ha
 | Search, no results | `NOTHING MATCHES.` |
 | Sold out | `NO LONGER AVAILABLE.` |
 | Network failure | Clear explanation + `Retry` |
+| Quick Add code loading | `Loading Quick Add…` |
+| Quick Add code unavailable | `Quick Add could not load.` with `Retry`, `CLOSE`, and `VIEW PRODUCT` |
+
+Before hydration, Quick Add remains disabled with the accessible description `Quick Add is loading. View this piece to choose options.` Native product links remain usable. Code-loading recovery describes the shopping flow, without exposing chunk or framework details. Product-data loading retains its separate recovery state.
 
 Source: [PROJECT.md §87](./PROJECT.md#87-error-states)
 

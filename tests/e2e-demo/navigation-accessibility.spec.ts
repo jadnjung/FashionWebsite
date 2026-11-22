@@ -46,6 +46,7 @@ async function openSearchQuickAdd(page: Page) {
   await search.getByRole('searchbox').fill('crewneck');
   const trigger = search.getByRole('button', { name: 'QUICK ADD', exact: true }).first();
   await expect(trigger).toBeAttached();
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await trigger.press('Enter');
   const quickAdd = page.getByRole('dialog', { name: /^Quick Add/ });

@@ -318,6 +318,7 @@ for (const scenario of [
     const search = page.getByRole('dialog', { name: 'Search', exact: true });
     await search.getByRole('searchbox').fill('crewneck');
     const quickAdd = search.getByRole('button', { name: 'QUICK ADD', exact: true });
+    await expect(quickAdd).toBeEnabled();
     await quickAdd.focus();
     await quickAdd.press('Enter');
     const panel = page.getByRole('dialog', { name: `Quick Add — ${title}`, exact: true });
