@@ -326,14 +326,18 @@ export function getPreviewProductDetail(handle: string): ProductDetail | null {
 // something even under Demo Mode, and 'collection-000' is the one that
 // populates /archive and /archive/[handle].
 //
-// 'collection-002' (added for the drop-gate feature) is a genuinely future
-// dropDate relative to this environment's "today" — it's the fixture that
+// 'collection-002' starts a seven-day sample release when this fixture
+// module initializes. Summary and detail share its fixed deadline, so
+// rereads never move the launch and an active preview can reach release.
+// It's the fixture that
 // lets the project owner preview the locked teaser/countdown and, after
 // entering ESQUE_DROP_ACCESS_CODE, the unlocked CollectionView, entirely
 // locally. The drop-gate's code check itself needs no Demo Mode branch at
 // all: validateDropAccessCode compares against process.env.
 // ESQUE_DROP_ACCESS_CODE directly, which works identically whether
 // PREVIEW_DEMO_MODE is set or not (the comparison never touches Shopify).
+const PREVIEW_UPCOMING_DROP_DATE = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
 export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
   {
     id: 'preview-collection-current',
@@ -356,7 +360,7 @@ export const PREVIEW_COLLECTIONS: CollectionSummary[] = [
     handle: 'collection-002',
     title: 'Collection 002',
     dropStatus: 'active',
-    dropDate: '2026-11-20T12:00:00Z',
+    dropDate: PREVIEW_UPCOMING_DROP_DATE,
     archivedAt: null,
   },
   {
@@ -539,7 +543,7 @@ export function getPreviewCollectionDetail(handle: string): CollectionDetail | n
       title: 'Collection 002',
       description: 'The next Esque collection — real campaign copy, held back until launch.',
       dropStatus: 'active',
-      dropDate: '2026-11-20T12:00:00Z',
+      dropDate: PREVIEW_UPCOMING_DROP_DATE,
       archivedAt: null,
       products: PREVIEW_UPCOMING_PRODUCTS.map((p) => ({
         id: p.id,

@@ -20,3 +20,13 @@ Native security review cleared both files and the independently pending app patc
 ## Final parent acceptance
 
 The original/new Escape cases passed 10/10 in parent integration run 40977 in 14.7 seconds. Final parent compiler passed and full lint/format run 43407 passed for all frozen changes. Full unit run 17724 had already passed 692/64 against the same candidate bytes. Both logical batches are accepted; their source fingerprints match native security review. Root will keep the CI health correction and app ownership fix in separate commits and push once after both commits validate, avoiding redundant overlapping workflow runs. Hosted outcome checks remain pending.
+
+
+## Publication
+
+Root verified surfacebook before each logical commit and before the single explicit push. CI health commit e6d4374 and app Escape commit f5d95e9 were pushed together. Fresh remote tip matches f5d95e913e1695052a6f33a55f713bd215633235. Matching CI 44968464859 at that tip covers both accepted batches and is in progress. No main action, credential access or Claude-file change occurred. Hosted unit/prerequisite and legal-suite verification remain pending.
+
+
+## Matching hosted outcome, November 21 follow-up
+
+CI 44968464859 at exact f5d95e913e1695052a6f33a55f713bd215633235 completed with an overall failure from the independent expired Demo countdown fixture (item 86). Units/build/browser installation and agent setup passed. Unconfigured passed 645 with 15 skips; collections passed 61 with nine skips, including execution after Demo failure. Demo passed 885 with 23 skips, failed countdown on five profiles and recovered one mobile-Safari filter-selection-budget case. No Quick Add close test appeared among failed/recovered cases. These are matching hosted acceptance for the repaired scopes, not a full-green workflow claim.

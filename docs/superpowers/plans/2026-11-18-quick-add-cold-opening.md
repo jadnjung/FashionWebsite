@@ -150,3 +150,13 @@ The new Escape regression failed before the candidate (89674), then passed focus
 Parent independently ran the original and new Escape cases across five profiles: 40977 passed 10/10 in 14.7 seconds. Full parent units 17724 passed 692/64 after fixing the independent dated unit fixture. Final parent typecheck and full lint/format 43407 passed. Native security and parent primary reviews cleared panel SHA-256 2e46292296dd982ae5a106f3d68e528f920d7edf74cd97f70fb56f0feaf28ca4 and deadline spec 82d21be4a459ff3e2d8be94d9fd53aeab9cbdbb9ef9e3581f4b402212c122d41. No source changes followed review.
 
 Frontend stopped original server 62361 on root instruction; fresh escalated verification found no port-3000 listener or matching project Next processes. Runtime is free. Root owns final document/hash checks and publication. Keep item 76 pending matching hosted verification, and keep loading/readiness 79/80 separate. The CI clock/prerequisite correction will be a separate logical commit in the same explicit surfacebook push.
+
+
+## Escape repair publication
+
+Published f5d95e913e1695052a6f33a55f713bd215633235 on surfacebook after parent validation and final fingerprint checks; fresh remote matches. CI health e6d4374 was its preceding logical commit, and both were sent in one explicit surfacebook push. Final structural checks passed 224 local links and all 84 backlog entries. Matching CI 44968464859 is in progress; item 76 remains pending its hosted outcome. All owned servers are stopped. Items 79/80 are the next separate design/discovery scope.
+
+
+## Matching hosted outcome, November 21 follow-up
+
+CI 44968464859 at exact f5d95e913e1695052a6f33a55f713bd215633235 completed with an overall failure from the independent expired Demo countdown fixture (item 86). Units/build/browser installation and agent setup passed. Unconfigured passed 645 with 15 skips; collections passed 61 with nine skips, including execution after Demo failure. Demo passed 885 with 23 skips, failed countdown on five profiles and recovered one mobile-Safari filter-selection-budget case. No Quick Add close test appeared among failed/recovered cases. These are matching hosted acceptance for the repaired scopes, not a full-green workflow claim.

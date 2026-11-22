@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
+import { getDropSnapshot } from '@/lib/collections/drop-phase';
 import {
   PREVIEW_COLLECTIONS,
   PREVIEW_PRODUCTS,
@@ -111,6 +112,47 @@ describe('getPreviewProductDetail', () => {
 });
 
 describe('PREVIEW_COLLECTIONS', () => {
+  test.each([
+    ['2026-11-21T12:00:00Z', '2026-11-28T12:00:00.000Z'],
+    ['2040-06-01T12:00:00Z', '2040-06-08T12:00:00.000Z'],
+    ['2100-01-01T12:00:00Z', '2100-01-08T12:00:00.000Z'],
+  ])('the Demo drop initialized at %s has one stable release deadline', async (now, deadline) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    vi.stubEnv('PREVIEW_DEMO_MODE', '1');
+    vi.stubEnv('PREVIEW_COLLECTION_SCENARIO', '');
+    vi.resetModules();
+    try {
+      const fixtures = await import('@/lib/shopify/preview-demo-fixtures');
+      const summary = fixtures
+        .getPreviewCollections()
+        .find((item) => item.handle === 'collection-002')!;
+      expect(summary.dropDate).toBe(deadline);
+      expect(fixtures.getPreviewCollectionDetail(summary.handle)?.dropDate).toBe(deadline);
+      expect(getDropSnapshot(summary).phase).toBe('upcoming');
+
+      const target = new Date(deadline).getTime();
+      for (const [timestamp, phase] of [
+        [target - 1, 'upcoming'],
+        [target, 'current'],
+        [target + 3_600_000, 'current'],
+      ] as const) {
+        vi.setSystemTime(timestamp);
+        const reread = fixtures
+          .getPreviewCollections()
+          .find((item) => item.handle === summary.handle)!;
+        expect(reread.dropDate).toBe(deadline);
+        const detail = fixtures.getPreviewCollectionDetail(summary.handle)!;
+        expect(detail.dropDate).toBe(deadline);
+        expect(getDropSnapshot(reread)).toEqual({ phase, serverNow: timestamp });
+        expect(getDropSnapshot(detail)).toEqual({ phase, serverNow: timestamp });
+      }
+    } finally {
+      vi.useRealTimers();
+      vi.resetModules();
+    }
+  });
+
   test('every handle is unique', () => {
     const handles = PREVIEW_COLLECTIONS.map((collection) => collection.handle);
     expect(new Set(handles).size).toBe(handles.length);
