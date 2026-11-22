@@ -43,6 +43,7 @@ jobs:
       - run: pnpm build
 
       - name: Install Playwright browsers
+        id: playwright_browsers
         run: pnpm exec playwright install --with-deps chromium webkit
 
       - run: pnpm test:e2e
@@ -53,14 +54,15 @@ jobs:
       # including the 3D Collection Closet. Runs after the main suite, whose
       # isolated production server has exited. Each launcher builds its own
       # optimized output with its mode-specific, pinned environment.
-      # `!cancelled()` so a main-suite failure still reports this suite too.
+      # Keep reporting after a main-suite failure once browsers are installed.
+      # Skip browser work when an earlier prerequisite prevented installation.
       - run: pnpm test:e2e:demo
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.playwright_browsers.outcome == 'success' }}
         env:
           PLAYWRIGHT_PRODUCTION: '1'
 
       - run: pnpm test:e2e:collections
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.playwright_browsers.outcome == 'success' }}
         env:
           PLAYWRIGHT_PRODUCTION: '1'
 

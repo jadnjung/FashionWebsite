@@ -61,7 +61,8 @@ describe('getUpcomingDrop', () => {
       endCursor: null,
     });
 
-    const result = await getUpcomingDrop();
+    // Keep the fixture upcoming regardless of the date this test runs.
+    const result = await getUpcomingDrop(new Date('2026-11-19T12:00:00Z'));
     expect(result).toEqual({
       handle: 'collection-002',
       title: 'Collection 002',

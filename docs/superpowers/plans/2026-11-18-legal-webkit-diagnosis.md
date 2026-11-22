@@ -339,3 +339,8 @@ Parent read the eight-result negative-probe verification receipt and reviewed th
 Parent full unconfigured run 49121 passed 645 tests with 15 intended skips across 660 cases in 4.6 minutes, exit 0. JSON receipt confirms unexpected=0 and flaky=0. Command used the pinned runtime with CI=1, optimized external unconfigured server, workers=2 and line/JSON reporters. Ignored receipts: playwright-report/diagnostics/legal-lifecycle-integrated.log and .json. Final parent typecheck, full lint/format run 96880 and diff checks passed. Probe TypeScript copies were renamed before compiler validation. Source bytes match the reviewed hash.
 
 After explicit handoff, QA stopped the original server session 9853 on root instruction; fresh escalated verification found zero port-3000 listeners and zero project Next/launcher processes. Runtime is released. D-106, roadmap, backlog and the compact maintenance checkpoint describe this repair. Governance/planning prose is excluded by formatter policy; its links/numbering are checked separately. Branch-only publication and matching hosted verification follow. Keep item 75 open until its matching hosted evidence arrives.
+
+
+## Lifecycle repair publication, November 21
+
+Verified surfacebook before commit and again before explicit push. Published 07582d66139976905e9e961a2a45dfeabbf042af; fresh remote revision matches. Final structural checks passed the reviewed source hash, 228 local links and all 82 backlog entries. Matching CI 44966663898 is in progress. Local repair is complete; item 75 remains open pending that hosted verification. Root proceeds to the separate native Escape/reopen gap in item 76.
